@@ -1,0 +1,156 @@
+package com.cnpiecsb.fc.payment.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 付款审批页面
+ * @author Administrator
+ *
+ */
+@Controller
+@RequestMapping("/fc/payment")
+public class PaymentProcessApprovalController extends BaseServiceController{
+	// 审批列表列表查询
+	private int paymentProcessApprovalManageQueryId = 8430007;	
+	private GridHeadConfig paymentProcessApprovalManageQueryHeadConfig;
+	
+	// 单条发票查询
+	private int applicationOneQueryId = 8430004;
+	
+	//流程查询
+	private int flowSearchManageQueryId = 8500001;
+	private GridHeadConfig flowSearchManageQueryHeadConfig;
+		
+	public PaymentProcessApprovalController() {
+		paymentProcessApprovalManageQueryHeadConfig = new GridHeadConfig(paymentProcessApprovalManageQueryId,true,false,true,false);
+		paymentProcessApprovalManageQueryHeadConfig.setOperatorWidth(100);
+		flowSearchManageQueryHeadConfig = new GridHeadConfig(flowSearchManageQueryId,true,false,false,false);
+	}
+	
+	/**
+	 * 付款审批页面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/processApprovalManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView processApprovalManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/paymentProcessApproval/processApprovalManage");
+        String tableHeader = this.getTableHeader(httpSession,paymentProcessApprovalManageQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", paymentProcessApprovalManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得付款审批页面数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getProcessApprovalList")
+	@ResponseBody
+	public Object getProcessApprovalList(@RequestBody Map postData, HttpSession httpSession) {
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("approval_account", user.getAccount());
+		return this.getTableDataList(postData, paymentProcessApprovalManageQueryId);
+	}
+	
+	/**
+	 * 详情页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/processApprovelDeatil",method=RequestMethod.GET)
+    public ModelAndView processApprovelDeatil(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(applicationOneQueryId, postData);	
+		String tableHeader = this.getTableHeader(httpSession,flowSearchManageQueryHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", flowSearchManageQueryId);
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("fc/paymentProcessApproval/processApprovelDeatil");
+        return mv;
+    }
+	
+	/**
+	 * 获得流程界面数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getFcFlowDetialList")
+	@ResponseBody
+	public Object getFcFlowDetialList(@RequestBody Map postData, HttpSession httpSession) {
+		postData.put("bill_code", (String)postData.get("ap_id"));
+		return this.getTableDataList(postData, flowSearchManageQueryId);
+	}
+	
+	/**
+	 * 审批页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/paymentApplicationApproval",method=RequestMethod.GET)
+	public ModelAndView paymentApplicationApproval(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+		ModelAndView mv = new ModelAndView();        
+		// 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(applicationOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		String tableHeader = this.getTableHeader(httpSession,flowSearchManageQueryHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", flowSearchManageQueryId);
+		mv.setViewName("fc/paymentProcessApproval/processApprovelDeal");
+		
+		return mv;
+	}
+	
+	/**
+	 * 审批
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/toProcessApprovelDeal")
+	@ResponseBody
+	public Object toProcessApprovelDeal(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"account","bill_code","flow_id","audit_status","audit_memo"};
+		// 加入sp的名称
+		postData.put("spName", "fc_process_approval_operate");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("account", user.getAccount());
+		
+		postData.put("bill_code", (String)postData.get("ap_id"));
+		
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+	}
+
+}

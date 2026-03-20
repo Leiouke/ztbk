@@ -1,0 +1,118 @@
+package com.cnpiecsb.fc.payment.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 财务用进货发票管理, 目前只有待补发票补充功能
+ * 
+ * @author user
+ *
+ */
+@Controller
+@RequestMapping("/fc/payment")
+public class PaymentFinancialInvoiceController extends BaseServiceController {
+	// 货源发票查询
+	private int financialInvoiceManageQueryId = 8420005;	
+	private GridHeadConfig financialInvoiceManageGridHeadConfig;
+	
+	// 单条发票查询
+	private int financialInvoiceOneQueryId = 8420004;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public PaymentFinancialInvoiceController(){
+		financialInvoiceManageGridHeadConfig = new GridHeadConfig(financialInvoiceManageQueryId,true,false,true,false);
+		financialInvoiceManageGridHeadConfig.setOperatorWidth(80);
+	}
+	
+	/**
+	 * 货源发票查询界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/financialInvoiceManage", method=RequestMethod.GET)
+    public ModelAndView financialInvoiceManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/paymentSourceInvoice/financialInvoiceManage");
+        String tableHeader = this.getTableHeader(httpSession,financialInvoiceManageGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", financialInvoiceManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得货源发票数据
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getFinancialInvoiceManageList")
+	@ResponseBody
+	public Object getFinancialInvoiceManageList(@RequestBody Map postData, HttpSession httpSession){
+		return this.getTableDataList(postData, financialInvoiceManageQueryId);
+	}
+	
+	/**
+	 * 补充发票号页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/financialInvoiceToComplement",method=RequestMethod.GET)
+    public ModelAndView financialInvoiceToComplement(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(financialInvoiceOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		
+        mv.setViewName("fc/paymentSourceInvoice/financialInvoiceToComplement");
+		
+        return mv;
+    }
+	
+	/**
+	 * 确认发票号补充
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/financialComplementInvoice")
+	@ResponseBody
+    public Object applicationPayComplete(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"inv_id","fc_invoice_class","inv_no","inv_date"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_invoice_financial_complement");
+	
+//		User user=(User)httpSession.getAttribute("user");
+//		postData.put("o_id_input", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		return "{\"success\":true}";
+    }
+}

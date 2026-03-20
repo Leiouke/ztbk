@@ -1,0 +1,9 @@
+# sqlserver\u7684\u76ca\u534e\u6b63\u5f0f\u5e93
+baswenxian.jdbc.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
+baswenxian.jdbc.url=jdbc:sqlserver://192.168.0.22:1433;databaseName=bas_wenxian
+baswenxian.jdbc.user=Rw_user_2015
+baswenxian.jdbc.pass=2018pwd5FE3CFCA
+# sqlserver\u7684\u76ca\u534e\u6d4b\u8bd5\u5e93
+#yh.jdbc.url=jdbc:sqlserver://192.168.100.112:1433;databaseName=BAS_Wenxian_test
+#yh.jdbc.user=WX_user_2016
+#yh.jdbc.pass=DNB2016WXB+F2D3F00F

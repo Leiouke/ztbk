@@ -1,0 +1,57 @@
+package com.cnpiecsb.organization.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+
+@Controller
+@RequestMapping("/organization")
+public class OrganizationController extends ZtbkServiceController {
+	private int orgListQueryId = 1010001;
+	
+	/**
+	 * 进入组织机构管理界面(查询不可维护)
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/organizationManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView organizationManage(){
+		ModelAndView mv = new ModelAndView();
+        mv.setViewName("organization/organizationManage");
+        return mv;
+    }
+	
+	/**
+	 * 获得整颗菜单树
+	 * 
+	 * 
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getOrganizationList")
+	@ResponseBody
+	public Object getOrganizationList(){
+		Map postData=new HashMap<String, Object>();
+		postData.put("queryId", orgListQueryId);
+		return this.getDataListByQueryId(postData);
+	}
+	
+	/**
+	 * 获得动态列表数据- 获得树节点
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getOrganizationManageList")
+	@ResponseBody
+	public Object getOrganizationManageList(@RequestBody Map postData){
+		return this.getTableDataList(postData,orgListQueryId);
+	}
+}

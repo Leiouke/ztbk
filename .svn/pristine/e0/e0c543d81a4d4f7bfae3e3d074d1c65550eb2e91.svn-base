@@ -1,0 +1,7 @@
+# sqlserver\u7684\u57fa\u7840\u5e93
+base.jdbc.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
+base.jdbc.url=jdbc:sqlserver://192.168.0.138:1433;databaseName=itoms_test
+# \u5982\u679c\u4f7f\u7528windows\u8eab\u4efd\u9a8c\u8bc1\u7684,\u4f7f\u7528\u4ee5\u4e0b\u5199\u6cd5, \u4f46\u662f\u6ce8\u610f\u8981\u5c06 sqljdbc_auth.dll(\u8fd9\u4e2a\u6587\u4ef6\u5728\u9a71\u52a8\u5305\u91cc\u9762\u80fd\u627e\u5230) \u653e\u5230 \u6570\u636e\u5e93\u670d\u52a1\u5668\u7684C:\Windows\System32 \u4e0b\u9762
+# base.jdbc.url=jdbc:sqlserver://localhost:1433;integratedSecurity=true;databaseName=record
+base.jdbc.user=bsdu138
+base.jdbc.pass=data_User1302(

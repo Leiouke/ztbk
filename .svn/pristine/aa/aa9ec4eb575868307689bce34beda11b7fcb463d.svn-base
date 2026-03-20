@@ -1,0 +1,278 @@
+package com.cnpiecsb.np.finance.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/np")
+public class CashClaimController extends ZtbkServiceController {
+	private int cashClaimQueryId = 5300002;	
+	private GridHeadConfig cashClaimGridHeadConfig;
+	
+	private int cashClaimOneQueryId = 5300002;
+	
+	private int cashClaimDetailQueryId = 5300003;	
+	private GridHeadConfig cashClaimDetailGridHeadConfig;
+	
+	private int cashClaimVerifyQueryId = 5300004;
+	private GridHeadConfig cashClaimVerifyGridHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public CashClaimController(){
+		cashClaimGridHeadConfig = new GridHeadConfig(cashClaimQueryId,true,false,true,false);
+		cashClaimGridHeadConfig.setOperatorWidth(180);
+		
+		cashClaimDetailGridHeadConfig=new GridHeadConfig(cashClaimDetailQueryId,true,false,true,false);
+		
+		cashClaimVerifyGridHeadConfig=new GridHeadConfig(cashClaimVerifyQueryId,true,true,true,false);
+		cashClaimVerifyGridHeadConfig.setOperatorWidth(80);
+	}
+	
+	@RequestMapping(value="/cashClaim",method=RequestMethod.GET)
+    public ModelAndView cashClaim(HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/cashClaim/cashClaim");
+        String tableHeader = this.getTableHeader(httpSession,cashClaimGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", cashClaimQueryId);
+        return mv;
+    }	
+	
+	/**
+	 * 获得动态列表数据-到款认领列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getCashClaimList")
+	@ResponseBody
+	public Object getCashClaimList(@RequestBody Map postData){
+		return this.getTableDataList(postData,cashClaimQueryId);
+	}
+	
+	/**
+	 * 到款认领-认领金额页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/cashClaimAdd",method=RequestMethod.GET)
+    public ModelAndView cashClaimAdd(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        Map<String, Object> oneQuery = baseService.getOneQuery(cashClaimOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("np/cashClaim/cashClaimAdd");
+        return mv;
+    }
+	
+	/**
+	 * 认领加审核操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addCashClaim")
+	@ResponseBody
+    public Object addCashClaim(@RequestParam Map postData,HttpSession httpSession){		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_operator", user.getAccount());
+		
+		// 先认领
+		int code = do_sp_add_cash_claim(postData);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 再审核
+		postData.put("o_id_audit", user.getAccount());
+		code = do_sp_add_cash_claim_verify(postData);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	//新增到款认领
+	private int do_sp_add_cash_claim(Map postData){
+		String paramNames[] = new String[]{"rp_id","c_id","money_amount","memo","o_id_operator"};
+		// 出参, 有顺序
+		String returnNames[] = new String[]{"id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_receive_payment_claim");
+		
+		return  baseService.doCallSp(postData, paramNames, returnNames);
+	}
+	
+	/**
+	 * 到款认领明细
+	 * 
+	 */
+	@RequestMapping(value="/cashClaimDetail",method=RequestMethod.GET)
+    public ModelAndView cashClaimDetail(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/cashClaim/cashClaimDetail");
+        Map<String, Object> oneQuery = baseService.getOneQuery(cashClaimOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        String tableHeader = this.getTableHeader(httpSession,cashClaimDetailGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", cashClaimDetailQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-到款认领明细列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getcashClaimDetailList")
+	@ResponseBody
+	public Object getcashClaimDetailList(@RequestBody Map postData){
+		return this.getTableDataList(postData,cashClaimDetailQueryId);
+	}
+	
+	/**
+	 * 到款认领审核
+	 * 
+	 */
+	@RequestMapping(value="/cashClaimVerify",method=RequestMethod.GET)
+    public ModelAndView cashClaimVerify(HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/cashClaimVerify/cashClaimVerify");
+        String tableHeader = this.getTableHeader(httpSession,cashClaimVerifyGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", cashClaimVerifyQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-到款登记列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getCashClaimVerifyList")
+	@ResponseBody
+	public Object getCashClaimVerifyList(@RequestBody Map postData){
+		return this.getTableDataList(postData,cashClaimVerifyQueryId);
+	}
+	
+	/**
+	 * 认领审核操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/cashClaimVerify")
+	@ResponseBody
+    public Object cashClaimVerify(@RequestParam Map postData,HttpServletRequest request,HttpSession httpSession){		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_audit", user.getAccount());
+		String[] ids=request.getParameterValues("ids");
+		if(ids!=null&&ids.length>0){
+			for(int i=0;i<ids.length;i++){
+				postData.put("id", ids[i]);
+				int code = do_sp_add_cash_claim_verify(postData);
+				
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}				
+		
+		// 以下获得出参值
+		//System.out.println(postData.get("sd_id"));
+		return "{\"success\":true}";
+    }
+	
+	//到款认领审核
+	private int do_sp_add_cash_claim_verify(Map postData){
+		String paramNames[] = {"id","o_id_audit"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_budget_item_audit");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	/**
+	 * 审核退回
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/cashClaimNotVerify")
+	@ResponseBody
+	public Object cashClaimNotVerify(HttpServletRequest request,@RequestParam Map postData,HttpSession httpSession){
+		String[] ids=request.getParameterValues("ids");
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_audit", user.getAccount());
+		if(ids!=null&&ids.length>0){
+			for(int i=0;i<ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"id","o_id_audit"};
+				// 加入sp的名称
+				postData.put("spName", "u_finance_budget_item_cancel");
+				
+				postData.put("id", ids[i]);		
+						
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 作废审核
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/cashClaimDelete")
+	@ResponseBody
+	public Object cashClaimDelete(HttpServletRequest request,@RequestParam Map postData,HttpSession httpSession){
+		String[] ids=request.getParameterValues("ids");
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_audit", user.getAccount());
+		if(ids!=null&&ids.length>0){
+			for(int i=0;i<ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"id"};
+				// 加入sp的名称
+				postData.put("spName", "u_finance_budget_item_delete");
+				
+				postData.put("id", ids[i]);
+						
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+	}
+}

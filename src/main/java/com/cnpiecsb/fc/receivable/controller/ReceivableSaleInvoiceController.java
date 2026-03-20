@@ -1,0 +1,879 @@
+package com.cnpiecsb.fc.receivable.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/fc/receivable")
+public class ReceivableSaleInvoiceController extends BaseServiceController {
+	// 业务开票查询(应收发票)
+	private int saleInvoiceManageQueryId = 8120001;	
+	private GridHeadConfig saleInvoiceManageGridHeadConfig;
+	
+	// 业务开票查询(预收发票)
+	private int saleInvoiceAdvanceManageQueryId = 8120009;	
+	private GridHeadConfig saleInvoiceAdvanceManageGridHeadConfig;
+	
+	// 发票结算单明细
+	private int saleInvoiceAddDetailQueryId = 8120002;
+	private GridHeadConfig saleInvoiceAddDetailHeadConfig;
+	
+	// 结算单明细引入
+	private int saleInvoiceStatementItemPullQueryId = 8120003;	
+	private GridHeadConfig saleInvoiceStatementItemPullHeadConfig;
+	
+	// 单条发票查询
+	private int saleInvoiceOneQueryId = 8120004;
+	
+	// 发票预收单明细
+	private int saleInvoiceAdvanceAddDetailQueryId = 8120007;
+	private GridHeadConfig saleInvoiceAdvanceAddDetailHeadConfig;
+	
+	// 预收单明细引入
+	private int saleInvoiceAdvanceItemPullQueryId = 8120008;	
+	private GridHeadConfig saleInvoiceAdvanceItemPullHeadConfig;
+	
+	// 销售开票内容明细查询
+	private int invoiceKpContentItemQueryId = 8120005;	
+	private GridHeadConfig invoiceKpContentItemHeadConfig;
+	
+//	private int saleInvoiceEditDetailQueryId = 5100006;	
+//	private GridHeadConfig saleInvoiceEditDetailHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public ReceivableSaleInvoiceController(){
+		saleInvoiceManageGridHeadConfig = new GridHeadConfig(saleInvoiceManageQueryId,true,true,true,false);
+		saleInvoiceManageGridHeadConfig.setOperatorWidth(150);
+		
+		saleInvoiceAdvanceManageGridHeadConfig = new GridHeadConfig(saleInvoiceAdvanceManageQueryId,true,true,true,false);
+		saleInvoiceAdvanceManageGridHeadConfig.setOperatorWidth(150);
+		
+		saleInvoiceAddDetailHeadConfig = new GridHeadConfig(saleInvoiceAddDetailQueryId,true,true,true,false);		
+		saleInvoiceStatementItemPullHeadConfig = new GridHeadConfig(saleInvoiceStatementItemPullQueryId,true,true,false,false);
+		
+		saleInvoiceAdvanceAddDetailHeadConfig = new GridHeadConfig(saleInvoiceAdvanceAddDetailQueryId,true,true,true,false);
+		saleInvoiceAdvanceItemPullHeadConfig = new GridHeadConfig(saleInvoiceAdvanceItemPullQueryId,true,true,false,false);
+		
+		invoiceKpContentItemHeadConfig = new GridHeadConfig(invoiceKpContentItemQueryId,true,false,true,false);
+		invoiceKpContentItemHeadConfig.setOperatorWidth(100);
+//		
+//		saleInvoiceEditDetailHeadConfig = new GridHeadConfig(saleInvoiceEditDetailQueryId,true,true,true,false);
+	}
+	
+	/**
+	 * 销售开票查询界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/saleInvoiceManage", method=RequestMethod.GET)
+    public ModelAndView saleInvoiceManage(@RequestParam Map postData, HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableSaleInvoice/saleInvoiceManage");
+        
+        String fc_kp_type = postData.get("fc_kp_type").toString();
+        
+        if (fc_kp_type.equals("0")) {
+	        String tableHeader = this.getTableHeader(httpSession, saleInvoiceManageGridHeadConfig);
+	        mv.addObject("tableHeader", tableHeader);
+			mv.addObject("queryId", saleInvoiceManageQueryId);
+        } else if (fc_kp_type.equals("1")) {
+        	String tableHeader = this.getTableHeader(httpSession, saleInvoiceAdvanceManageGridHeadConfig);
+	        mv.addObject("tableHeader", tableHeader);
+			mv.addObject("queryId", saleInvoiceAdvanceManageQueryId);
+        }
+        
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-销售发票管理
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getSaleInvoiceManageList")
+	@ResponseBody
+	public Object getSaleInvoiceManageList(@RequestBody Map postData, HttpSession httpSession){
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		
+		String fc_kp_type = postData.get("fc_kp_type").toString();
+		int queryId = saleInvoiceManageQueryId;
+		if (fc_kp_type.equals("0")) {
+			queryId = saleInvoiceManageQueryId;
+        } else if (fc_kp_type.equals("1")) {
+	        queryId = saleInvoiceAdvanceManageQueryId;
+        }
+		
+		return this.getTableDataList(postData,queryId);
+	}
+	
+	/**
+	 * 新增和修改返回操作
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/returnSaleInvoice")
+	@ResponseBody
+    public Object returnSaleInvoice(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"guid"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_return");
+		
+		String saleInvoice_guid=(String)httpSession.getAttribute("saleInvoice_guid");
+		postData.put("guid", saleInvoice_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		httpSession.setAttribute("saleInvoice_guid", "");
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增发票页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/saleInvoiceAdd",method=RequestMethod.GET)
+    public ModelAndView saleInvoiceAdd(@RequestParam Map postData, HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableSaleInvoice/saleInvoiceAdd");
+        
+        String saleInvoice_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("saleInvoice_guid", saleInvoice_guid);
+        
+        String fc_kp_type = postData.get("fc_kp_type").toString();
+        
+        // 假如 是应收发票, 放结算单明细
+        if (fc_kp_type.equals("0")) {
+	        String tableHeader = this.getTableHeader(httpSession,saleInvoiceAddDetailHeadConfig);
+			mv.addObject("tableHeader", tableHeader);
+			mv.addObject("queryId", saleInvoiceAddDetailQueryId);
+        } else if (fc_kp_type.equals("1")) { // 假如 是预收发票, 放预收单明细
+        	String tableHeader = this.getTableHeader(httpSession,saleInvoiceAdvanceAddDetailHeadConfig);
+			mv.addObject("tableHeader", tableHeader);
+			mv.addObject("queryId", saleInvoiceAdvanceAddDetailQueryId);
+        }
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-新增发票明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getSaleInvoiceAddItemList")
+	@ResponseBody
+	public Object getSaleInvoiceAddItemList(@RequestBody Map postData,HttpSession httpSession){
+		String saleInvoice_guid=(String)httpSession.getAttribute("saleInvoice_guid");
+		postData.put("guid", saleInvoice_guid);
+		return this.getTableDataList(postData,saleInvoiceAddDetailQueryId);
+	}	
+	
+	/**
+	 * 引入明细页面 结算单明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/saleInvoiceStatementItemPull",method=RequestMethod.GET)
+    public ModelAndView saleInvoiceStatementItemPull(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableSaleInvoice/saleInvoiceStatementItemPull");
+        String tableHeader = this.getTableHeader(httpSession, saleInvoiceStatementItemPullHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", saleInvoiceStatementItemPullQueryId);
+        return mv;
+    }
+	
+	/**
+   	 * 获得动态列表数据-引入发票结算单明细
+   	 * 
+   	 * param postData
+   	 * return
+   	 */
+   	@RequestMapping(value="/getSaleInvoiceStatementItemPullList")
+   	@ResponseBody
+   	public Object getSaleInvoiceStatementItemPullList(@RequestBody Map postData,HttpSession httpSession) {
+   		// 获得权限代码参数
+   		AccessControlUtil.accessParams(postData, httpSession);
+   		return this.getTableDataList(postData, saleInvoiceStatementItemPullQueryId);
+   	}
+   	
+   	/**
+	 * 引入明细页面 预收单明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/saleInvoiceAdvanceItemPull",method=RequestMethod.GET)
+    public ModelAndView saleInvoiceAdvanceItemPull(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableSaleInvoice/saleInvoiceAdvanceItemPull");
+        String tableHeader = this.getTableHeader(httpSession, saleInvoiceAdvanceItemPullHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", saleInvoiceAdvanceItemPullQueryId);
+        return mv;
+    }
+	
+	/**
+   	 * 获得动态列表数据-引入发票预收单明细
+   	 * 
+   	 * param postData
+   	 * return
+   	 */
+   	@RequestMapping(value="/getSaleInvoiceAdvanceItemPullList")
+   	@ResponseBody
+   	public Object getSaleInvoiceAdvanceItemPullList(@RequestBody Map postData, HttpSession httpSession) {
+   		// 获得权限代码参数
+   		AccessControlUtil.accessParams(postData, httpSession);
+   		return this.getTableDataList(postData, saleInvoiceAdvanceItemPullQueryId);
+   	}
+   	
+	/**
+	 * 引入发票结算单明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/pullSaleInvoiceItem")
+	@ResponseBody
+    public Object pullSaleInvoiceItem(@RequestBody List<Map<String,Object>> postData,HttpSession httpSession, HttpServletRequest request){
+		String saleInvoice_guid=(String)httpSession.getAttribute("saleInvoice_guid");
+		if(postData!=null&&postData.size()>0){
+			for(Map<String,Object> kp_map:postData){				
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"guid", "statement_id", "kp_money"};
+				// 加入sp的名称
+				kp_map.put("spName", "fc_receivable_invoice_kp_item_pullin");				
+				kp_map.put("guid", saleInvoice_guid);			
+				int code = baseService.doCallSp(kp_map, paramNames, null);					
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改明细操作
+	 * 
+	 * @param dynamicColumns
+	 * @return
+	 */
+	@RequestMapping(value="/updateSaleInvoiceItem")
+	@ResponseBody
+	public Object updateSaleInvoiceItem(@RequestParam Map postData, HttpSession httpSession) {
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"guid", "statement_id", "kp_money"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_item_update");
+		
+		String saleInvoice_guid=(String)httpSession.getAttribute("saleInvoice_guid");
+		postData.put("guid", saleInvoice_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 删除明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteSaleInvoiceItem")
+	@ResponseBody
+    public Object deleteSaleInvoiceItem(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){	
+		String saleInvoice_guid=(String)httpSession.getAttribute("saleInvoice_guid");
+		postData.put("guid", saleInvoice_guid);
+		
+		String[] statement_ids = request.getParameterValues("statement_ids");
+		if(statement_ids != null && statement_ids.length > 0){
+			for(int i=0;i<statement_ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"guid", "statement_id"};
+				// 加入sp的名称
+				postData.put("spName", "fc_receivable_invoice_kp_item_delete");					
+				
+				postData.put("statement_id", statement_ids[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}	
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增销售发票操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addSaleInvoice")
+	@ResponseBody
+    public Object addSaleInvoice(@RequestParam Map postData,HttpSession httpSession) {		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid", "c_id","fc_kp_form","fc_kp_family","fc_tax_rate","tax_money","memo","o_id_input","o_id_receiver","fc_kp_type","org_code","kp_cw_type","unit_code","fc_kp_mail"};
+		// 出参, 有顺序
+		String returnNames[] = {"kp_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_new");
+		
+		String saleInvoice_guid=(String)httpSession.getAttribute("saleInvoice_guid");
+		postData.put("guid", saleInvoice_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		postData.put("is_to_edit", 0);
+		code = do_sp_sale_invoice_item_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		return "{\"success\":true}";
+    }
+	
+	// 重算这次发票对应的结算单/预收单明细的已开票金额 
+	private int do_sp_sale_invoice_item_calculate(Map postData){
+		String paramNames[] = {"kp_id", "is_to_edit"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_item_calculate");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	/**
+	 * 修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/saleInvoiceEdit",method=RequestMethod.GET)
+    public ModelAndView saleInvoiceEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(saleInvoiceOneQueryId, postData);		
+		//ObjectMapper mapper = new ObjectMapper();
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("fc/receivableSaleInvoice/saleInvoiceEdit");
+        
+        String fc_kp_type = oneQuery.get("fc_kp_type").toString();
+        
+        // 假如 是应收发票, 放结算单明细
+        if (fc_kp_type.equals("0")) {
+	        String tableHeader = this.getTableHeader(httpSession,saleInvoiceAddDetailHeadConfig);
+			mv.addObject("tableHeader", tableHeader);
+			mv.addObject("queryId", saleInvoiceAddDetailQueryId);
+        } else if (fc_kp_type.equals("1")) { // 假如 是预收发票, 放预收单明细
+        	String tableHeader = this.getTableHeader(httpSession,saleInvoiceAdvanceAddDetailHeadConfig);
+			mv.addObject("tableHeader", tableHeader);
+			mv.addObject("queryId", saleInvoiceAdvanceAddDetailQueryId);
+        }
+        
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"kp_id","guid"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_toUpdate");
+		
+		String saleInvoice_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("saleInvoice_guid", saleInvoice_guid);
+		postData.put("guid", saleInvoice_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-编辑发票明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getSaleInvoiceEditItemList")
+	@ResponseBody
+	public Object getSaleInvoiceEditItemList(@RequestBody Map postData,HttpSession httpSession){
+		String saleInvoice_guid=(String)httpSession.getAttribute("saleInvoice_guid");
+		postData.put("guid", saleInvoice_guid);
+		return this.getTableDataList(postData, saleInvoiceAddDetailQueryId);
+	}
+	
+	/**
+	 * 修改发票操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editSaleInvoice")
+	@ResponseBody
+    public Object editSaleInvoice(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"kp_id","guid","c_id","fc_kp_form", "fc_kp_family", "fc_tax_rate","tax_money","memo","o_id_receiver","kp_cw_type","unit_code","fc_kp_mail"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_update");
+		
+		String saleInvoice_guid=(String)httpSession.getAttribute("saleInvoice_guid");
+		postData.put("guid", saleInvoice_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		postData.put("is_to_edit", 0);
+		code = do_sp_sale_invoice_item_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 获得系统产生的发票号码
+	 * 
+	 * @param dynamicColumns
+	 * @return
+	 */
+	@RequestMapping(value="/getSaleInvoiceNo")
+	@ResponseBody
+	public Object getSaleInvoiceNo(@RequestParam Map postData) {
+		String returnNames[] = new String[]{"kp_no"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_no_create");
+		
+		int code = baseService.doCallSp(postData, null, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		String kp_no = postData.get("kp_no").toString();
+		return "{\"success\":true, \"kp_no\":" + kp_no + "}";
+	}
+	
+	/**
+	 * 修改操作 发票号
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editSaleInvoiceNo")
+	@ResponseBody
+    public Object editSaleInvoiceNo(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"kp_id","kp_no","kp_date", "o_id_kp"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_no_update");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_kp", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除操作 -销售发票
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteSaleInvoice")
+	@ResponseBody
+    public Object deleteSaleInvoice(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"kp_id","o_id_destroy"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_delete");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_destroy", user.getAccount());
+        
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		postData.put("is_to_edit", 0);
+		code = do_sp_sale_invoice_item_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+     * 进入开票申请界面- 未申请状态
+     * 
+     * @param postData
+     * @param httpSession
+     * @return
+     * @throws JsonProcessingException
+     */
+	@RequestMapping(value="/toSaleInvoiceClaimKp",method=RequestMethod.GET)
+    public ModelAndView toSaleInvoiceClaimKp(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException {  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();
+        
+        // 查询客户银行信息
+        Map<String, Object> bankDataList = this.getTableDataList(postData, 8000003);
+        List<Map> bankList = (List<Map>) bankDataList.get("rows");
+        mv.addObject("bankList", bankList);
+
+        
+        if (postData.get("bank_id")==null && bankList.size() > 0) {
+        	postData.put("bank_id", bankList.get(0).get("id"));
+        	postData.put("id", postData.get("bank_id"));  // 使用的也是银行的id
+        } else {
+        	postData.put("id", postData.get("bank_id"));  // 使用的也是银行的id
+        }
+        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(saleInvoiceOneQueryId, postData);	
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		
+		// 选中的单条银行记录
+		Map<String, Object> oneBankQuery = baseService.getOneQuery(8000003, postData);	
+		mv.addObject("oneBankJson", JsonUtil.mapToString(oneBankQuery));
+		
+        mv.setViewName("fc/receivableSaleInvoice/saleInvoiceClaimKp");		
+        return mv;
+    }
+	
+	/**
+	 * 申请开票操作 -销售发票
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/claimKpSaleInvoice")
+	@ResponseBody
+    public Object claimKpSaleInvoice(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"kp_id", "kp_content", "kp_amount", "kp_unit", "kp_memo", "bank_id", "fc_tax_class_code"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_to_claim");
+        
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 销售开票申请开票界面-- 已申请做明细维护操作
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toSaleInvoiceNextClaimKp",method=RequestMethod.GET)
+    public ModelAndView toSaleInvoiceNextClaimKp(@RequestParam Map postData, HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        // 已申请开票的
+        Map<String, Object> oneQuery = baseService.getOneQuery(saleInvoiceOneQueryId, postData);	
+		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		mv.setViewName("fc/receivableSaleInvoice/saleInvoiceNextClaimKp");
+        
+        String tableHeader = this.getTableHeader(httpSession,invoiceKpContentItemHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", invoiceKpContentItemQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-开票内容明细界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getSaleInvoiceContentItemList")
+	@ResponseBody
+	public Object getSaleInvoiceContentItemList(@RequestBody Map postData,HttpSession httpSession){
+		return this.getTableDataList(postData,invoiceKpContentItemQueryId);
+	}
+	
+	/**
+	 * 销售开票单撤销申请开票
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/saleInvoiceCancelClaimKp")
+	@ResponseBody
+    public Object saleInvoiceCancelClaimKp(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"kp_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_to_cancel_claim");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增开票内容明细页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/saleInvoiceContentItemAdd",method=RequestMethod.GET)
+    public ModelAndView saleInvoiceContentItemAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableSaleInvoice/saleInvoiceContentItemAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增开票内容明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/addSaleInvoiceContentItem")
+	@ResponseBody
+    public Object addSaleInvoiceContentItem(@RequestParam Map postData)throws JsonProcessingException{
+		int code = this.addOneSaleInvoiceContentItem(postData);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增开票内容明细
+	 * 
+	 * @param postData
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	private int addOneSaleInvoiceContentItem(Map postData) {
+		// 入参, 注意按照顺序
+		String paramNames[] = {"kp_id","kp_content","kp_amount", "kp_unit", "kp_money", "kp_memo", "kp_specs", "total_money", "discount", "fc_tax_class_code"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_item_content_new");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		return code;
+    }
+	
+	/**
+	 * 修改开票内容明细界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/toSaleInvoiceContentItemEdit", method=RequestMethod.GET)
+    public ModelAndView toSaleInvoiceContentItemEdit(@RequestParam Map postData) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableSaleInvoice/saleInvoiceContentItemEdit");
+        
+        // 单记录查询
+     	Map<String, Object> oneQuery = baseService.getOneQuery(invoiceKpContentItemQueryId, postData);
+     	mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        return mv;
+    }
+	
+	/**
+	 * 修改开票内容明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/editSaleInvoiceContentItem")
+	@ResponseBody
+    public Object editSaleInvoiceContentItem(@RequestParam Map postData)throws JsonProcessingException{
+		// 入参, 注意按照顺序
+		String paramNames[] = {"id","kp_content","kp_amount", "kp_unit", "kp_money", "kp_memo", "kp_specs", "total_money", "discount", "fc_tax_class_code"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_item_content_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除开票内容明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteSaleInvoiceContentItem")
+	@ResponseBody
+    public Object deleteSaleInvoiceContentItem(@RequestParam Map postData){
+		int code = this.deleteOneSaleInvoiceContentItem(postData);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除开票内容明细
+	 * 
+	 * param postData
+	 * return
+	 */
+    private int deleteOneSaleInvoiceContentItem(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_item_content_delete");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		return code;
+    }
+    
+    /**
+	 * 开票单提交申请开票
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/saleInvoiceCommitClaimKp")
+	@ResponseBody
+    public Object saleInvoiceCommitClaimKp(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"kp_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_claim_commit");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 记账操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/accountSaleInvoice")
+	@ResponseBody
+    public Object accountSaleInvoice(@RequestParam Map postData,HttpServletRequest request,HttpSession httpSession){
+		String[] kp_ids=request.getParameterValues("kp_ids");
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("account_person", user.getAccount());
+		
+		if(kp_ids !=null && kp_ids.length>0){
+			for(int i=0;i < kp_ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"kp_id","account_person","account_month"};
+				// 加入sp的名称
+				postData.put("spName", "fc_receivable_invoice_kp_account");
+				
+				postData.put("kp_id", kp_ids[i]);
+						
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 撤销记账操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteSaleInvoiceAccount")
+	@ResponseBody
+    public Object deleteSaleInvoiceAccount(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){		
+		String[] kp_ids=request.getParameterValues("kp_ids");
+		if(kp_ids !=null && kp_ids.length>0){
+			for(int i=0; i < kp_ids.length; i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"kp_id"};
+				// 加入sp的名称
+				postData.put("spName", "fc_receivable_invoice_kp_account_cancel");					
+				
+				postData.put("kp_id", kp_ids[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		
+		return "{\"success\":true}";
+    }
+}

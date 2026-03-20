@@ -1,0 +1,138 @@
+package com.cnpiecsb.edi.controller;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.GenericXmlApplicationContext;
+import org.springframework.stereotype.Service;
+
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Service
+public class IsbnTaskDetaliController extends ZtbkServiceController{
+	
+	private int IsbnTaskDetaliQueryId = 1120001;
+	
+	@Autowired
+	private IsbnTaskDetailService isbnTaskDetailService;
+	
+	public void IsbnTaskDetaliGet (){
+		
+		if(ZsStartValid()==0){//为0代表不能执行，直接跳出
+			return;
+		}
+		
+		
+		//政审状态数组
+		Map<String,String> zsMap = new HashMap();
+		zsMap.put("0", "无数据");
+		zsMap.put("1", "政审通过");
+		zsMap.put("2", "政审不通过");
+		zsMap.put("3", "政审需加工");
+		zsMap.put("4", "电审通过");
+		zsMap.put("5", "电审不通过");
+		zsMap.put("6", "黑名单");
+		
+		//查询益华黑名单
+		Map searchMainMap = new HashMap();
+		searchMainMap.put("queryId", IsbnTaskDetaliQueryId);
+		List<Map> dataList = this.getDataListByQueryId(searchMainMap);
+
+//		String zs_is_pass = isbnTaskDetailService.IsbnTaskDetailEdi("9780061149948", "0");//返回政审状态
+//		System.out.println(zsMap.get(zs_is_pass));
+		
+		System.out.println(dataList.toString());
+		
+		if(dataList.size() >0){
+			for(Map<String,Object> map:dataList){
+				String h_isbn = map.get("h_isbn").toString();
+				String inc_no = map.get("inc_no").toString();
+				String zs_inc_no = map.get("zs_inc_no").toString();
+				String zs_is_pass = isbnTaskDetailService.IsbnTaskDetailEdi(h_isbn);//返回政审状态
+				
+				if(zs_is_pass != null&&!zs_is_pass.equals("")&&!zs_is_pass.equals("7")){ //数据不为空或null,不为7即b2b条码查询不为null
+					String zs_b2b = zsMap.get(zs_is_pass);
+					zc_task_detail_update(zs_b2b,zs_inc_no);//更新ZS_Task_Detail政审名称
+				}
+				
+				//跟新爬虫数据
+				clawler_task_update(inc_no);
+			}
+		}
+	}
+	
+	//更新ZS_Task_Detail政审名称
+	public Object zc_task_detail_update(String zs_b2b,String inc_no) {
+		Map postData = new HashMap();
+		
+		postData.put("zs_b2b", zs_b2b);
+		postData.put("inc_no", inc_no);
+		
+		// 加入sp的名称
+		postData.put("spName", "u_zs_task_zs_b2b_update");
+						
+		String paramNames[] = {"zs_b2b","inc_no"};
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		
+		return "{\"success\":true}";
+	}
+	
+	//更新爬虫数据
+	public Object clawler_task_update(String inc_no) {
+		Map postData = new HashMap();
+		
+		postData.put("inc_no", inc_no);
+		
+		// 加入sp的名称
+		postData.put("spName", "u_clawler_task_clawered_update");
+		
+		String paramNames[] = {"inc_no"};
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		
+		return "{\"success\":true}";
+	}
+	
+	//更新爬虫数据
+	public int ZsStartValid() {
+		Map postData = new HashMap();
+		
+		// 加入sp的名称
+		postData.put("spName", "ZsStartValid");
+		
+		int code = baseService.doCallSp(postData, null, null);
+		
+		return code;
+	}
+	
+	
+	
+	//测试方法
+	public static void main(String[] args) throws JsonProcessingException, InterruptedException, ParseException,IOException {
+	    // 以下代码可以脱离web容器
+		GenericXmlApplicationContext context = new GenericXmlApplicationContext();
+		context.setValidating(false);  
+		context.load("classpath*:spring-*.xml");  
+		context.refresh(); 
+			
+		IsbnTaskDetaliController testService = (IsbnTaskDetaliController) context.getBean("isbnTaskDetaliController");		
+			
+		try {
+			testService.IsbnTaskDetaliGet();
+//			testService.ZsStartValid();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+			
+		System.out.println("hello");
+	}
+
+}

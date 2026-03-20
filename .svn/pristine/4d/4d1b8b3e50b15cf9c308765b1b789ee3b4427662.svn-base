@@ -1,0 +1,208 @@
+package com.cnpiecsb.fc.payment.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+/**
+ * 预付单页面
+ * @author by zc 2021/12/17
+ *
+ */
+@Controller
+@RequestMapping("/fc/payment")
+public class PaymentAdvanceController extends BaseServiceController {
+	// 预付单查询
+	private int paymentAdvanceManageQueryId = 8410001;	
+	private GridHeadConfig paymentAdvanceManageQueryHeadConfig;
+	
+	// 预付单单记录查询
+	private int paymentAdvanceOneQueryId = 8410002;
+	
+	public PaymentAdvanceController() {
+		paymentAdvanceManageQueryHeadConfig = new GridHeadConfig(paymentAdvanceManageQueryId,true,false,true,false);
+		paymentAdvanceManageQueryHeadConfig.setOperatorWidth(190);
+		
+	}
+	
+	/**
+	 * 进入预付单管理界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/advanceManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView advanceManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/paymentAdvance/advanceManage");
+        String tableHeader = this.getTableHeader(httpSession,paymentAdvanceManageQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", paymentAdvanceManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得预收单数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getAdvanceList")
+	@ResponseBody
+	public Object getAdvanceList(@RequestBody Map postData, HttpSession httpSession) {
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		return this.getTableDataList(postData, paymentAdvanceManageQueryId);
+	}
+
+	/**
+	 * 新增预收单页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/advanceAdd",method=RequestMethod.GET)
+    public ModelAndView advanceAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/paymentAdvance/advanceAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增预收单操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addPaymentAdvance")
+	@ResponseBody
+    public Object addPaymentAdvance(@RequestParam Map postData,HttpSession httpSession) {	
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"f_id","currency","c_real_money","rmb_real_money","input_code","memo","org_code","unit_code", "cost_form", "pv_cw_type"};
+		// 出参, 有顺序
+		String returnNames[] = {"pv_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_advance_new");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("input_code", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	
+	/**
+	 * 删除预收单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deletePaymentAdvance")
+	@ResponseBody
+    public Object deletePaymentAdvance(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"pv_id", "o_id_destroy"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_advance_delete");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_destroy", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+
+	
+	/**
+	 * 修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/advancePrymentEdit",method=RequestMethod.GET)
+    public ModelAndView advancePrymentEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(paymentAdvanceOneQueryId, postData);		
+		//ObjectMapper mapper = new ObjectMapper();
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		mv.addObject("is_detail", (String)postData.get("is_detail"));
+        mv.setViewName("fc/paymentAdvance/advanceEdit");
+		
+        return mv;
+    }
+	
+	/**
+	 * 修改预收单操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editPaymentAdvance")
+	@ResponseBody
+    public Object editPaymentAdvance(@RequestParam Map postData,HttpSession httpSession) {	
+		
+		System.out.println(1);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"pv_id","f_id","currency","c_real_money","rmb_real_money","memo","unit_code", "cost_form", "pv_cw_type"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_advance_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改外销发票号操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editPaymentAdvanceExportInvoiceNo")
+	@ResponseBody
+    public Object editPaymentAdvanceExportInvoiceNo(@RequestParam Map postData,HttpSession httpSession) {	
+		// 入参, 注意按照顺序
+		String paramNames[] = {"pv_id", "export_invoice_no"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_advance_export_invoice_no_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+}

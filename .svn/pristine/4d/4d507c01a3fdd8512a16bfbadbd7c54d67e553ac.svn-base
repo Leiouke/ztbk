@@ -1,0 +1,429 @@
+package com.cnpiecsb.basic.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Controller
+@RequestMapping("/bk/basic")
+public class BkFactoryController extends ZtbkServiceController {
+	private int factoryManageQueryId = 10000003;		//客户信息表头查询
+	private GridHeadConfig  factoryManageGridHeadConfig;
+	
+	private int factoryOneQueryId = 10000003; //单条查询
+	
+	private int bankQueryId = 5000008;	
+	private GridHeadConfig bankGridHeadConfig;
+
+	private int contactQueryId = 5000010;
+	private GridHeadConfig contactGridHeadConfig;
+	
+
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public BkFactoryController(){
+		factoryManageGridHeadConfig = new GridHeadConfig(factoryManageQueryId,true,false,true,false);
+		factoryManageGridHeadConfig.setOperatorWidth(40);
+		factoryManageGridHeadConfig.setLineNoWidth(20);
+		
+		bankGridHeadConfig = new GridHeadConfig(bankQueryId,true,false,true,false);
+		contactGridHeadConfig = new GridHeadConfig(contactQueryId,true,false,true,false);
+		contactGridHeadConfig.setOperatorWidth(120);
+		
+	}
+	
+	
+	/**
+	 * 货源管理界面
+	 * 
+	 * @param httpSession
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value="/factoryManage",method=RequestMethod.GET)
+    public ModelAndView factoryManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("basic/factory/factoryManage");
+        String tableHeader = this.getTableHeader(httpSession, factoryManageGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", factoryManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-货源
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getFactoryList")
+	@ResponseBody
+	public Object getFactoryList(@RequestBody Map postData){
+		return this.getTableDataList(postData, factoryManageQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-联系人
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getContactList")
+	@ResponseBody
+	public Object getContactList(@RequestBody Map postData){
+		return this.getTableDataList(postData, contactQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-付汇
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getFactoryBankList")
+	@ResponseBody
+	public Object getFactoryBankList(@RequestBody Map postData){
+		return this.getTableDataList(postData, bankQueryId);
+	}
+	
+	/**
+	 * 新增页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/factoryAdd",method=RequestMethod.GET)
+    public ModelAndView clientAdd(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("basic/factory/factoryAdd");
+        return mv;
+    }
+	
+	/**
+	 * 修改页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/factoryEdit",method=RequestMethod.GET)
+    public ModelAndView factoryEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+		ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(factoryOneQueryId, postData);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("basic/factory/factoryEdit");
+        
+        //货源联系人
+        String tableHeader_contact = this.getTableHeader(httpSession,contactGridHeadConfig);
+  		mv.addObject("tableHeader_contact", tableHeader_contact);		
+   		mv.addObject("queryId_contact", contactQueryId);        
+        //银行账户
+        String tableHeader_bank = this.getTableHeader(httpSession,bankGridHeadConfig);
+  		mv.addObject("tableHeader_bank", tableHeader_bank);		
+   		mv.addObject("queryId_bank", bankQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 新增货源
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addFactory")
+	@ResponseBody
+    public Object addFactory(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {
+				  "fc_id",
+		          "f_create",
+		          "f_birth",
+		          "f_contact_man",
+		          "f_department",
+		          "f_address",
+		          "f_tel",
+		          "f_fax",
+		          "f_level",
+		          "f_help_input",
+		          "f_account",
+		          "f_bank",
+		          "f_tax",
+		          "f_zip",
+		          "f_mail",
+		          "f_tax_address",
+		          "f_tax_account",
+		          "f_tax_bank",
+		          "o_id",
+		          "cm_id",
+		          "f_mem",
+		          "f_charge_man",
+		          "f_tax_tel",
+		          "clients_credit",
+		          "f_account_name",
+		          "f_back_address",
+		          "f_department_simple",
+		          "f_jb",
+		          "f_law_man",
+		          "f_abstract",
+		          "hy_id",
+		          "last_mod_date",
+		          "last_trans_date",
+		          "zn_path_id",
+		          "limit_money",
+		          "limit_day",
+		          "f_discount",
+		          "f_back",
+		          "notrigger",
+		          "inc_discount",
+		          "source_flag",
+		          "arrear_f_id",
+		          "station_account",
+		          "station_id",
+		          "contract_id",
+		          "inv_id",
+		          "yyzz_id",
+		          "p_id",
+		          "i_class_id",
+		          "back_limit_date",
+		          "passwd",
+		          "f_handset",
+		          "o_id_input",
+		          "f_back_man",
+		          "f_back_te",
+		          "f_account_style",
+		          "custom_id",
+		          "parent_factory",
+		          "f_ms_id",
+		          "f_department_Foreign",
+		          "ac_no",
+		          "IBAN",
+		          "SWIFT",
+		          "f_country",
+		          "f_bak1",
+		          "f_bak2",
+		          "f_bak3",
+		          "f_bak4",
+		          "f_bak5",
+		          "f_bak6",
+		          "f_bak7",
+		          "f_bak8",
+		          "f_bak9",
+		          "f_bak10",
+		          "f_bak11",
+		          "f_bak12",
+		          "f_bak13",
+		          "f_bak14",
+		          "f_bak15",
+		          "f_bak16",
+		          "http_address",
+		          "qk_bd_style",
+		          "pre_bd_date",
+		          "next_bd_date"
+		};		//出参, 有顺序
+		String returnNames[] = {"f_id"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_db_factory_new");
+		User user=(User)httpSession.getAttribute("user");		
+		postData.put("o_id", user.getAccount());
+		postData.put("station_id", "ZT02"); //为了视图能查询出来，先写死
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}		
+		return "{\"success\":true}";
+    }
+	
+	
+	/**
+	 * 作废货源
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deletefactory")
+	@ResponseBody
+    public Object deletefactory(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"f_id"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_db_factory_delete");
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改货源
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editFactory")
+	@ResponseBody
+    public Object editFactory(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {
+				  "f_id",
+		          "fc_id",
+		          "f_create",
+		          "f_birth",
+		          "f_contact_man",
+		          "f_department",
+		          "f_address",
+		          "f_tel",
+		          "f_fax",
+		          "f_level",
+		          "f_help_input",
+		          "f_account",
+		          "f_bank",
+		          "f_tax",
+		          "f_zip",
+		          "f_mail",
+		          "f_tax_address",
+		          "f_tax_account",
+		          "f_tax_bank",
+		          "o_id",
+		          "cm_id",
+		          "f_mem",
+		          "f_charge_man",
+		          "f_tax_tel",
+		          "clients_credit",
+		          "f_account_name",
+		          "f_back_address",
+		          "f_department_simple",
+		          "f_jb",
+		          "f_law_man",
+		          "f_abstract",
+		          "hy_id",
+		          "last_mod_date",
+		          "last_trans_date",
+		          "zn_path_id",
+		          "limit_money",
+		          "limit_day",
+		          "f_discount",
+		          "f_back",
+		          "notrigger",
+		          "inc_discount",
+		          "source_flag",
+		          "arrear_f_id",
+		          "station_account",
+		          "station_id",
+		          "contract_id",
+		          "inv_id",
+		          "yyzz_id",
+		          "p_id",
+		          "i_class_id",
+		          "back_limit_date",
+		          "passwd",
+		          "f_handset",
+		          "o_id_input",
+		          "f_back_man",
+		          "f_back_tel",
+		          "f_account_style",
+		          "custom_id",
+		          "parent_factory",
+		          "f_ms_id",
+		          "f_department_Foreign",
+		          "ac_no",
+		          "IBAN",
+		          "SWIFT",
+		          "f_country",
+		          "f_bak1",
+		          "f_bak2",
+		          "f_bak3",
+		          "f_bak4",
+		          "f_bak5",
+		          "f_bak6",
+		          "f_bak7",
+		          "f_bak8",
+		          "f_bak9",
+		          "f_bak10",
+		          "f_bak11",
+		          "f_bak12",
+		          "f_bak13",
+		          "f_bak14",
+		          "f_bak15",
+		          "f_bak16",
+		          "http_address",
+		          "qk_bd_style",
+		          "pre_bd_date",
+		          "next_bd_date"
+		};		//出参, 有顺序
+		// 加入sp的名称
+		postData.put("spName", "n_bk_db_factory_update");
+		User user=(User)httpSession.getAttribute("user");		
+		postData.put("o_id", user.getAccount());
+		postData.put("station_id", "ZT02"); //为了视图能查询出来，先写死
+		int code = baseService.doCallSp(postData, paramNames, null);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增银行
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addBank")
+	@ResponseBody
+    public Object addClientRatio(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"f_id","f_companyName","f_registMark","f_companyAddress",
+				"f_companyPhone","f_payment","f_bank","f_account","swift_code","iban","aba","f_default","f_bankAddress","f_bankPhone","memo","my_bank","my_account",
+				"kp_type", "tax_rate", "is_item" , "kp_content", "kp_amount", "kp_unit"};	
+		// 加入sp的名称
+		postData.put("spName", "u_basic_bank_new");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除操作 银行
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteBank")
+	@ResponseBody
+    public Object deleteBank(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"id"};
+		// 加入sp的名称
+		postData.put("spName", "u_basic_bank_delete");
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+}

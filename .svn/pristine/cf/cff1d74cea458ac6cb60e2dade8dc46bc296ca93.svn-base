@@ -1,0 +1,116 @@
+package com.cnpiecsb.np.basic.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+
+@Controller
+@RequestMapping("/basic")
+public class ContactController extends BaseServiceController {
+	private int contactQueryId = 5000010;	
+	private int oneContactQueryId = 5000010;	
+//	private int contactSearchQueryId = 1100019;
+	
+	@RequestMapping(value="/getContactList")
+	@ResponseBody
+	public Object getContactList(@RequestBody Map postData){
+		return this.getTableDataList(postData,contactQueryId);
+	}
+	
+//	/**
+//	 * 获得动态列表数据-联系人-搜索自动补全
+//	 * 
+//	 * param postData
+//	 * return
+//	 */
+//	@RequestMapping(value="/getContactListSearch")
+//	@ResponseBody
+//	public Object getContactListSearch(@RequestParam Map postData){
+//		return this.getTableDataList(postData, contactSearchQueryId);
+//	}
+	
+	/**
+	 * 新增操作 系数
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addContact")
+	@ResponseBody
+    public Object addClientRatio(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"f_id","f_contact_category","f_contact_man","f_country","f_address","f_zip","f_tel",
+				"f_mobile","f_email","f_QQ","f_weixin","f_contact_mem","f_status"};
+		// 加入sp的名称
+		postData.put("spName", "u_basic_contact_new");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改操作 系数
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editContact")
+	@ResponseBody
+    public Object editClientRatio(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"id","f_contact_category","f_contact_man","f_country","f_address","f_zip","f_tel","f_mobile","f_email","f_QQ","f_weixin","f_contact_mem","f_status"};
+		// 加入sp的名称
+		postData.put("spName", "u_basic_contact_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	/**
+	 * 删除操作 系数
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteContact")
+	@ResponseBody
+    public Object deleteClientRatio(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"id"};
+		// 加入sp的名称
+		postData.put("spName", "u_basic_contact_delete");
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	/**
+	 * 获得单联系人
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getOneContact")
+	@ResponseBody
+	public Object getOneContact(@RequestParam Map postData,HttpSession httpSession){
+		Map<String, Object> oneQuery = baseService.getOneQuery(oneContactQueryId, postData);	
+		return oneQuery;
+	}
+}

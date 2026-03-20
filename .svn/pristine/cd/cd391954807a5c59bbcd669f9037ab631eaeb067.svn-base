@@ -1,0 +1,298 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->  
+	    <jsp:include page="../../include/h_superHead.jsp"></jsp:include>
+	    <!-- Bootstrap table -->
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+	    <link rel="stylesheet" type="text/css" href="${context}/css/plugins/webuploader/webuploader.css">
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-editable.css" rel="stylesheet">
+	    <link href="${context}/css/boocup_style.css" rel="stylesheet">
+	    <style type="text/css">
+	    	/*table里面的文本框css*/
+		    .ibox-content-table input[type='text']{
+		    	width:70px;
+		        text-align: right;
+		    }
+	    </style>
+	</head>
+	<body>
+		<div class="sonpage-body">
+			<div class="col-md-12">
+			   <div class="ibox float-e-margins">
+		            <div class="ibox-content search-content">
+			            <form id="form" class="form-inline">
+							<div class="col-xs-12">
+								<div class="row">
+						  			<div class="form-group input-group inline-middle not-null">
+										<label >报关单号：</label>
+										<input type="text" name="dcl_no" class="search-items" id = "dcl_no" disabled>
+									</div>
+						  			<div class="form-group input-group inline-middle not-null">
+										<label >外销发票号：</label>
+										<input type="text" name="export_invoice_no" class="search-items" id = "export_invoice_no" disabled>
+									</div>
+									<div class="form-group input-group inline-small not-null">
+										<label >报关金额：</label>
+									    <input type="text" name="sales_money" class="search-items" disabled/>
+	                                 </div>
+	                       		</div>
+	                       		<div class="row">
+	                       			<div class="form-group input-group inline-middle not-null">
+					    				<label >货币类型：</label>
+					    				<select name="currency_type" class="dictionary" id="currency_type" disabled>
+					    					<option></option>
+					    				</select>
+					  				</div>
+	                       			<div class="form-group input-group inline-small not-null">
+										<label >运杂费：</label>
+								    	<input type="text" name="other_fee" class="search-items"  id = "other_fee" disabled/>
+                                  	</div>
+	                                 <div class="form-group input-group inline-small not-null">
+										<label >美元报关金额：</label>
+								    	<input type="text" name="usbg_money" class="search-items"  id = "usbg_money" disabled/>
+                                  	</div>
+	                       		</div>
+	                        	<div class="row">
+	                        		<div class="form-group input-group inline-small not-null">
+				                  		<label >出口日期：</label>
+				                        <input type="text" id="export_date" name="export_date" class="layer-date date-type" disabled> 
+				                	</div>
+	                                 <div class="form-group input-group inline-small not-null">
+										<label >出口地：</label>
+								    	<select name="export_place" class="dictionary" id="export_place" disabled>
+								    		<option></option>
+					    				</select>
+                                  	</div>
+	                                 <div class="form-group input-group inline-small not-null">
+										<label >总箱数：</label>
+								    	<input type="text" name="total_packages" class="search-items"  id = "total_packages" disabled/>
+                                  	</div>
+	                                 <div class="form-group input-group inline-small not-null">
+										<label >预估汇率：</label>
+								    	<input type="text" name="pre_exchange_rate" class="search-items"  id = "pre_exchange_rate" disabled/>
+                                  	</div>
+	                                 <div class="form-group input-group inline-small not-null">
+										<label >预估人民币：</label>
+								    	<input type="text" name="pre_rmb" class="search-items"  id = "pre_rmb" disabled/>
+                                  	</div>
+	                        	</div>
+	                        	<div class="row">
+								  	<div class="col-xs-12"  style="display:none">
+								  		<div class="form-group middle-space col-xs-12">
+								    		<label >dcl_id</label>
+								    		<input type="text" name="dcl_id" class="search-items">
+								  		</div>
+									</div>
+	                        	</div>
+							</div>
+						</form>
+		            </div>
+       		</div>
+       		<div class="ibox float-e-margins">
+	            <div class="ibox-title">
+	                <h5>退税发票</h5>
+	                <div class="ibox-tools">
+	                    <a class="collapse-link">
+	                        <i class="fa fa-chevron-up"></i>
+	                    </a>
+	                </div>
+	            </div>
+	            <div class="ibox-content ibox-content-table">
+	                <div class="row row-lg">                    
+	                    <div class="col-sm-12">
+	                        <div class="btn-group hidden-xs" id="tableTool" role="group">
+	                            <button type="button" class="btn btn-outline btn-default" id="add">
+	                               <i class="glyphicon glyphicon-plus" aria-hidden="true"></i>
+	                            </button>
+	                            <button type="button" class="btn btn-outline btn-default" id="delete_items">
+	                               <i class="glyphicon glyphicon-trash" aria-hidden="true"></i>
+	                           	</button>
+	                            <button type="button" class="btn btn-outline btn-default" id="copy_items">
+	                               <i class="glyphicon glyphicon-copy" aria-hidden="true"></i>
+	                           	</button>
+	                            <button type="button" class="btn btn-outline btn-default" id="config">
+	                               <i class="glyphicon glyphicon-cog" aria-hidden="true"></i>
+	                            </button>
+	                            <select class="form-control" >
+	                           	   <option value="all">导出全部</option>
+					               <option value="basic">导出当页</option>	
+					            </select>
+	                        </div>
+	                        <table id="table" data-mobile-responsive="true">
+	                            
+	                        </table>
+	                    </div>
+	                </div>
+	            </div>
+        </div>       			
+		</div>
+	</div>
+	<div class="sonpage-footer">
+<!-- 	    <button id="save" class="btn btn-primary" type="button">保存</button> -->
+	    <button id="cancel" class="btn btn-white" type="button">取消</button>
+	</div>
+	</body>
+	<!-- Bootstrap table -->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <!-- Bootstrap table export-->
+    <script src="${context}/js/plugins/bootstrap-table/export/bootstrap-table-export.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/tableExport.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/js-xlsx/xlsx.core.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.plugin.autotable.js"></script>
+    <!-- Bootstrap table editable-->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-editable.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table-editable.js"></script>
+    
+	<script src="${context}/js/plugins/layer/layer.min.js"></script>
+	<!-- plugins -->
+ 	<script src="${context}/js/plugins/suggest/bootstrap-suggest-new.min.js"></script>
+	<!-- layerDate plugin javascript -->
+    <script src="${context}/js/plugins/layer/laydate-new/laydate.js"></script>
+	<script type="text/javascript">
+	function queryParams(param) {
+		var json_obj_invoice = formToJson($("#form"));
+		json_obj_invoice['limit'] =param.limit;
+		json_obj_invoice['offset'] =param.offset;
+		json_obj_invoice['sortName'] =this.sortName;
+		json_obj_invoice['sortOrder'] =this.sortOrder;
+	    return json_obj_invoice;
+	}
+	
+	var $table = $('#table');
+	
+	$(document).ready(function () {
+	
+		$(".layer-date").each(function(){
+			inistal_one_data('#'+$(this).attr('id'));
+		});
+		
+		//填充数据
+		var invoice=JSON.parse('${oneJson}');
+		set_one_info($("#form"),invoice);
+		
+		if(invoice.status!=1){
+			$("#add").remove();
+			$("#delete_items").remove();
+			$("#copy_items").remove();
+		}
+		//加载字典数据
+		get_dictionary("${context}",invoice);
+		
+		$('#delete_items').on('click',function(){
+			var inv_id = $.map($table.bootstrapTable('getSelections'), function (row) {
+                return row.inv_id;
+            });
+			if(inv_id.length!=0) {
+				ajax_function_ask_and_refresh("确认删除?","deleteDeclareInvoice","post",{'inv_ids': inv_id},"删除成功!",$('#table'));
+			} else {
+				layer.msg("未选择明细！");
+			}
+		});
+		
+		$('#copy_items').on('click',function(){
+			var inv_id = $.map($table.bootstrapTable('getSelections'), function (row) {
+                return row.inv_id;
+            });
+			var data=JSON.parse('${oneJson}');
+			var dcl_id = data.dcl_id;
+			if(inv_id.length!=0) {
+				ajax_function_ask_and_refresh("确认复制?","copyDeclareInvoice","post",{'inv_ids': inv_id,'dcl_id':dcl_id},"复制成功!",$('#table'));
+			} else {
+				layer.msg("未选择明细！");
+			}
+		});
+		
+		//bootstrap初始化
+		initialize_table($table,"getDecalreInvoiceList",${tableHeader},queryParams,"#tableTool",400);
+		
+		//增加条目layer
+		var $add=$("#add");
+		
+		//增加条目layer
+		$("#add").click(function(){
+			var data=JSON.parse('${oneJson}');
+			open_layer_refresh(2,'新增退税发票','toDeclareInvoiceNew?dcl_id='+data.dcl_id,
+					$table,['600px', '400px'],true);
+		});
+		
+		//表格配置 layer
+		var $config=$("#config");
+		
+		table_column_config_layer($config,2,'表格属性配置','${context}/csu/columnConfig?queryId=${queryId}');
+		
+		$('#tableTool').find('select').change(function () {
+			 $('#table').bootstrapTable('refreshOptions',{exportDataType: $(this).val()});
+	    });
+		
+// 		$('#pre_exchange_rate').on('change',function(){
+// 			if($('#usbg_money')!=""&&$('#pre_exchange_rate')!=""){
+// 				$('#pre_rmb').val(($('#pre_exchange_rate').val()*$('#usbg_money').val()).toFixed(2));
+// 			}
+// 		});
+		
+// 		$('#usbg_money').on('change',function(){
+// 			if($('#usbg_money')!=""&&$('#pre_exchange_rate')!=""){
+// 				$('#pre_rmb').val(($('#pre_exchange_rate').val()*$('#usbg_money').val()).toFixed(2));
+// 			}
+// 		});
+
+	});
+	
+	function toDel(inv_id) {
+		ajax_function_ask_and_refresh("确认删除?","deleteDeclareInvoice","post",{'inv_ids': inv_id},"删除成功!",$('#table'));
+	}
+	
+	function toEdit(inv_id){
+		var data=JSON.parse('${oneJson}');
+		var dcl_id = data.dcl_id;
+		 open_layer_refresh(2,'编辑退税发票','toDecalreInvoiceEdit?dcl_id='+dcl_id+'&is_detail='+0+'&inv_id='+inv_id,$table,['1200px', '550px'],true);
+	 }
+	 
+	 function toDetail(inv_id){
+		 var data=JSON.parse('${oneJson}');
+		 var dcl_id = data.dcl_id;
+		 open_layer_refresh(2,'退税发票详情','toDecalreInvoiceEdit?dcl_id='+dcl_id+'&is_detail='+1+'&inv_id='+inv_id,$table,['1200px', '550px'],true);
+	 }
+	
+	function renderOperator(value,row,index) {
+		var data=JSON.parse('${oneJson}');
+		var dcl_id = data.dcl_id;
+		var str="";
+		str += "<a onclick=\"toDetail('"+row.inv_id + "')\">详情</a> "
+		+"&nbsp;&nbsp;";
+		if(data.status==1){//录入发票状态才能编辑和删除
+			str += "<a onclick=\"toEdit('"+row.inv_id + "')\">编辑</a> "
+			+"&nbsp;&nbsp;";
+			str += "<a onclick=\"toDel('"+row.inv_id + "')\">删除</a> ";
+		}
+		
+		return str;
+	 }
+	
+	//query页面不刷新
+	function table_column_config_layer($config,type,title,url,$table){
+		$config.on('click', function () {
+			  parent.layer.open({
+	              type: 2,
+	              title:title,
+	              moveOut:true,
+	              area: ['820px', '580px'],
+	              skin: 'layui-layer-rim', //加上边框
+	              content: url,
+	              end:function () {
+
+	              }
+	          }); 				
+		 });
+	}
+
+	</script>
+</html>

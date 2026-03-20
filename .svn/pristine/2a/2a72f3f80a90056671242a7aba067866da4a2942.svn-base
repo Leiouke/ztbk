@@ -1,0 +1,648 @@
+package com.cnpiecsb.fc.collection.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/fc/collection")
+public class CollectionClientPayController extends BaseServiceController {
+	// 客户查询
+	private int clientPayQueryId = 8320001;
+	private GridHeadConfig clientPayGridHeadConfig;
+	
+	// 单个客户查询
+	private int clientPayOneQueryId = 8000002;
+	
+	// 支出单查询
+	private int clientPayItemManageQueryId = 8320002;
+	private GridHeadConfig clientPayItemManageGridHeadConfig;
+	
+	// 支出单单条查询
+	private int clientPayItemOneQueryId = 8320002;
+	
+	// 支出单发票明细
+	private int clientPayItemAddDetailQueryId = 8310003;
+	private GridHeadConfig clientPayItemAddDetailHeadConfig;
+	
+	// 发票明细引入
+	private int clientPayItemItemPullQueryId = 8310004;	
+	private GridHeadConfig clientPayItemItemPullHeadConfig;
+	
+	// 客户余额台账查询
+	private int clientBalanceLogQueryId = 8320003;
+	private GridHeadConfig clientBalanceLogGridHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public CollectionClientPayController(){
+		clientPayGridHeadConfig = new GridHeadConfig(clientPayQueryId,true,false,true,false);
+		clientPayGridHeadConfig.setOperatorWidth(120);
+		
+		clientPayItemManageGridHeadConfig = new GridHeadConfig(clientPayItemManageQueryId,true,false,true,false);
+		clientPayItemManageGridHeadConfig.setOperatorWidth(120);
+		
+		clientPayItemAddDetailHeadConfig = new GridHeadConfig(clientPayItemAddDetailQueryId,true,false,true,false);
+		
+		clientPayItemItemPullHeadConfig = new GridHeadConfig(clientPayItemItemPullQueryId,true,true,false,false);
+		
+		clientBalanceLogGridHeadConfig = new GridHeadConfig(clientBalanceLogQueryId,true,false,false,false);
+	}
+	
+	/**
+	 * 余额认领  客户查询
+	 * 
+	 * @param httpSession
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value="/clientPayManage",method=RequestMethod.GET)
+    public ModelAndView clientPayManage(HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/collectionClientPay/clientPayManage");
+        String tableHeader = this.getTableHeader(httpSession, clientPayGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", clientPayQueryId);
+        return mv;
+    }	
+	
+	/**
+	 * 获得动态列表数据-余额认领  客户查询
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientPayManageList")
+	@ResponseBody
+	public Object getClientPayManageList(@RequestBody Map postData, HttpSession httpSession){
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		return this.getTableDataList(postData, clientPayQueryId);
+	}
+	
+	/**
+	 * 余额认领记录 列表查询
+	 * 
+	 * @param postData
+	 * @param httpSession
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value="/clientPayItemManage",method=RequestMethod.GET)
+    public ModelAndView clientPayItemManage(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/collectionClientPay/clientPayItemManage");
+        Map<String, Object> oneQuery = baseService.getOneQuery(clientPayOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        String tableHeader = this.getTableHeader(httpSession, clientPayItemManageGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", clientPayItemManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-余额认领记录列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientPayItemManageList")
+	@ResponseBody
+	public Object getClientPayItemManageList(@RequestBody Map postData){
+		return this.getTableDataList(postData, clientPayItemManageQueryId);
+	}
+	
+	/**
+	 * 支出单新增和修改返回操作
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/returnClientPayItem")
+	@ResponseBody
+    public Object returnClientPayItem(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"guid"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_incoming_claim_return");
+		
+		String clientPayItem_guid = (String)httpSession.getAttribute("clientPayItem_guid");
+		postData.put("guid", clientPayItem_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		httpSession.setAttribute("clientPayItem_guid", "");
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增支出单页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/clientPayItemAdd",method=RequestMethod.GET)
+    public ModelAndView clientPayItemAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/collectionClientPay/clientPayItemAdd");
+        
+        String clientPayItem_guid = GuidUtil.create32Guid();
+        httpSession.setAttribute("clientPayItem_guid", clientPayItem_guid);
+        
+        String tableHeader = this.getTableHeader(httpSession, clientPayItemAddDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", clientPayItemAddDetailQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-新增支出单明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientPayItemAddList")
+	@ResponseBody
+	public Object getClientPayItemAddList(@RequestBody Map postData,HttpSession httpSession){
+		String clientPayItem_guid = (String)httpSession.getAttribute("clientPayItem_guid");
+		postData.put("guid", clientPayItem_guid);
+		return this.getTableDataList(postData, clientPayItemAddDetailQueryId);
+	}
+	
+	/**
+	 * 客户余额认领新增操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addClientPayItem")
+	@ResponseBody
+    public Object addClientPayItem(@RequestParam Map postData,HttpSession httpSession) {		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid", "c_id","memo","o_id_operator"};
+		// 出参, 有顺序
+		String returnNames[] = {"pa_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_client_pay_new");
+		
+		String clientPayItem_guid = (String)httpSession.getAttribute("clientPayItem_guid");
+		postData.put("guid", clientPayItem_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_operator", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		postData.put("is_to_edit", 0);
+		postData.put("bill_id", postData.get("pa_id"));
+		code = do_sp_client_pay_item_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		code = do_sp_client_balance_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		return "{\"success\":true}";
+    }
+	
+	// 重算这次支出单 对应的发票已收款金额
+	private int do_sp_client_pay_item_calculate(Map postData){
+		String paramNames[] = {"bill_id", "is_to_edit"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_against_item_calculate");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	// 重算客户剩余金额
+	private int do_sp_client_balance_calculate(Map postData){
+		String paramNames[] = {"c_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_client_balance_calculate");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	/**
+	 * 删除操作 - 支出单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteClientPayItem")
+	@ResponseBody
+    public Object deleteClientPayItem(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"pa_id","o_id_destroy"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_client_pay_delete");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_destroy", user.getAccount());
+        
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		postData.put("is_to_edit", 0);
+		postData.put("bill_id", postData.get("pa_id"));
+		code = do_sp_client_pay_item_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		code = do_sp_client_balance_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 引入明细页面 发票明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/clientPayItemItemPull",method=RequestMethod.GET)
+    public ModelAndView incomingClaimItemItemPull(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/collectionClientPay/clientPayItemItemPull");
+        String tableHeader = this.getTableHeader(httpSession, clientPayItemItemPullHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", clientPayItemItemPullQueryId);
+        return mv;
+    }
+	
+	/**
+   	 * 获得动态列表数据-引入支出单发票明细
+   	 * 
+   	 * param postData
+   	 * return
+   	 */
+   	@RequestMapping(value="/getClientPayItemItemPullList")
+   	@ResponseBody
+   	public Object getClientPayItemItemPullList(@RequestBody Map postData,HttpSession httpSession) {
+   		// 获得权限代码参数
+   		AccessControlUtil.accessParams(postData, httpSession);
+   		return this.getTableDataList(postData, clientPayItemItemPullQueryId);
+   	}
+   	
+   	/**
+	 * 支出单引入发票
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/pullClientPayItemItem")
+	@ResponseBody
+	public Object pullClientPayItemItem(@RequestBody List<Map<String,Object>> postData,HttpSession httpSession){
+		String clientPayItem_guid = (String)httpSession.getAttribute("clientPayItem_guid");
+		if(postData != null && postData.size()>0){
+			for(Map<String,Object> item_map : postData){
+				// 然后发票支出操作
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"guid","kp_id","kp_money"};
+				// 加入sp的名称
+				item_map.put("spName", "fc_collection_against_item_pullin");
+				item_map.put("guid", clientPayItem_guid);		
+
+				int code = baseService.doCallSp(item_map, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}		
+		}				
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 修改明细折扣操作
+	 * 
+	 * @param dynamicColumns
+	 * @return
+	 */
+	@RequestMapping(value="/updateClientPayItemItem")
+	@ResponseBody
+	public Object updateClientPayItemItem(@RequestParam Map postData, HttpSession httpSession) {
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"guid", "kp_id", "kp_money", "rebate_money"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_against_item_update");
+		
+		String clientPayItem_guid = (String)httpSession.getAttribute("clientPayItem_guid");
+		postData.put("guid", clientPayItem_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 删除明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteClientPayItemItem")
+	@ResponseBody
+    public Object deleteClientPayItemItem(@RequestParam Map postData,HttpSession httpSession, HttpServletRequest request){	
+		String clientPayItem_guid = (String)httpSession.getAttribute("clientPayItem_guid");
+		postData.put("guid", clientPayItem_guid);
+		
+		String[] kp_ids = request.getParameterValues("kp_ids");
+		if(kp_ids != null && kp_ids.length > 0){
+			for(int i=0; i < kp_ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"guid", "kp_id"};
+				// 加入sp的名称
+				postData.put("spName", "fc_collection_against_item_delete");					
+				
+				postData.put("kp_id", kp_ids[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}	
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 获得动态列表数据- 获得当前客户信息, 为了提取余额字段
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientPayItemOneClient")
+	@ResponseBody
+	public Object getClientPayItemOneClient(@RequestParam Map postData){
+		return baseService.getOneQuery(clientPayOneQueryId, postData);		
+	}
+	
+	/**
+	 * 修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/clientPayItemEdit",method=RequestMethod.GET)
+    public ModelAndView clientPayItemEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(clientPayItemOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("fc/collectionClientPay/clientPayItemEdit");
+        
+        String tableHeader = this.getTableHeader(httpSession, clientPayItemAddDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", clientPayItemAddDetailQueryId);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"bill_id","guid"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_incoming_claim_toUpdate");
+		
+		String clientPayItem_guid = GuidUtil.create32Guid();
+        httpSession.setAttribute("clientPayItem_guid", clientPayItem_guid);
+		postData.put("guid", clientPayItem_guid);
+		postData.put("bill_id", postData.get("pa_id"));
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-编辑发票明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientPayItemList")
+	@ResponseBody
+	public Object getClientPayItemList(@RequestBody Map postData,HttpSession httpSession){
+		String clientPayItem_guid = (String)httpSession.getAttribute("clientPayItem_guid");
+		postData.put("guid", clientPayItem_guid);
+		return this.getTableDataList(postData, clientPayItemAddDetailQueryId);
+	}
+	
+	/**
+	 * 修改支出单操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editClientPayItem")
+	@ResponseBody
+    public Object editClientPayItem(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"pa_id","guid","c_id","memo","o_id_modify"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_client_pay_update");
+		
+		String clientPayItem_guid = (String)httpSession.getAttribute("clientPayItem_guid");
+		postData.put("guid", clientPayItem_guid);
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_modify", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		postData.put("is_to_edit", 0);
+		postData.put("bill_id", postData.get("pa_id"));
+		code = do_sp_client_pay_item_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		code = do_sp_client_balance_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 审核通过支出单操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/auditClientPayItemPass")
+	@ResponseBody
+    public Object auditClientPayItemPass(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"pa_id", "is_audit_pass", "o_id_audit"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_client_pay_audit");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_audit", user.getAccount());
+		postData.put("is_audit_pass", 1);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 产生折扣单
+		postData.remove("paramNames");
+		postData.put("bill_id", postData.get("pa_id"));
+		postData.put("is_claim", 0);  // 代表是支出单
+		
+		paramNames = new String[]{"bill_id", "c_id", "rebate_money", "is_claim"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_discount_adjustment_new");
+		
+		code = baseService.doCallSp(postData, paramNames, null);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 审核不通过支出单操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/auditClientPayItemNotPass")
+	@ResponseBody
+    public Object auditClientPayItemNotPass(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"pa_id", "is_audit_pass", "o_id_audit"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_client_pay_audit");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_audit", user.getAccount());
+		postData.put("is_audit_pass", 0);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		postData.put("is_to_edit", 0);
+		postData.put("bill_id", postData.get("pa_id"));
+		code = do_sp_client_pay_item_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		code = do_sp_client_balance_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 支出单记账
+	 * 
+	 * @param postData
+	 * @param httpSession
+	 * @return
+	 */
+	@RequestMapping(value="/accountClientPayItem")
+	@ResponseBody
+    public Object accountClientPayItem(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"pa_id","o_id_account"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_client_pay_account");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_account", user.getAccount());
+        
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 客户余额台账查询
+	 * 
+	 * @param httpSession
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value="/clientBalanceLog",method=RequestMethod.GET)
+    public ModelAndView clientBalanceLog(HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/collectionClientPay/clientBalanceLog");
+        String tableHeader = this.getTableHeader(httpSession, clientBalanceLogGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", clientBalanceLogQueryId);
+        return mv;
+    }	
+	
+	/**
+	 * 获得动态列表数据-客户余额台账查询
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientBalanceLogList")
+	@ResponseBody
+	public Object getClientBalanceLogList(@RequestBody Map postData, HttpSession httpSession) {
+		return this.getTableDataList(postData, clientBalanceLogQueryId);
+	}
+}

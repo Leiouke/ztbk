@@ -1,0 +1,212 @@
+package com.cnpiecsb.np.search.controller;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 结算单比对界面
+ * 
+ * @author zc 2022/02/25
+ *
+ */
+@Controller
+@RequestMapping("/npSearch")
+public class StatementComparisonController extends BaseServiceController{
+	
+	private int statementComparisonQueryId = 8900001;	
+	private GridHeadConfig statementComparisonHeadConfig;
+	
+	private int statementDetailQueryId = 8900003;	
+	private GridHeadConfig statementDetailHeadConfig;
+	
+	
+	
+	public StatementComparisonController(){
+		statementComparisonHeadConfig = new GridHeadConfig(statementComparisonQueryId,true,false,true,false);
+		statementComparisonHeadConfig.setOperatorWidth(100);
+		statementDetailHeadConfig = new GridHeadConfig(statementDetailQueryId,true,false,false,false);
+	}
+	
+	/**
+	 * 进入结算单比对界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/statementComparisonManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView statementComparisonManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        String tableHeader = this.getTableHeader(httpSession, statementComparisonHeadConfig);
+        mv.setViewName("np/search/statementComparisonManage");
+        mv.addObject("tableHeader", tableHeader);
+        mv.addObject("queryId", statementComparisonQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得结算单比对界面数据
+	 * @return
+	 */
+	@RequestMapping(value="/getStatementComparisonList")
+	@ResponseBody
+	public Object getStatementComparisonList(@RequestBody Map postData) {
+		return this.getTableDataList(postData,statementComparisonQueryId);
+	}
+	
+	/**
+	 * 作废单据
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/cancelStatement")
+	@ResponseBody
+    public Object cancelStatement(@RequestParam Map postData,HttpSession httpSession){
+		Map<String, Object> map = this.getTableDataList(postData,statementComparisonQueryId);
+		
+		//取当处理的内容
+		ArrayList<Map<String,String>> dataList = (ArrayList) map.get("rows");
+		
+		Date date = new Date();
+
+		long times = date.getTime();//时间戳
+
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		
+		//按格式获得当前时间
+		String dateString = formatter.format(date);
+
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"statement_no","is_destroy","des_date","des_code","is_deal",
+				                             "op_date","op_code","op_result","op_memo"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_statement_diff_deal");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("is_destroy","1");
+		postData.put("des_date",dateString);
+		postData.put("des_code",user.getAccount());
+		postData.put("is_deal",dataList.get(0).get("is_deal"));
+		postData.put("op_date",dataList.get(0).get("op_date"));
+		postData.put("op_code",dataList.get(0).get("op_code"));
+		postData.put("op_result",dataList.get(0).get("op_result"));
+		postData.put("op_memo",dataList.get(0).get("op_memo"));
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 处理页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/dealStatementPage",method=RequestMethod.GET)
+    public ModelAndView dealStatementPage(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+		mv.addObject("statement_no", (String)postData.get("statement_no"));
+        mv.setViewName("np/search/statementComparisonDealManage");
+		
+        return mv;
+    }
+	
+	/**
+	 * 处理单据
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/dealStatement")
+	@ResponseBody
+    public Object dealStatement(@RequestParam Map postData,HttpSession httpSession){
+		Map<String, Object> map = this.getTableDataList(postData,statementComparisonQueryId);
+		
+		//取当处理的内容
+		ArrayList<Map<String,String>> dataList = (ArrayList) map.get("rows");
+		
+		Date date = new Date();
+
+		long times = date.getTime();//时间戳
+
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		
+		//按格式获得当前时间
+		String dateString = formatter.format(date);
+
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"statement_no","is_destroy","des_date","des_code","is_deal",
+				                             "op_date","op_code","op_result","op_memo"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_statement_diff_deal");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("is_destroy",dataList.get(0).get("is_destroy"));
+		postData.put("des_date",dataList.get(0).get("des_date"));
+		postData.put("des_code",dataList.get(0).get("des_code"));
+		postData.put("is_deal","1");
+		postData.put("op_date",dateString);
+		postData.put("op_code",user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 结算单明细数据页面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/toStatementDeatilPage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView toStatementDeatilPage(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        String tableHeader = this.getTableHeader(httpSession, statementDetailHeadConfig);
+        mv.setViewName("np/search/statementDeatilManage");
+        mv.addObject("tableHeader", tableHeader);
+        mv.addObject("queryId", statementDetailQueryId);
+        mv.addObject("statement_no", postData.get("statement_no"));
+        return mv;
+    }
+	
+	/**
+	 * 获得结算单明细数据页面数据
+	 * @return
+	 */
+	@RequestMapping(value="/getStatementDeatilPageList")
+	@ResponseBody
+	public Object getStatementDeatilPageList(@RequestBody Map postData) {
+		return this.getTableDataList(postData,statementDetailQueryId);
+	}
+}

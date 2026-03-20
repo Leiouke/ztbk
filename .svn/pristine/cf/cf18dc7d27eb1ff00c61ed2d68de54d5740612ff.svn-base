@@ -1,0 +1,277 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->  
+	    <jsp:include page="../../include/h_superHead.jsp"></jsp:include>
+	    <link rel="stylesheet" type="text/css" href="${context}/css/plugins/webuploader/webuploader.css">
+	    <!-- Bootstrap table -->
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+	    <link href="${context}/css/boocup_style.css" rel="stylesheet">	
+	</head>
+	<body>
+		<div class="sonpage-body">
+			<div class="col-md-12">	        
+                <div class="tabs-container">
+                    <ul class="nav nav-tabs">
+                        <li class="active"><a data-toggle="tab" id="tab-1-title" href="#tab-1" aria-expanded="true">货源信息</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content">                    
+                        <div id="tab-1" class="tab-pane active">
+                            <div class="panel-body">
+                            <form id="form" class="form-inline">
+	                            <div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>货源编号*：</label>
+				                        <input type="text" name="f_id" disabled>  <!-- 如果没有赋值, 那么传到数据库是null 不是空字符串了 -->
+				                	</div>
+							        <div class="form-group small-space col-xs-4">
+				                  		<label>级别*：</label>
+				                        <select name="f_jb" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>建档日期：</label>
+							            <input type="text" class="layer-date search-items date-type" name="f_create" id="f_create">
+							        </div>
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4" >
+							            <label >名称*：</label>
+							            <input type="text" name="f_department" >
+							        </div>	    
+							        <div class="form-group small-space col-xs-4" >
+							            <label >简称：</label>
+							            <input type="text" name="f_department_simple" >
+							        </div>	
+							        <div class="form-group small-space col-xs-4" >
+							            <label >户号：</label>
+							            <input type="text" name="custom_id" >
+							        </div> 
+							    </div>	
+							     <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label>货源类别*：</label>
+										 <select name="fc_id" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label>财务编码：</label>
+										<input type="text" name="f_account" >
+				                	</div>
+							        <div class="form-group small-space col-xs-4">
+				                  		<label>经销方式：</label>
+										 <select name="cm_id" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>         				
+							    </div>					    
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label>退货率：</label>
+										<input type="text" name="f_back" >
+				                	</div>
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label>退货联系人：</label>
+										<input type="text" name="f_back_man" >
+				                	</div>
+							        <div class="form-group small-space col-xs-4">
+				                  		<label>退货期限：</label>
+										<input type="text" name="back_limit_date" >
+				                	</div>         				
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >退货地址：</label>
+				                        <input type="text" name="f_back_address" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >退货电话：</label>
+				                        <input type="text" name="f_back_tel" >
+				                	</div> 
+<!-- 				                	<div class="form-group small-space col-xs-4">  确定该字段不使用-->
+<!-- 				                  		<label >物流路径：</label> -->
+<!-- 				                         <select name="" class="dictionary"> -->
+<!-- 							            	<option></option> -->
+<!-- 							            </select> -->
+<!-- 				                	</div> 		 -->
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >最大欠款：</label>
+				                        <input type="text" name="limit_money" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >结算期限：</label>
+				                        <input type="text" name="limit_day" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >结算方式：</label>
+				                        <input type="text" name="f_account_style" >
+				                	</div> 		
+							    </div>
+							    <div class="row">
+							    	<div class="form-group small-space col-xs-4">
+				                  		<label >折扣：</label>
+				                        <input type="text" name="f_discount" >
+				                	</div>
+							    	<div class="form-group small-space col-xs-4" >
+							            <label >行业：</label>
+							            <select name="hy_id" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>		
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >庆典日期：</label>
+				                       <input type="text" class="layer-date search-items date-type" name="f_birth" id="f_birth">
+				                	</div>				        						       	
+							    </div>
+							    <div class="row">
+							    	<div class="form-group small-space col-xs-4">
+				                  		<label >电话：</label>
+				                        <input type="text" name="f_tel" >
+				                	</div>    
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >移动电话：</label>
+				                        <input type="text" name="f_handset" >
+				                	</div>       
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >传真：</label>
+				                        <input type="text" name="f_fax" >
+				                	</div>          	
+							    </div>
+							    <div class="row">	
+							    	<div class="form-group small-space col-xs-4">
+				                  		<label >邮编：</label>
+				                       <input type="text" name="f_zip" >
+				                	</div>   	
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >邮件：</label>
+							            <input type="text" name="f_mail" >
+				                	</div>
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >联系人：</label>
+				                        <input type="text" name="f_contact_man" >
+				                	</div>     	
+							    </div>
+							    <div class="row">
+							    	<div class="form-group small-space col-xs-4">
+				                  		<label >主管业务员：</label>
+				                        <input type="text" name="f_charge_man_name">
+									    <div class="input-group-btn">
+				                         <button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+				                             <span class="caret"></span>
+				                         </button>
+				                         <ul class="dropdown-menu dropdown-menu-right" role="menu" style="margin-left:580px"></ul>
+				                        </div>
+				                        <input type="hidden" name="f_charge_man">
+				                	</div>
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >当前状况*：</label>
+				                        <select name="f_level" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>    
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >信用管制：</label>
+				                        <select name="clients_credit" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 				       	
+							    </div>							    
+							    
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >国家：</label>
+				                        <select name="f_country" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >地址：</label>
+							            <input type="text" name="f_address" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >网址：</label>
+							            <input type="text" name="http_address" >
+				                	</div> 		
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >所属货源编号：</label>
+							            <input type="text" name="parent_factory" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >所属货源：</label>
+				                        <input type="text" name="" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >报订类型：</label>
+				                        <select name="qk_bd_style" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 
+							    </div>
+							    <div class="row">
+							    	<div class="form-group large-space col-xs-12" >
+							            <label >备注：</label>
+							            <textarea name="f_mem" cols="50" rows="5"></textarea>
+							        </div>
+							    </div>
+							</form>
+						    </div><!-- panel-body1-->
+                        </div>
+                    </div>                    
+                    
+                </div>
+			 </div>
+		</div>
+		<div class="sonpage-footer">
+			                     <button id="save" class="btn btn-primary" type="button">保存</button>
+			                     <button id="cancel" class="btn btn-white" type="button">取消</button>
+		</div>
+	</body>
+	<!-- Bootstrap table -->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <!-- Bootstrap table export-->
+    <script src="${context}/js/plugins/bootstrap-table/export/bootstrap-table-export.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/tableExport.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/js-xlsx/xlsx.core.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.plugin.autotable.js"></script>
+    
+	<script src="${context}/js/common/common.js"></script>
+	<script src="${context}/js/plugins/layer/layer.min.js"></script>
+	<script src="${context}/js/plugins/webuploader/webuploader.min.js"></script>
+	
+	<!-- plugins -->
+ 	<script src="${context}/js/plugins/suggest/bootstrap-suggest-new.min.js"></script>
+ 	<!-- layerDate plugin javascript -->
+    <script src="${context}/js/plugins/layer/laydate-new/laydate.js"></script>
+ 	
+	<script type="text/javascript">
+	
+	$(document).ready(function () {
+		$(".layer-date").each(function(){
+			inistal_one_data('#'+$(this).attr('id'));
+		});
+		//加载字典数据
+		get_dictionary("${context}",null);
+		
+		initialize_bsSuggest_user_by_dept("${context}", "f_charge_man_name", "f_charge_man", "2000");      // 放用户信息(报刊的)
+			
+		$('#save').on('click', function () {
+			if(!has_null($("#form")))
+				ajax_function("addFactory","post",$('#form').serialize(),'新增成功');		
+		 });
+	});
+	</script>
+</html>

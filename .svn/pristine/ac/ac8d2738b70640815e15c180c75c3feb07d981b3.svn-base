@@ -1,0 +1,400 @@
+/* 琛ㄥ崟缂╁皬闂磋窛
+ */
+.small-space{
+		float:left;
+}
+.small-space label{
+	   	font-weight:100;
+	   	width:30%;
+	    white-space: nowrap;
+	    text-align: right;
+}
+.small-space input,
+.small-space select{
+		width:68%;
+    	height:21px;
+    	padding:1px 1px;
+}
+.small-space-long-label{
+		float:left;
+}
+.small-space-long-label label{
+	   	font-weight:100;
+	   	width:45%;
+	    white-space: nowrap;
+	    text-align: right;
+}
+.small-space-long-label input,
+.small-space-long-label select{
+		width:52%;
+    	height:21px;
+    	padding:1px 1px;
+}
+.small-space-help{
+	width: 68%;
+    float: right;
+    color:red;
+    font-size:10px;
+    display: block;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+.large-space-help{
+	width: 89.8%;
+    float: right;
+    color:red;
+    font-size:10px;
+    display: block;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+/* 琛ㄥ崟缂╁皬闂磋窛
+ */
+.middle-space{
+		float:left;
+}
+.middle-space label{
+	   	font-weight:100;
+	   	width:14.4%;
+	    white-space: nowrap;
+	    text-align: right;
+}
+.middle-space input,
+.middle-space select{
+		width:84.6%;
+    	height:21px;
+}
+.middle-space input[type="checbox"]{
+		width:84.6%;
+}
+.middle-space-6{
+	float:left;
+}
+.middle-space-6 label{
+	   	font-weight:100;
+	   	width:19.4%;
+	    white-space: nowrap;
+	    text-align: right;
+}
+.middle-space-6 input,
+.middle-space-6 select{
+		width:76%;
+    	height:21px;
+}
+.middle-space-6 input[type="checbox"]{
+		width:84.6%;
+}
+.large-space{
+		float:left;
+}	
+.large-space label{
+	   	font-weight:100;
+	   	width:9.5%;
+	    white-space: nowrap;
+	    text-align: right;
+	    vertical-align: top;
+}
+.large-space input,
+.large-space select{
+		width:89.8%;
+    	height:21px;
+}
+.large-space textarea{
+		width:89.8%;
+}
+/* 长标签*/
+.middle-space-long-label{
+		float:left;
+}	
+.middle-space-long-label label{
+	   	font-weight:100;
+	   	width:21.6%;
+	    white-space: nowrap;
+	    text-align: right;
+	    vertical-align: top;
+}
+.middle-space-long-label input,
+.middle-space-long-label select{
+		width:76.9%;
+    	height:21px;
+}
+.middle-space-long-label textarea{
+		width:76.9%;
+}
+/* 澶氶�夋 */
+.large-space-checkbox{
+		float:left;
+}	
+.large-space-checkbox label{
+	   	font-weight:100;
+	   	width:9.5%;
+	    white-space: nowrap;
+	    text-align: right;
+	    vertical-align: top;
+}
+.large-space-checkbox .checkbox{
+		width:89.8%;
+    	/* height:21px; */
+}
+/* 单选框 */
+.large-space-radio{
+		float:left;
+}	
+.large-space-radio label{
+	   	font-weight:100;
+	   	width:9.5%;
+	    white-space: nowrap;
+	    text-align: right;
+	    vertical-align: top;
+}
+.large-space-radio .radio{
+		width:89.8%;
+    	/* height:21px; */
+}
+/* 琛ㄥ崟缂╁皬闂磋窛
+	缁勫悎杈撳叆
+ */
+.small-space-group{
+		float:left;
+}
+.small-space-group label{
+	   	font-weight:100;
+	   	width:30%;
+	    white-space: nowrap;
+	    text-align: right;
+}
+.small-space-group .title{
+		width:20%;
+    	height:21px;
+}
+.small-space-group .content{
+		width:46%;
+    	height:21px;
+}
+/* 琛ㄥ崟缂╁皬闂磋窛
+	缁勫悎杈撳叆
+ */
+.middle-space-group{
+		float:left;
+}
+.middle-space-group label{
+	   	font-weight:100;
+	   	width:14.5%;
+	    white-space: nowrap;
+	    text-align: right;
+}
+.middle-space-group .title{
+		width:17%;
+    	height:21px;
+}
+.middle-space-group .content{
+		width:38.5%;
+    	height:21px;
+}
+/*
+鑷姩鎼滅储琛ラ綈
+*/
+.auto-group-small{
+	width:100%;
+}
+.auto-group-small label{
+	width:26%;
+	text-align: right;
+}
+.auto-group-small input{
+	margin-left:0.5%;
+}
+.auto-group-middle{
+	width:100%;
+}
+.auto-group-middle label{
+	width:17%;
+	text-align: right;
+}
+.auto-group-middle input{
+	margin-left:0.5%;
+}
+/* 鏌ヨ鏉′欢
+ */
+.inline-small label{
+		font-weight:100;
+	    white-space: nowrap;
+	    float:left;
+}
+.inline-small input,
+.inline-small select{
+		width:120px!important;
+    	height:21px;
+    	font-size:10px;
+}
+.inline-small input[type=checkbox]{
+    	height: 13px;
+    	width: 28px!important;
+    	margin-top: 3px;
+}
+.inline-small select{
+		padding:1px 1px;
+}
+/* middle */
+.inline-middle label{
+		font-weight:100;
+	    white-space: nowrap;
+	    float:left;
+}
+.inline-middle input,
+.inline-middle select{
+		width:220px!important;
+    	height:21px;
+    	font-size:10px;
+}
+.inline-middle select{
+		padding:1px 1px;
+}
+/* large */
+.inline-large label{
+		font-weight:100;
+	    white-space: nowrap;
+	    float:left;
+}
+.inline-large input,
+.inline-large select{
+		width:330px!important;
+    	height:21px;
+    	font-size:10px;
+}
+.inline-large select{
+		padding:1px 1px;
+}
+/* 鍥句功鏂板鍥剧墖鏄剧ず鍜屼笂浼� 
+
+*/
+.book_img:hover {
+    	opacity: 0.5; 
+}
+#uploader{
+    	margin:30%
+}
+.img_bg:hover .delete{
+	display:block;
+}
+.not-null label{
+	font-weight: bold;
+}
+/* 寮瑰嚭绐楀彛
+	鏌ヨ鎸夐挳搴曢儴鏄剧ず
+*/
+.sonpage-footer{
+	height:50px;
+	bottom:0px;
+	float:right;
+	margin-right: 35px;
+}
+.sonpage-footer-left{
+	height:50px;
+	bottom:0px;
+	float:left;
+	margin-left: 35px;
+}
+.sonpage-body{	
+	padding-top:20px;
+	padding-bottom:50px;
+}
+.sonpage-body .tab-content{	
+	height: 460px;
+    overflow-y: scroll;
+}
+.sonpage-body-small{	
+	padding-top:20px;
+	padding-bottom:50px;
+	height:475px;
+}
+.sonpage-body .tab-content-small{	
+	height: 350px;
+    overflow-y: scroll;
+}
+.search-group-button button{
+	margin-top:2px;
+}
+/*
+閿�鍞鍗�
+*/
+.badge-red {
+    background-color: #f30707;
+    color: #f9f9f9;
+    font-size: 11px;
+    font-weight: 600;
+    padding-bottom: 1px;
+    padding-left: 1px;
+    padding-right: 1px;
+    text-shadow: none;
+    margin-bottom: 15px;
+    margin-left: -17px;
+    border-radius:10px;
+    vertical-align: middle;
+    display: inline-block;
+}
+/*
+鏂囨湰妗嗙粍鍚�
+*/
+.textarea-group label{
+	vertical-align: top;
+	margin-top: 20px;
+	font-size: 14px;
+}
+.textarea-group textarea{
+	width:60%;
+}
+.select-group label{
+	font-size: 14px;
+}
+.select-group select{
+	width:60%;
+}
+.hid{
+	word-break: keep-all;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 18px;
+}
+.fixed-table-footer tr td {
+        border: 0px solid !important;
+        max-height:23px!important;
+}
+.fixed-table-footer .th-inner{
+	max-height:23px;
+	padding:0px!important;
+}
+.package label{
+		font-size: 15px;
+}
+.package input{
+    width: 40px;
+    height: 30px;
+    font-size: 18px;
+}
+.print-layer-button{
+	text-align: center;
+    margin-top: 6%;
+}
+.input-group{
+	margin-left:15px;
+}
+.checkbox input[type=checkbox]{
+	height: 15px;
+	vertical-align: middle
+}
+.red-color{
+	color:red
+}
+.green-color{
+	color:green
+}
+input[type="text"]{
+	height:21px
+}
+/* 	    .img_bg{
+	    background: '/images/portrait/timg.jpg';
+	    position:relative;
+	    } 
+	    .img_bg .delete{display:none;position:absolute;top:25%;left:25%;width:50%;height:50%}*/

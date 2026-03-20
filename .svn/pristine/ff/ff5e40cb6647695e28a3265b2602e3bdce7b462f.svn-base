@@ -1,0 +1,28 @@
+package com.cnpiecsb.bd.util;
+
+public class InvoiceUtil {
+  private String paramNames_verify[];
+  private String spName_verify;
+  
+  public InvoiceUtil(){	  
+	  paramNames_verify=new String[]{"inv_id","guid"};
+	  spName_verify="n_np_invoice_dh_verify";
+  }
+
+public String[] getParamNames_verify() {
+	return paramNames_verify;
+}
+
+public void setParamNames_verify(String[] paramNames_verify) {
+	this.paramNames_verify = paramNames_verify;
+}
+
+public String getSpName_verify() {
+	return spName_verify;
+}
+
+public void setSpName_verify(String spName_verify) {
+	this.spName_verify = spName_verify;
+}
+
+}

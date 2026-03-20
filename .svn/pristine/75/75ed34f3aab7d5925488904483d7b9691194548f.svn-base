@@ -1,0 +1,499 @@
+package com.cnpiecsb.logistics.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Controller
+@RequestMapping("/bk/logistics")
+public class InBoundController extends ZtbkServiceController{
+	
+	// 入库管理表头查询
+	private int inBoundManageSearchQueryId = 10000032;
+	private GridHeadConfig inBoundManageGridHeadConfig;
+	
+	// 入库管理明细查询
+	private int inBoundTempItemSearchQueryId = 10000033;
+	private GridHeadConfig inBoundTempItemGridHeadConfig;
+	
+	// 入库管理确认明细查询
+	private int inBoundConfrimItemSearchQueryId = 10000034;
+	private GridHeadConfig inBoundConfrimItemGridHeadConfig;
+	
+	// 入库管理库存查询
+	private int inventorySearchQueryId = 10000035;
+	private GridHeadConfig inventoryGridHeadConfig;
+	
+	// 入库管理库存日志查询
+	private int inventoryLogSearchQueryId = 10000036;
+	private GridHeadConfig inventoryLogGridHeadConfig;
+	
+	//商品期刊查询
+	private int productInstanceManageQueryId = 10000004;	
+	private GridHeadConfig productInstanceManageQueryHeadConfig;
+		
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public InBoundController(){
+		inBoundManageGridHeadConfig = new GridHeadConfig(inBoundManageSearchQueryId,true,false,true,false);
+		inBoundManageGridHeadConfig.setOperatorWidth(100);
+		
+		inBoundTempItemGridHeadConfig = new GridHeadConfig(inBoundTempItemSearchQueryId,true,true,true,false);
+		
+		inBoundConfrimItemGridHeadConfig = new GridHeadConfig(inBoundConfrimItemSearchQueryId,true,false,false,false);
+		
+		inventoryGridHeadConfig = new GridHeadConfig(inventorySearchQueryId,true,false,false,false);
+		
+		inventoryLogGridHeadConfig = new GridHeadConfig(inventoryLogSearchQueryId,true,false,false,false);
+		
+		productInstanceManageQueryHeadConfig = new GridHeadConfig(productInstanceManageQueryId,true,true,false,false);
+	}
+	
+	/**
+	 * 入库管理界面
+	 * 
+	 * @param httpSession
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value="/inBoundManage",method=RequestMethod.GET)
+    public ModelAndView inBoundManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("logistics/inBound/inBoundManage");
+        String tableHeader = this.getTableHeader(httpSession, inBoundManageGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", inBoundManageSearchQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-入库单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getInBoundList")
+	@ResponseBody
+	public Object getInBoundList(@RequestBody Map postData){
+		return this.getTableDataList(postData, inBoundManageSearchQueryId);
+	}
+	
+	/**
+	 * 新增入库单页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/inBoundAdd",method=RequestMethod.GET)
+    public ModelAndView inBoundAdd(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        //获取guid
+        String inBound_guid = GuidUtil.create32Guid();
+        httpSession.setAttribute("inBound_guid", inBound_guid);
+        
+        String tableHeader = this.getTableHeader(httpSession, inBoundTempItemGridHeadConfig);
+		
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", inBoundTempItemSearchQueryId);
+        
+        mv.setViewName("logistics/inBound/inBoundAdd");
+        return mv;
+    }
+	
+	/**
+	 * 获得入库单新增明细临时表数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getInBoundItemTempList")
+	@ResponseBody
+	public Object getInBoundItemTempList(@RequestBody Map postData, HttpSession httpSession) {
+		String inBound_guid = (String)httpSession.getAttribute("inBound_guid");
+		postData.put("guid", inBound_guid);
+		return this.getTableDataList(postData, inBoundTempItemSearchQueryId);
+	}
+	
+	/**
+	 * 删除临时表明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/deleteInBoundItemTemp")
+	@ResponseBody
+    public Object deleteInBoundItemTemp(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request)throws JsonProcessingException{
+		
+		String[] inc_nos = request.getParameterValues("inc_nos");
+		if(inc_nos != null && inc_nos.length > 0){
+			for(int i=0;i<inc_nos.length;i++){
+		        String inBound_guid = (String)httpSession.getAttribute("inBound_guid");
+				postData.put("guid", inBound_guid);
+				
+				// 入参, 注意按照顺序
+				String paramNames[] = {"guid","inc_no"};
+				// 加入sp的名称
+				postData.put("spName", "n_bk_qk_upshelf_item_temp_delete");
+				
+				postData.put("inc_no", inc_nos[i]);
+				
+				int code = baseService.doCallSp(postData, paramNames, null);
+				
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增临时表明细页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/inBoundItemTempAdd",method=RequestMethod.GET)
+    public ModelAndView inBoundItemTempAdd(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();        
+        mv.setViewName("logistics/inBound/inBoundItemAdd");
+		mv.addObject("c_id", postData.get("c_id"));
+		mv.addObject("c_department", postData.get("c_department"));
+		
+		String tableHeader = this.getTableHeader(httpSession, productInstanceManageQueryHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", productInstanceManageQueryId);
+		
+        return mv;
+    }
+	
+	/**
+	 * 获得临时表期刊数据
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getInBoundProductInstance")
+	@ResponseBody
+	public Object getInBoundProductInstance(@RequestBody Map postData){
+		return this.getTableDataList(postData, productInstanceManageQueryId);
+	}
+	
+	/**
+	 * 新增明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addInBoundItemTemp")
+	@ResponseBody
+    public Object addInBoundItemTemp(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){
+		String inBound_guid = (String)httpSession.getAttribute("inBound_guid");
+		
+		postData.put("guid", inBound_guid);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid",
+		          "upshelf_id",
+		          "qk_id",
+		          "period_id",
+		          "h_amount",
+		          "c_id"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_upshelf_item_temp_new");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改临时表明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/editInBoundItemTemp")
+	@ResponseBody
+    public Object editInBoundItemTemp(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+		String inBound_guid = (String)httpSession.getAttribute("inBound_guid");
+		
+		postData.put("guid", inBound_guid);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid",
+		          "inc_no",
+		          "h_amount"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_upshelf_item_temp_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增入库单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addInBound")
+	@ResponseBody
+    public Object addInBound(@RequestParam Map postData,HttpSession httpSession){
+		String inBound_guid = (String)httpSession.getAttribute("inBound_guid");
+		
+		postData.put("guid", inBound_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		
+		postData.put("o_id_input", user.getAccount());
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid",
+		          "in_type",
+		          "o_id_input"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_upshelf_new");
+		
+		String returnNames[] = {"upshelf_id"};
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 作废入库单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteInBound")
+	@ResponseBody
+    public Object deleteInBound(@RequestParam Map postData,HttpSession httpSession){
+		User user=(User)httpSession.getAttribute("user");
+		
+		postData.put("o_id_destroy", user.getAccount());
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"upshelf_id","o_id_destroy"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_upshelf_delete");
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/inBoundEdit",method=RequestMethod.GET)
+    public ModelAndView inBoundEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+		ModelAndView mv = new ModelAndView();      
+		
+		//获取guid
+        String inBound_guid = GuidUtil.create32Guid();
+        httpSession.setAttribute("inBound_guid", inBound_guid);
+		
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(inBoundManageSearchQueryId, postData);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        
+        String tableHeader = this.getTableHeader(httpSession, inBoundTempItemGridHeadConfig);
+		
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", inBoundTempItemSearchQueryId);
+        
+        mv.setViewName("logistics/inBound/inBoundEdit");
+        
+        // 入参, 注意按照顺序
+     	String paramNames[] = new String[]{"guid", "upshelf_id"};
+     	// 加入sp的名称
+     	postData.put("spName", "n_bk_qk_upshelf_item_temp_getdata");
+     				
+     	httpSession.setAttribute("inBound_guid", inBound_guid);
+     	postData.put("guid", inBound_guid);
+     				
+     	int code = baseService.doCallSp(postData, paramNames, null);
+			        
+        return mv;
+    }
+	
+	/**
+	 * 编辑入库单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editInBound")
+	@ResponseBody
+    public Object editInBound(@RequestParam Map postData,HttpSession httpSession){
+		String inBound_guid = (String)httpSession.getAttribute("inBound_guid");
+		
+		postData.put("guid", inBound_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		
+		postData.put("o_id_input", user.getAccount());
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid",
+				  "upshelf_id",
+		          "in_type",
+		          "o_id_input"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_upshelf_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 上架确认页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/inBoundShelvesConfirm",method=RequestMethod.GET)
+    public ModelAndView inBoundShelvesConfirm(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();        
+        mv.setViewName("logistics/inBound/inBoundToShelves");
+		mv.addObject("upshelf_id", postData.get("upshelf_id"));
+		
+		String tableHeader = this.getTableHeader(httpSession, inBoundConfrimItemGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", inBoundConfrimItemSearchQueryId);
+		
+        return mv;
+    }
+	
+	/**
+	 * 获得临上架确认页面明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getInBoundShelvesConfirmList")
+	@ResponseBody
+	public Object getInBoundShelvesConfirmList(@RequestBody Map postData){
+		return this.getTableDataList(postData, inBoundConfrimItemSearchQueryId);
+	}
+	
+	/**
+	 * 修改上架明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/inBoundUpshelfItemEdit",method=RequestMethod.GET)
+    public ModelAndView inBoundUpshelfItemEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+		ModelAndView mv = new ModelAndView();      
+        
+        mv.setViewName("logistics/inBound/inBoundUpshelfItemEdit");
+        mv.addObject("upshelf_id", postData.get("upshelf_id"));
+        mv.addObject("ItemExclusiveCode", postData.get("ItemExclusiveCode"));
+			        
+        return mv;
+    }
+	
+	/**
+	 * 编辑入库单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editInBoundUpshelfItem")
+	@ResponseBody
+    public Object editInBoundUpshelfItem(@RequestParam Map postData,HttpSession httpSession){
+		
+		User user=(User)httpSession.getAttribute("user");
+		
+		postData.put("o_id_onshelves", user.getAccount());
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"ItemExclusiveCode",     
+		          "upshelf_id",
+		          "h_amount_real",
+		          "shelf_no",
+		          "o_id_onshelves"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_upshelf_item_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 确认入库操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/commitInBoundToShelves")
+	@ResponseBody
+    public Object commitInBoundToShelves(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){
+		User user=(User)httpSession.getAttribute("user");
+		
+		postData.put("o_id_input", user.getAccount());
+		
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"upshelf_id","o_id_input"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_upshelf_confirm");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+       
+}

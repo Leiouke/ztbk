@@ -1,0 +1,144 @@
+package com.cnpiecsb.fc.petty.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 领款还款页面
+ * @author by zc 2022/08/10
+ *
+ */
+@Controller
+@RequestMapping("/fc/petty")
+public class PettyCashClaimRepayController extends BaseServiceController{
+	
+	// 财务备用金查询
+	private int financePettyCashQueryId = 8600004;	
+	private GridHeadConfig financePettyCashQueryHeadConfig;
+	
+	// 备用金单记录查询
+	private int pettyCashOneQueryId = 8600002;
+		
+	public PettyCashClaimRepayController() {
+		financePettyCashQueryHeadConfig = new GridHeadConfig(financePettyCashQueryId,true,false,true,false);
+		financePettyCashQueryHeadConfig.setOperatorWidth(180);
+	}
+	
+	/**
+	 * 进入领款还款页面界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/pettyCashClaimRepayManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView pettyCashClaimRepayManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/pettyCashClaimRepay/pettyCashClaimRepayManage");
+        String tableHeader = this.getTableHeader(httpSession,financePettyCashQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", financePettyCashQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得领款还款页面页面数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getPettyCashClaimRepayList")
+	@ResponseBody
+	public Object getPettyCashList(@RequestBody Map postData, HttpSession httpSession) {
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		return this.getTableDataList(postData, financePettyCashQueryId);
+	}
+	
+	/**
+	 * 进入领款还款页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toPettyCashClaimRepayDeal",method=RequestMethod.GET)
+	public ModelAndView toPettyCashClaimRepayDeal(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+		ModelAndView mv = new ModelAndView();       
+		Object claimRepay = postData.get("claimRepay");
+		// 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(pettyCashOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		mv.addObject("claimRepay",claimRepay);
+		mv.setViewName("fc/pettyCashClaimRepay/pettyCashClaimRepayDeal");
+		return mv;
+	}
+	
+	/**
+	 * 确认领款
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/toPettyCashClaimDeal")
+	@ResponseBody
+    public Object toPettyCashClaimDeal(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"pc_id", "claim_time","o_id_claim"};
+		// 加入sp的名称
+		postData.put("spName", "fc_petty_cash_claim");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_claim", user.getAccount());
+
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 确认还款
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/toPettyCashRepayDeal")
+	@ResponseBody
+	public Object toPettyCashRepayDeal(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"pc_id", "repay_time","o_id_repay"};
+		// 加入sp的名称
+		postData.put("spName", "fc_petty_cash_repay");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_repay", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+	}
+
+}

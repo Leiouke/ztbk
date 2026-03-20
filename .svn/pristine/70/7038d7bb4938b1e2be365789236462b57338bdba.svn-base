@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+    <!-- OA消息集成 每隔10分钟执行一次触发   -->
+    <bean name="OaMsgJobDetail"    class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobClass" value="com.cnpiecsb.messageIntergration.job.OaMsgJob" />
+        <property name="jobDataMap">
+            <map>
+                <entry key="pushItomsMsgToOaService" value-ref="pushItomsMsgToOaService" /> <!-- 放入spring bean -->
+            </map>
+        </property>
+        <property name="durability" value="true" />
+    </bean>
+    
+    <bean id="OaMsgTrigger"  class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail" ref="OaMsgJobDetail" />
+        <property name="cronExpression" value="0 0/10 * * * ?" />  <!-- 按顺序依次为1.秒(0~59)2.分钟(0~59)3.小时(0~23)4.天(0~31)5.月(0~11)6.天(1~7 1=星期天)7.年份(1970~2099)  -->
+    </bean>
+    
+    <!-- Scheduler factory bean to glue together jobDetails and triggers to Configure Quartz Scheduler -->
+    <!--<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="jobDetails">
+            <list>
+                <ref bean="OaMsgJobDetail" />
+            </list>
+        </property>
+ 
+        <property name="triggers">
+            <list>
+                <ref bean="OaMsgTrigger" />
+            </list>
+        </property>
+    </bean>-->
+</beans>

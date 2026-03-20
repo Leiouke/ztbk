@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnpiecsb.system.dao.UserDao">
+	<resultMap type="com.cnpiecsb.system.entity.User" id="userResultMap">
+		<result property="id" column="ID"/>
+		<result property="account" column="ACCOUNT"/>
+		<result property="password" column="PASSWORD"/>
+		<result property="userName" column="USERNAME"/>
+		<result property="mobile" column="MOBILE"/>
+		<result property="remark" column="REMARK"/>
+		<result property="status" column="STATUS"/>
+		<result property="registerDate" column="REGISTERDATE"/>
+		<result property="loginDate" column="LOGINDATE"/>
+		<result property="logoutDate" column="LOGOUTDATE"/>
+		<result property="isManager" column="ISMANAGER"/>
+		<result property="yhUserId" column="YH_USER_ID"/>
+	</resultMap>	
+	
+	<!-- 添加用户 -->
+	<insert id="addUser" parameterType="com.cnpiecsb.system.entity.User">
+		<![CDATA[
+			insert into it_system_user (account, password, job_no,userName, mobile, email, status, registerDate, remark, isManager) values 
+				(#{account},#{password},#{job_no},#{userName},#{mobile}, #{email}, #{status}, #{registerDate}, #{remark}, #{isManager})
+		]]>
+	</insert>
+	
+	<!-- 查询单用户信息 -->
+	<select id="getUser" resultMap="userResultMap">
+		<![CDATA[
+			SELECT * from it_system_user where id = #{id}
+		]]>
+	</select>
+	
+	<!-- 查询单用户信息通过账号 -->
+	<select id="getUserByAccount" resultMap="userResultMap">
+		<![CDATA[
+			SELECT * from it_system_user where account = #{account}
+		]]>
+	</select>
+	
+	<!-- 修改用户信息 -->
+	<select id="editUser" parameterType="com.cnpiecsb.system.entity.User">
+		update it_system_user 
+	    <set>
+	    	<if test="account != null ">   
+	      		account = #{account},
+	      	</if>
+	      	<if test="password != null ">   
+				password = #{password},
+			</if>
+			<if test="password_modify_time != null ">   
+				password_modify_time = getdate(),
+			</if>
+			<if test="job_no != null ">   
+				job_no = #{job_no},
+			</if>
+			<if test="userName != null ">   
+	      		userName = #{userName},
+	      	</if>
+	      	<if test="mobile != null ">   
+	      		mobile = #{mobile},
+	      	</if>
+	      	<if test="email != null ">   
+	      		email = #{email},
+	      	</if>
+	      	<if test="remark != null ">   
+	      		remark = #{remark},
+	      	</if>
+	      	<if test="modifyDate != null ">   
+	      		modifyDate = #{modifyDate},
+	      	</if>
+	      	<if test="loginDate != null ">   
+	      		loginDate = #{loginDate},
+	      	</if>
+	      	<if test="portrait != null ">   
+	      		portrait = #{portrait},
+	      	</if>
+	      	<if test="logoutDate != null ">   
+	      		logoutDate = #{logoutDate}
+	      	</if>
+	    </set>
+	    where id = #{id}
+	</select>
+	
+	<!-- 修改用户信息,根据工号来修改 -->
+	<select id="editUserByJobNo" parameterType="com.cnpiecsb.system.entity.User">
+		update it_system_user 
+	    <set>
+	      	<if test="password != null ">   
+				password = #{password},
+			</if>
+			<if test="userName != null ">   
+	      		userName = #{userName},
+	      	</if>
+	      	<if test="mobile != null ">   
+	      		mobile = #{mobile},
+	      	</if>
+	      	<if test="email != null ">   
+	      		email = #{email},
+	      	</if>
+	      	<if test="portrait != null ">   
+	      		portrait = #{portrait},
+	      	</if>
+	    </set>
+	    where job_no = #{job_no}
+	</select>
+	
+	<!-- 删除用户 -->
+	<delete id="deleteUser">
+		delete from it_system_user where id = #{id}
+	</delete>
+	
+	<!-- 启用用户 -->
+	<update id="enableUser">
+	    update it_system_user
+	      set status = 0
+	      where id = #{id}
+	</update>
+	
+	<!-- 停用用户 -->
+	<update id="disableUser">
+	    update it_system_user
+	      set status = 1
+	      where id = #{id}
+	</update>
+	
+	<!-- 获得登录用户信息, 取默认岗位的那一个  -->
+	<select id="login" resultMap="userResultMap">
+		select * from it_system_user a
+		  where (job_no = #{account} or account = #{account}) and password = #{password} and status = 0
+	</select>
+	
+	<!-- 只根据工号和账号来登录,不用密码  -->
+	<select id="loginWithAccount" resultMap="userResultMap">
+		select c.post_name postName,* from it_system_user a
+		   left join hr_staff_personnel_post b on a.account = b.account
+			left join hr_staff_post c on b.post_code = c.post_code 
+		where a.job_no = #{job_no} and a.account = #{account} and status = 0
+	</select>
+	
+	<!-- 分页的条件 -->
+	<sql id="pageCondition">
+		<if test="account != null ">   
+			and a.account = #{account}   
+		</if>
+		<if test="userName != null "> 
+			<bind name="userName" value="'%' + userName + '%'" />  <!--  这样写感觉不挑具体数据库 -->  
+			and a.userName like #{userName}
+		</if>
+		<if test="isManager != null">
+			and a.isManager = #{isManager} 
+		</if>
+		<if test="status != null">
+			and a.status = #{status} 
+		</if>
+		<if test="roleId != null">
+			and b.roleId = #{roleId} 
+		</if>
+		<if test="job_no != null">
+			and a.job_no = #{job_no} 
+		</if>
+		<if test="dep_org_code != null">
+			and b.dep_org_code = #{dep_org_code} 
+		</if>
+	</sql>
+	
+	<!-- 查询所有有效的用户信息,分页查询 ,带查询条件 仅适用于mysql-->
+	<select id="getUsersByPage" resultMap="userResultMap">
+		SELECT * FROM 
+		(
+			SELECT top (${offset} + ${limit}) ROW_NUMBER()OVER(ORDER BY a.id desc) 'Row',a.*,c.name roleName,c.ID roleId,
+			  d.org_name dep_org_code_name,
+			  e.org_name office_org_code_name,
+			  f.org_name group_org_code_name,
+			  g.name approve_role_name,
+			  b.dep_org_code
+			 FROM it_system_user a
+              left join it_system_userrole b on a.account = b.account and b.is_default = 'true'
+               left join it_system_role c on b.roleId = c.ID 
+                left join it_system_dept d on b.dep_org_code = d.org_code
+                 left join it_system_dept e on b.office_org_code = e.org_code
+                  left join it_system_dept f on b.group_org_code = f.org_code
+                   left join it_system_dictionary g on b.approve_role = g.code and g.d_code = 'S40'
+               where 1 = 1 
+			<include refid="pageCondition"/>
+		) t
+		WHERE t.Row > #{offset}
+	</select>
+	
+	<!-- 查询所有有效的用户数,带查询条件-->
+	<select id="getUsersCount"  resultType="_int">
+		SELECT count(*) from it_system_user a
+              left join it_system_userrole b on a.account = b.account and b.is_default = 'true'
+               left join it_system_role c on b.roleId = c.ID 
+                left join it_system_dept d on b.dep_org_code = d.org_code
+                 left join it_system_dept e on b.office_org_code = e.org_code
+                  left join it_system_dept f on b.group_org_code = f.org_code
+                   left join it_system_dictionary g on b.approve_role = g.code and g.d_code = 'S40'
+               where 1 = 1 
+		<include refid="pageCondition"/>
+	</select>
+	
+	<!-- 查询所有有效的用户信息 -->
+	<select id="getStaff" resultType="Map">
+		select a.account,userName
+		 FROM it_system_user a
+		  left join it_system_userrole b on a.account = b.account
+		  where a.status = 0
+		<if test="account != null">
+			and a.account = #{account} 
+		</if>
+		<if test="userName != null ">
+			<bind name="userName" value="'%' + userName + '%'" />  <!--  这样写感觉不挑具体数据库 -->  
+			and userName like #{userName}
+		</if>
+		<if test="approve_role != null">
+			and approve_role = #{approve_role} 
+		</if>
+		<if test="dep_org_code != null">
+			and dep_org_code = #{dep_org_code} 
+		</if>
+		 group by a.account,userName
+	</select>
+	
+	<!-- 添加用户菜单信息 -->
+	<insert id="addUserMenu">
+		<![CDATA[
+			insert into it_system_usermenu (account, menuId) values 
+			(
+				#{account},
+				#{menuId}
+			)
+		]]>
+	</insert>
+	
+	<!-- 删除用户菜单 -->
+	<delete id="deleteUserMenu">
+		delete from it_system_usermenu where account = #{account}
+	</delete>
+</mapper>

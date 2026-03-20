@@ -1,0 +1,107 @@
+package com.cnpiecsb.fc.basic.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+
+@Controller
+@RequestMapping("/fc/basic")
+public class AssessUnitController extends BaseServiceController {
+	private int assessUnitListQueryId = 8020001;
+	
+	private int DepositDbCompanyQueryId = 8700001;
+	
+	private int DepositBidProjectSearchQueryId = 8710001;
+	
+	private int DeposittenderProjectSearchQueryId = 8720001;
+	
+	private int deapartmentAutoByAccountSearchQueryId = 1010003;
+	
+	/**
+	 * 获得动态列表数据-可按部门查询的财务分类列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getAssessUnitList")
+	@ResponseBody
+	public Object getAssessUnitList(@RequestParam Map postData, HttpSession httpSession){
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		return this.getTableDataList(postData, assessUnitListQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-招标单位-搜索自动补全
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getDepartmentListSearch")
+	@ResponseBody
+	public Object getDepartmentListSearch(String c_department, String c_id,String company_type,HttpSession session){
+		Map<String,Object> postData=new HashMap<>();
+		postData.put("c_department", c_department);
+		postData.put("company_type", company_type);
+		postData.put("c_id", c_id);  // 部门编号
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, session);
+		return this.getTableDataList(postData, DepositDbCompanyQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-招标项目-搜索自动补全
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getBidProjectListSearch")
+	@ResponseBody
+	public Object getBidProjectListSearch(String bids_project,HttpSession session){
+		Map<String,Object> postData=new HashMap<>();
+		postData.put("bids_project", bids_project);
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, session);
+		return this.getTableDataList(postData, DepositBidProjectSearchQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-投标项目-搜索自动补全
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getTenderProjectListSearch")
+	@ResponseBody
+	public Object getTenderProjectListSearch(String bids_project,HttpSession session){
+		Map<String,Object> postData=new HashMap<>();
+		postData.put("bids_project", bids_project);
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, session);
+		return this.getTableDataList(postData, DeposittenderProjectSearchQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-业务员-搜索自动补全
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getUserListSearchByAccount")
+	@ResponseBody
+	public Object getUserListSearchByAccount(String account){
+		Map<String,Object> postData=new HashMap<>();
+		postData.put("account", account);
+		postData.put("is_default", "1");
+		return this.getTableDataList(postData, deapartmentAutoByAccountSearchQueryId);
+	}
+}

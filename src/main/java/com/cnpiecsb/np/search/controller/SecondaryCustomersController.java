@@ -1,0 +1,60 @@
+package com.cnpiecsb.np.search.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 结算二级客户查询界面
+ * 
+ * @author zc 2022/02/25
+ *
+ */
+@Controller
+@RequestMapping("/npSearch")
+public class SecondaryCustomersController extends BaseServiceController{
+	
+	private int secondaryCustomersQueryId = 8900004;	
+	private GridHeadConfig secondaryCustomersHeadConfig;
+	
+	public SecondaryCustomersController(){
+		secondaryCustomersHeadConfig = new GridHeadConfig(secondaryCustomersQueryId,true,false,false,false);
+	}
+	
+	/**
+	 * 结算二级客户查询界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/secondaryCustomersManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView secondaryCustomersManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        String tableHeader = this.getTableHeader(httpSession, secondaryCustomersHeadConfig);
+        mv.setViewName("np/search/secondaryCustomersManage");
+        mv.addObject("tableHeader", tableHeader);
+        mv.addObject("queryId", secondaryCustomersQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得二级客户界面数据
+	 * @return
+	 */
+	@RequestMapping(value="/getSecondaryCustomersList")
+	@ResponseBody
+	public Object getSecondaryCustomersList(@RequestBody Map postData) {
+		return this.getTableDataList(postData,secondaryCustomersQueryId);
+	}
+
+}

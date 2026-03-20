@@ -1,0 +1,390 @@
+package com.cnpiecsb.fc.receivable.controller;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/fc/receivable")
+public class ReceivableFinancialSaleInvoiceController extends BaseServiceController {
+	// 财务开票查询
+	private int saleInvoiceFinanceManageQueryId = 8120006;	
+	private GridHeadConfig saleInvoiceFinanceManageGridHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public ReceivableFinancialSaleInvoiceController(){
+		saleInvoiceFinanceManageGridHeadConfig = new GridHeadConfig(saleInvoiceFinanceManageQueryId,true,true,true,false);
+		saleInvoiceFinanceManageGridHeadConfig.setOperatorWidth(100);
+	}
+	
+	/**
+	 * 财务销售开票查询界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/saleInvoiceFinanceManage", method=RequestMethod.GET)
+    public ModelAndView saleInvoiceFinanceManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableFinancialSaleInvoice/saleInvoiceFinanceManage");
+        String tableHeader = this.getTableHeader(httpSession,saleInvoiceFinanceManageGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", saleInvoiceFinanceManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-财务销售发票管理
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getSaleInvoiceFinanceManageList")
+	@ResponseBody
+	public Object getSaleInvoiceFinanceManageList(@RequestBody Map postData){
+		return this.getTableDataList(postData,saleInvoiceFinanceManageQueryId);
+	}
+	
+	/**
+	 * 开票结果上传界面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/saleInvoiceKpBatchUpload",method=RequestMethod.GET)
+    public ModelAndView bdBatchUpload(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableFinancialSaleInvoice/saleInvoiceKpBatchUpload");
+        return mv;
+    }
+	
+	/**
+	 * 批量上传excel
+	 * 
+	 * @param httpSession
+	 * @param request
+	 * @return
+	 * @throws IOException 
+	 * @throws InvalidFormatException 
+	 * @throws EncryptedDocumentException 
+	 */
+	@RequestMapping(value="/uploadKpBatch",method=RequestMethod.POST)
+	@ResponseBody
+    public Object uploadBdBatch(MultipartFile excel,HttpSession httpSession, HttpServletRequest request)throws EncryptedDocumentException, InvalidFormatException, IOException {
+		if(!excel.isEmpty()){
+			Workbook workbook = WorkbookFactory.create(excel.getInputStream());
+			Sheet sheet = workbook.getSheetAt(0);  // 指代sheet1, 索引从0开始
+			int rowNum = 0;
+//			int success=0;
+			List<Map> excelData = new ArrayList<Map>();
+			for (rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++){  // 行数，真实数据索引也从1开始
+				Row row = sheet.getRow(rowNum);	
+				Map<String, Object> itemMap = new HashMap();
+				for (int i = 0; i < 13; i++) {
+					Cell cell = row.getCell(i);
+					
+					if (i == 4 && cell == null) {  // 假如开票单号列为空
+						break;
+					}
+					
+					if (cell != null) {
+						switch(i){
+							case 4: {
+								cell.setCellType(Cell.CELL_TYPE_STRING);
+								itemMap.put("kp_id", cell.getStringCellValue().trim());break;
+							}  // 开票单号
+							case 10:{
+								cell.setCellType(Cell.CELL_TYPE_STRING);
+								String kpNo = cell.getStringCellValue().trim();
+								if (kpNo == null || StringUtils.isEmpty(kpNo)) {
+									break;
+								}
+								itemMap.put("kp_no", kpNo);
+								break;
+							} // 发票号
+							case 12:{
+								Date kp_date = null;
+								if (StringUtils.isNotEmpty(cell.toString())){
+									try {
+										kp_date = cell.getDateCellValue();
+										itemMap.put("kp_date", kp_date);
+									} catch(Exception e) {  // 这里有个判断要是得不到日期类型的数据, 就获得字符串类型的 也可以将日期保存进去
+//										System.out.println("日期格式不对");
+										cell.setCellType(Cell.CELL_TYPE_STRING);
+										itemMap.put("kp_date", cell.getStringCellValue().trim());
+									}
+								}
+								
+								break;
+							}  // 开票日期
+						}						
+					} 
+				}
+				
+				if (itemMap.get("kp_no") == null) {
+					break;
+				}
+				// 数据收集完后 应该要放到session中, 后面要跟表头数据一起保存
+				excelData.add(itemMap);
+			}
+			
+			httpSession.setAttribute("kpItemExcelData", excelData);
+			return "{\"success\":true}";
+		}else{
+			return "{\"success\":false}";
+		}
+	}
+	
+	/**
+	 * 批量加入开票信息
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addKpItems")
+	@ResponseBody
+    public Object addKpItems(@RequestParam Map postData, HttpSession httpSession){
+		List<Map> kpItemExcelData = (List<Map>) httpSession.getAttribute("kpItemExcelData");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_kp", user.getAccount());
+		for (Map map : kpItemExcelData) {
+			postData.put("kp_id", map.get("kp_id"));
+			postData.put("kp_no", map.get("kp_no"));
+			postData.put("kp_date", map.get("kp_date"));
+			
+			//加入sp的名称
+			postData.put("spName", "fc_receivable_invoice_kp_no_update");	
+			String paramNames[] = {"kp_id", "kp_no", "kp_date", "o_id_kp"};  
+			
+			int code = baseService.doCallSp(postData, paramNames, null);
+			
+			if (code != 0) {
+				continue;
+			}
+			System.out.println(1);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 退回开票申请
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/saleInvoiceKpApplyGoback")
+	@ResponseBody
+    public Object saleInvoiceKpApplyGoback(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+		// 入参, 注意按照顺序
+		String paramNames[] = {"kp_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_invoice_kp_commit_goback");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 外部开票结果上传界面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/saleInvoicewbKpBatchUpload",method=RequestMethod.GET)
+    public ModelAndView saleInvoicewbKpBatchUpload(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableFinancialSaleInvoice/saleInvoicewbKpBatchUpload");
+        return mv;
+    }
+	
+	/**
+	 * 批量上传外部excel
+	 * 
+	 * @param httpSession
+	 * @param request
+	 * @return
+	 * @throws IOException 
+	 * @throws InvalidFormatException 
+	 * @throws EncryptedDocumentException 
+	 */
+	@RequestMapping(value="/uploadwbKpBatch",method=RequestMethod.POST)
+	@ResponseBody
+    public Object uploadwbKpBatch(MultipartFile excel,HttpSession httpSession, HttpServletRequest request)throws EncryptedDocumentException, InvalidFormatException, IOException {
+		if(!excel.isEmpty()){
+			Workbook workbook = WorkbookFactory.create(excel.getInputStream());
+			Sheet sheet = workbook.getSheetAt(0);  // 指代sheet1, 索引从0开始
+			int rowNum = 0;
+//			int success=0;
+			List<Map> excelData = new ArrayList<Map>();
+			
+			int start_num = 0;//详情开始行数
+			int end_num = sheet.getLastRowNum() -2; //详情结束行数,在倒数第三行
+			
+//			//判断是否有合并行的单元格
+//			List<Map<String,Integer>> list = new ArrayList<Map<String,Integer>>();//存放所有合并单元格的起始和最终行数
+//			
+//			if(sheet.getNumMergedRegions()>=1){
+//				int hb_cell = sheet.getNumMergedRegions();//获得共有多少个合并的单元格
+//				for(int i = 0;i<hb_cell;i++){//便利获得
+//					Map<String,Integer> map = new HashMap<String,Integer>();
+//					int a =sheet.getMergedRegion(i).getFirstRow();
+//					map.put("first_row",Integer.valueOf(a));
+//					int b =sheet.getMergedRegion(i).getLastRow();
+//					map.put("last_row",Integer.valueOf(b));
+//					list.add(map);
+//				}
+//			}
+			
+			//获得开始的行数和结束的行数
+			for (rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++){
+				//System.out.println(rowNum);
+				Row row = sheet.getRow(rowNum);	
+				if(row ==null){//如果单元格无内容，跳出
+					continue;
+				}
+				Cell cell = row.getCell(0);//取每个的第一格判断是否是表头
+				//判断是否是合并单元格，否则就跳到最终行
+//				if(list.size()==0){//没有合并单元格就跳过
+//					
+//				}else{
+//					for(Map<String,Integer> map:list){
+//						if(map.get("first_row")== rowNum){
+//							rowNum = map.get("last_row").intValue();
+//							break;
+//						}
+//					}
+//				}
+				
+				if(cell ==null){//如果单元格无内容，跳出
+					continue;
+				}
+				if(cell.getStringCellValue().trim().equals("流水号")){//如果这个单元格是流水号，则明细的各自再下一行
+					start_num = rowNum + 1;
+					break;//
+				}
+			}
+			
+			if(start_num == 0){//0表示每找到开头，退出
+				return "{\"success\":false}";
+			}else {
+				for (rowNum = start_num; rowNum <= end_num; rowNum++){  // 行数，真实数据索引也从1开始
+					Row row = sheet.getRow(rowNum);	
+					Map<String, Object> itemMap = new HashMap();
+					
+					boolean is_dp = false;//判断是否为电票
+					
+					for (int i = 0; i <= 10; i++) {
+						Cell cell = row.getCell(i);
+						
+						if (i == 1 && cell == null) {  // 假如开票单号列为空
+							break;
+						}
+						
+						if (cell != null) {
+							switch(i){
+								case 1: {
+									if(cell.getStringCellValue().trim().length()>12){
+										itemMap.put("kp_id", cell.getStringCellValue().trim().substring(0, 12));
+									}else{
+										itemMap.put("kp_id", cell.getStringCellValue().trim());
+									}
+									break;
+								}  // 开票单号
+								case 3:{
+									Date kp_date = null;
+									if (StringUtils.isNotEmpty(cell.toString())){
+										try {
+											kp_date = cell.getDateCellValue();
+											itemMap.put("kp_date", kp_date);
+										} catch(Exception e) {  // 这里有个判断要是得不到日期类型的数据, 就获得字符串类型的 也可以将日期保存进去
+//											System.out.println("日期格式不对");
+											itemMap.put("kp_date", cell.getStringCellValue().trim());
+										}
+									}
+									
+									break;
+								}  // 开票日期
+								case 5:{
+									String kp_type = cell.getStringCellValue().trim();
+									if (kp_type.indexOf("数电")!=-1) {//包含数电，为数电发票
+										is_dp = true;
+									}
+									break;
+								} // 判断是否为电票
+								case 7:{
+									if(is_dp){//是数电发票
+										break;
+									}else{
+										String kpNo = cell.getStringCellValue().trim();
+										if (kpNo == null || StringUtils.isEmpty(kpNo)) {
+											break;
+										}
+										itemMap.put("kp_no", kpNo);
+										break;
+									}
+								} // 发票号
+								case 8:{
+									if(is_dp){//是数电发票
+										String kpNo = cell.getStringCellValue().trim();
+										if (kpNo == null || StringUtils.isEmpty(kpNo)) {
+											break;
+										}
+										itemMap.put("kp_no", kpNo);
+										break;
+									}else{
+										break;
+									}
+								} // 发票号
+							}						
+						} 
+					}
+					
+					if (itemMap.get("kp_no") == null) {
+						break;
+					}
+					// 数据收集完后 应该要放到session中, 后面要跟表头数据一起保存
+					excelData.add(itemMap);
+				}
+				
+				httpSession.setAttribute("kpItemExcelData", excelData);
+				return "{\"success\":true}";
+			}
+		}else{
+			return "{\"success\":false}";
+		}
+	}
+}

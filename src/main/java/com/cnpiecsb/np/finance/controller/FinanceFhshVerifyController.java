@@ -1,0 +1,164 @@
+package com.cnpiecsb.np.finance.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/np")
+public class FinanceFhshVerifyController extends ZtbkServiceController {
+	private int financeFhshVerifyQueryId = 5600007;	
+	private GridHeadConfig financeFhshVerifyGridHeadConfig;
+	
+	private int financeFhshVerifyOneQueryId = 5600007;	
+	
+	private int financeFhshItemQueryId = 5600008;	
+	private GridHeadConfig financeFhshItemGridHeadConfig;	
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public FinanceFhshVerifyController(){
+		financeFhshVerifyGridHeadConfig = new GridHeadConfig(financeFhshVerifyQueryId,true,false,true,false);
+		financeFhshVerifyGridHeadConfig.setOperatorWidth(120);
+		
+		financeFhshItemGridHeadConfig=new GridHeadConfig(financeFhshItemQueryId,true,false,false,false);
+	}
+	
+	/**
+	 * 申汇待审核列表界面
+	 * 
+	 * @param httpSession
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value="/financeFhshVerifyManage",method=RequestMethod.GET)
+    public ModelAndView sdManage(HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/financeFhshVerify/financeFhshVerifyManage");
+        String tableHeader = this.getTableHeader(httpSession,financeFhshVerifyGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", financeFhshVerifyQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-申汇审核列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getFinanceFhshVerifyManageList")
+	@ResponseBody
+	public Object getFinanceFhshVerifyManageList(@RequestBody Map postData){
+		return this.getTableDataList(postData,financeFhshVerifyQueryId);
+	}
+	
+	/**
+	 * 申汇审核页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/financeFhshVerify",method=RequestMethod.GET)
+    public ModelAndView sdVerify(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException {
+		ModelAndView mv = new ModelAndView();
+		// 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(financeFhshVerifyOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("np/financeFhshVerify/financeFhshVerify");
+        String tableHeader = this.getTableHeader(httpSession,financeFhshItemGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", financeFhshItemQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-申汇审核明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getFinanceFhshVerifyList")
+	@ResponseBody
+	public Object getFinanceFhshVerifyList(@RequestBody Map postData){
+		return this.getTableDataList(postData,financeFhshItemQueryId);
+	}
+	
+	/**
+	 * 审核通过、不通过操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/verifyFinanceFhsh")
+	@ResponseBody
+    public Object verifysd(@RequestParam Map postData,HttpSession httpSession){
+		String is_pass=postData.get("is_pass").toString();
+		String fh_status=postData.get("status").toString();
+		User user=(User)httpSession.getAttribute("user");
+		if("0".equals(is_pass)){
+			int code = do_sp_shfh_verify_renturn(postData);
+			if (code != 0) {
+				return this.getAjaxResult(code);
+			}	
+		}else if("1".equals(is_pass)){
+			if("1".equals(fh_status)){
+				int code = do_sp_first_verify(postData,user.getAccount());
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}else if("2".equals(fh_status)){
+				int code = do_sp_second_verify(postData,user.getAccount());
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+    }
+	
+	//申汇审核退回SP
+	private int do_sp_shfh_verify_renturn(Map postData){
+		String paramNames[] = {"fh_id","audit_memo"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_audit_return");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	//申汇一审通过
+	private int do_sp_first_verify(Map postData,String username){
+		String paramNames[] = {"fh_id","o_id_first_auditor","audit_memo"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_first_audit");
+		postData.put("o_id_first_auditor", username);
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	//申汇二审通过
+	private int do_sp_second_verify(Map postData,String username){
+		String paramNames[] = {"fh_id","o_id_second_auditor","audit_memo"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_second_audit");
+		postData.put("o_id_second_auditor", username);
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+}

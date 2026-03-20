@@ -1,0 +1,209 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->  
+	    <jsp:include page="../../include/h_superHead.jsp"></jsp:include>
+	    <link href="${context}/css/boocup_style.css" rel="stylesheet">	
+	</head>
+	<body>
+		<div>
+        	<div class="ibox-content">
+				<form id="form" class="form-horizontal" enctype=”multipart/form-data”>
+					<div class="col-xs-12">
+						<div class="form-group middle-space-long-label col-xs-6">
+							<label>运单号：</label>
+							<input type="text" name="tracking_number"  id="tracking_number" > 
+						</div>
+						<div class="form-group middle-space-long-label col-xs-6">
+							<label>报关单号：</label>
+							<input type="text" name="customs_declaration_number"  id="customs_declaration_number" > 
+						</div>
+					</div>
+					<div class="col-xs-12">
+						<div class="form-group middle-space-long-label col-xs-6">
+						    <label>国家：</label>
+							<select name="country" id="country" class="search-items dictionary">
+									<option></option>
+							</select>
+						</div>
+						<div class="form-group middle-space-long-label col-xs-6 not-null">
+							<label>出货人：</label>
+							<input type="text" name="supplier"  id="supplier" > 
+						</div>
+					</div>
+					<div class="col-xs-12">
+						<div class="form-group middle-space-long-label col-xs-6 not-null">
+							<label >币种：</label>
+						    <select name="currency" class="search-items dictionary" >
+								   <option></option>
+						    </select>
+						</div>
+						<div class="form-group middle-space-long-label col-xs-6 not-null">
+							<label>金额：</label>
+							<input type="text" name="amount"  id="amount" > 
+						</div>
+					</div>
+					<div class="col-xs-12">  		  
+						<div class="form-group middle-space-long-label col-xs-6">
+				           <label >贸易方式：</label>
+						   <select name="trade_terms" class="search-items dictionary" >
+								   <option></option>
+						   </select>
+				        </div>
+				        <div class="form-group middle-space-long-label col-xs-6">
+				           <label >运输方式：</label>
+						   <select name="transport_mode" class="search-items dictionary" >
+								   <option></option>
+						   </select>
+				        </div>
+			        </div>
+			        <div class="col-xs-12">
+						<div class="form-group middle-space-long-label col-xs-6 not-null">
+							<label>发货日期：</label>
+				           	<input type="text" id="shipping_date" name="shipping_date" class="search-items layer-date">
+						</div>
+							<div class="form-group middle-space-long-label col-xs-6">
+							<label>预计到港日期：</label>
+				           	<input type="text" id="estimated_arrival_date" name="estimated_arrival_date" class="search-items layer-date">
+						</div>
+					</div>
+			        <div class="col-xs-12">
+						<div class="form-group middle-space-long-label col-xs-6">
+				            <label>国际运费：</label>
+							<input type="text" name="international_freight" id="international_freight" > 
+				        </div>
+				        <div class="form-group middle-space-long-label col-xs-6">
+							<label>提货费：</label>
+							<input type="text" name="pickup_fee" id="pickup_fee" > 
+						</div>
+			        </div>
+					<div class="col-xs-12">
+						<div class="form-group middle-space-long-label col-xs-6">
+							<label>关税：</label>
+							<input type="text" name="tariff" id="tariff" > 
+						</div>
+						<div class="form-group middle-space-long-label col-xs-6">
+				           <label>增值税：</label>
+						   <input type="text" name="vat" id="vat" > 
+				        </div>
+			        </div>
+					<div class="col-xs-12">
+						<div class="form-group middle-space-long-label col-xs-6">
+							<label>港口仓储费：</label>
+						    <input type="text" name="port_storage_fee" id="port_storage_fee" > 
+						</div>
+						<div class="form-group middle-space-long-label col-xs-6">
+						    <label>手续费：</label>
+						    <input type="text" name="service_fee" id="service_fee" > 
+						</div>
+					</div>
+					<div class="col-xs-12">
+						<div class="form-group middle-space-long-label col-xs-6">
+							<label>消费使用单位：</label>
+						    <input type="text" name="consumer_unit" id="consumer_unit" > 
+						</div>
+						<div class="form-group middle-space-long-label col-xs-6">
+							<label>公斤数：</label>
+						    <input type="text" name="kilogram_count" id="kilogram_count" > 
+						</div>
+					</div>
+					<div class="col-xs-12">
+						<div class="form-group middle-space-long-label col-xs-6">
+							<label>件数：</label>
+						    <input type="text" name="quantity_count" id="consumer_unit" > 
+						</div>
+						<div class="form-group middle-space-long-label col-xs-6">
+							<label>册数：</label>
+						    <input type="text" name="volume_count" id="kilogram_count" > 
+						</div>
+					</div>
+					<div class="col-xs-12">
+				        <div class="form-group middle-space-long-label col-xs-6">
+							<label style = "float:left;">报关单文件：</label>
+							<input type="file"  name="customs_declaration_pdf" id="customs_declaration_pdf" style = "height:30px;"> 
+						</div>
+						<div class="form-group middle-space-long-label col-xs-6">
+							<label style = "float:left;">税单文件：</label>
+							<input type="file"  name="tax_bill_pdf"  id="tax_bill_pdf" style = "height:30px;"> 
+						</div>
+					</div>
+					<div class="form-group" >
+						<div class="col-sm-12" style="text-align:center">
+							<button id="save"  class="btn btn-primary" type="button">提交</button>
+							<button id="cancel"  class="btn btn-white" type="button" name="cancel">取消</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</body>	    
+	<script src="${context}/js/plugins/layer/layer.min.js"></script>
+	<script src="${context}/js/plugins/suggest/bootstrap-suggest-new.min.js"></script>
+	<!-- layerDate plugin javascript -->
+    <script src="${context}/js/plugins/layer/laydate-new/laydate.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function () {
+			//加载字典数据
+			get_dictionary("${context}",null);
+			
+			//加载时间控件
+			$(".layer-date").each(function(){
+				  inistal_one_data('#'+$(this).attr('id'));
+			});
+			
+			//取消按钮
+			$("#cancel").on('click', function () {
+				   var index = parent.layer.getFrameIndex(window.name); //获取窗口索引
+		           parent.layer.close(index);
+			});
+			
+			//提交按钮
+			 $('#save').on('click', function () {
+				 var index = parent.layer.getFrameIndex(window.name); //获取窗口索引 
+				 if(!has_null($("#form"))){
+					var formData = new FormData($('#form')[0]);
+					if(confirm("是否新增")){
+						$.ajax({
+		                url: "addDhBatch",
+		                data:  formData,
+		                type: "Post",
+		                //dataType: "formData",
+		                cache: false,//上传文件无需缓存
+		                processData: false,//用于对data参数进行序列化处理 这里必须false
+		                contentType: false, //必须
+		                success: function (data) {
+		                	if (typeof data === 'string') {
+		                		var obj = JSON.parse(data);//转成json对象再判断
+		                	} else {
+		                		var obj = data;
+		                	}
+		                	if (obj.success){
+		                		layer.msg("新增成功");        		
+		                		setTimeout(function (){
+		                    		//var index = parent.layer.getFrameIndex(window.name); //获取窗口索引            		
+		                            parent.layer.close(index);
+		                    	   }, 1000); 
+		                	} else {
+		                		layer.msg("新增失败");
+		                		setTimeout(function (){
+		                    		//var index = parent.layer.getFrameIndex(window.name); //获取窗口索引            		
+		                            parent.layer.close(index);
+		                    	   }, 1000);
+		                	}        	
+		                },
+		                error:function(data){
+		                	parent.layer.close(index);
+		                	alert("请求失败!");        
+		            	}
+		            	})
+					}
+				}
+			 });
+		});
+	</script>
+</html>

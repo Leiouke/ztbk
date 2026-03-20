@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnpiecsb.system.dao.RoleDao">
+	<resultMap type="com.cnpiecsb.system.entity.Role" id="roleResultMap">
+
+	</resultMap>	
+	
+	<!-- 查询某用户的所有角色信息, 可能有多个 -->
+	<select id="getRolesByAccount" parameterType="String"  resultMap="roleResultMap">
+		<![CDATA[
+			SELECT a.*,b.*,
+			 c.org_name dep_org_name,
+			 d.org_name office_org_name,
+			 e.org_name group_org_name,
+			 f.org_name org_name
+			 from it_system_userrole a inner join it_system_role b on a.roleid = b.id
+			LEFT OUTER JOIN it_system_dept c ON a.dep_org_code = c.org_code
+			LEFT OUTER JOIN it_system_dept d ON a.office_org_code = d.org_code
+			LEFT OUTER JOIN it_system_dept e ON a.group_org_code = e.org_code
+			left outer join v_it_system_dept f on a.org_code = f.org_code
+			where a.account = #{account}
+		]]>
+	</select>
+	
+	<!-- 查询角色信息 -->
+	<select id="getRoleById" parameterType="_int"  resultMap="roleResultMap">
+		<![CDATA[
+			select * from it_system_role where id=#{id}
+		]]>
+	</select>
+	
+	<!-- 添加角色 -->
+	<insert id="addRole" parameterType="com.cnpiecsb.system.entity.Role">
+		<![CDATA[
+			insert into it_system_role (name, defaultSubsystem) values 
+				(#{name}, #{defaultSubsystem})
+		]]>
+	</insert>
+	
+	<!-- 修改用户信息 -->
+	<update id="editRole" parameterType="com.cnpiecsb.system.entity.Role">
+		update it_system_role 
+	    <set>
+	    	<if test="name != null ">   
+	      		name = #{name},
+	      	</if>
+	      	<if test="defaultSubsystem != null ">   
+	      		defaultSubsystem = #{defaultSubsystem}
+	      	</if>
+	    </set>
+	    where id = #{id}
+	</update>
+	
+	<!-- 删除角色 -->
+	<delete id="deleteRole">
+		delete from it_system_role where id = #{id}
+	</delete>
+	
+	<!-- 查询所有角色信息,分页查询 ,带查询条件 仅适用于mysql-->
+	<select id="getRolesByPage" resultMap="roleResultMap">
+		<!-- sqlserver写法 -->
+		SELECT * FROM 
+		(
+			SELECT top (${offset} + ${limit}) ROW_NUMBER()OVER(ORDER BY a.id desc) 'Row',a.*,b.name subsystemName FROM it_system_role a
+               left join it_system_subsystem b on a.defaultSubsystem = b.ID where 1 = 1
+		) t
+		WHERE t.Row > #{offset}
+	</select>
+	
+	<!-- 查询所有有效的角色数,带查询条件-->
+	<select id="getRolesCount"  resultType="_int">
+		SELECT count(*) from it_system_role a
+         left join it_system_subsystem b on a.defaultSubsystem = b.ID
+	</select>
+	
+	<!-- 添加用户角色信息 -->
+	<insert id="addUserRole">
+		<![CDATA[
+			insert into it_system_userrole (account, roleId) values 
+			(
+				#{account},
+				#{roleId}
+			)
+		]]>
+	</insert>
+	
+	<!-- 更新用户角色信息 -->
+	<update id="editUserRole">
+		update it_system_userrole 
+		set
+	    	roleId = #{roleId} 
+	    where account = #{account}
+	</update>
+	
+	<!-- 获得用户角色个数 -->
+	<select id="getUserRoleCount" resultType="_int">
+	   select count(*) from it_system_userrole where account = #{account}
+	</select>
+	
+	<!-- 添加角色菜单信息 -->
+	<insert id="addRoleMenu">
+		<![CDATA[
+			insert into it_system_rolemenu (roleId, menuId) values 
+			(
+				#{roleId},
+				#{menuId}
+			)
+		]]>
+	</insert>
+	
+	<!-- 删除角色 -->
+	<delete id="deleteRoleMenu">
+		delete from it_system_rolemenu where roleId = #{roleId}
+	</delete>
+	
+	<!-- 获得默认子系统对应的角色数 -->
+	<select id="subsystemHasRoles" resultType="_int">
+	   select COUNT(1) from it_system_role where defaultSubsystem = #{subsystemId}
+	</select>
+</mapper>

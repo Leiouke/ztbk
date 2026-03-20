@@ -1,0 +1,450 @@
+package com.cnpiecsb.np.backIssue.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.np.backIssue.viewobject.BackIssueVerifyResult;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/np/backIssue")
+public class BackIssueInBoundController extends ZtbkServiceController{
+	//
+	private int backIssueInBoundManageQueryId = 6400001;//其他入库查询
+	private GridHeadConfig backIssueInBoundManageGridHeadConfig;
+	
+	private int backIssueInBoundAddQueryId = 6400002;
+	private GridHeadConfig backIssueInBoundAddGridHeadConfig;
+	
+//	private int otherInBoundOneQueryId = 8900001;
+	private int backIssueInBoundDetailQueryId = 6400003;//
+	private GridHeadConfig backIssueInBoundDetialGridHeadConfig;
+//	
+	private int backIssueInBoundConfirmQueryId = 5110071;
+	private GridHeadConfig backIssueInBoundGridHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public BackIssueInBoundController(){
+		backIssueInBoundManageGridHeadConfig = new GridHeadConfig(backIssueInBoundManageQueryId,true,false,true,false);
+		backIssueInBoundManageGridHeadConfig.setOperatorWidth(80);		
+		
+		backIssueInBoundAddGridHeadConfig =new GridHeadConfig(backIssueInBoundAddQueryId,true,false,true,false);
+		
+		backIssueInBoundGridHeadConfig=new GridHeadConfig(backIssueInBoundConfirmQueryId,true,true,false,false);
+		
+		backIssueInBoundDetialGridHeadConfig=new GridHeadConfig(backIssueInBoundDetailQueryId, true, true, true, false);
+	}
+	
+	/**
+	 * 入库单管理页面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/backIssueInBoundManage",method=RequestMethod.GET)
+    public ModelAndView backIssueInBoundManage(HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/backIssue/inBoundManage");
+        String tableHeader = this.getTableHeader(httpSession,backIssueInBoundManageGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", backIssueInBoundManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-入库单管理
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getBackIssueInBoundManageList")
+	@ResponseBody
+	public Object getBackIssueInBoundManageList(@RequestBody Map postData){			
+		return this.getTableDataList(postData, backIssueInBoundManageQueryId);
+	}
+	
+	/**
+	 * 验货页面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/backIssueInBoundAdd",method=RequestMethod.GET)
+    public ModelAndView backIssueInBoundAdd(HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/backIssue/inBoundAdd"); 
+        String tableHeader = this.getTableHeader(httpSession,backIssueInBoundAddGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", backIssueInBoundAddQueryId);
+		
+		User user=(User)httpSession.getAttribute("user");
+		mv.addObject("o_id_exam", user.getAccount());
+        return mv;
+    }
+	/**
+	 * 获得动态列表数据-验货列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getBackIssueInBoundAddList")
+	@ResponseBody
+	public Object getBackIssueInBoundAddList(@RequestBody Map postData,HttpSession httpSession){
+        User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_exam", user.getAccount());
+		return this.getTableDataList(postData, backIssueInBoundAddQueryId);
+	}
+	
+	/**
+	 * 初次验货
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/verifyBackIssueInBound")
+	@ResponseBody
+    public Object verifyBackIssueInBound(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"key_word", "inventory", "o_id_exam"};
+		// 出参, 有顺序
+		String returnNames[] = new String[]{"result", "qk_id", "period_name", "rack_no"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_storage_backissue_inbound_item_verify"); 
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_exam", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		BackIssueVerifyResult resultSuccess = new BackIssueVerifyResult();
+		resultSuccess.setSuccess(true);
+		resultSuccess.setResult(postData.get("result").toString());
+		// 如果是唯一期刊
+		if (resultSuccess.getResult().equals("1")) {
+			resultSuccess.setQk_id(postData.get("qk_id").toString());
+			resultSuccess.setPeriod_name(postData.get("period_name").toString());
+			resultSuccess.setRack_no(postData.get("rack_no")==null? null: postData.get("rack_no").toString());
+		}
+		return resultSuccess;
+    }
+	
+	/**
+	 * 确认验货
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/confirmBackIssueInBound")
+	@ResponseBody
+    public Object confirmBackIssueInBound(@RequestParam Map postData,HttpSession httpSession){	
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"inventory","qk_id", "period_name", "amount", "rack_no", "o_id_exam"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_storage_backissue_inbound_item_verify_confirm"); 
+				
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_exam", user.getAccount());
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		//System.out.println(postData.get("sd_id"));
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除验货条目
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteBackIssueInBoundItemVerify")
+	@ResponseBody
+    public Object deleteBackIssueInBoundItemVerify(@RequestParam Map postData,HttpServletRequest request,HttpSession httpSession){
+		String[] ids=request.getParameterValues("ids");
+		if(ids!=null&&ids.length>0){
+			for(int i=0;i<ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"id"};
+				// 加入sp的名称
+				postData.put("spName", "u_np_storage_backissue_inbound_item_verify_delete");
+				
+				postData.put("id", ids[i]);
+						
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}				
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 验货确认页面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/backIssueInBoundConfirm",method=RequestMethod.GET)
+    public ModelAndView backIssueInBoundConfirm(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/backIssue/inBoundConfirm");
+        
+        User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_lastmodify", user.getAccount());
+		
+        String tableHeader = this.getTableHeader(httpSession,backIssueInBoundGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", backIssueInBoundConfirmQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-确认验货信息
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getConfirmBackIssueInBoundList")
+	@ResponseBody
+	public Object getConfirmBackIssueInBoundList(@RequestBody Map postData){			
+		return this.getTableDataList(postData, backIssueInBoundConfirmQueryId);
+	}
+	
+	/**
+	 * 获得最新更新的某个期刊的库存数据(只取架号)
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getOneBackIssueInventory")
+	@ResponseBody
+    public Object getOneBackIssueInventory(@RequestParam Map postData,HttpSession httpSession){	
+		Map<String, Object> inventoryDataList = this.getTableDataList(postData,6420001);
+        List<Map> inventoryList = (List<Map>) inventoryDataList.get("rows");
+        
+        if (inventoryList != null && inventoryList.size()>0) {
+        	return inventoryList.get(0);
+        }
+		
+		return new HashMap();
+    }
+
+	/**
+	 * 新增入库单操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addBackIssueInBound")
+	@ResponseBody
+    public Object addBackIssueInBound(@RequestParam Map postData,HttpSession httpSession){	
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"o_id_exam", "memo"};
+		// 出参, 有顺序
+		String returnNames[] = new String[]{"bi_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_storage_backissue_inbound_verify_complete");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_exam", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 入库单明细页面
+	 * 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/backIssueInBoundDetail",method=RequestMethod.GET)
+    public ModelAndView backIssueInBoundDetail(HttpSession httpSession,@RequestParam Map postData)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+
+        mv.setViewName("np/backIssue/inBoundDetail");
+        String tableHeader = this.getTableHeader(httpSession, backIssueInBoundDetialGridHeadConfig);
+	    mv.addObject("tableHeader", tableHeader);	
+		mv.addObject("queryId", backIssueInBoundDetailQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-入库单明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getBackIssueInBoundDetailList")
+	@ResponseBody
+	public Object getBackIssueInBoundDetailList(@RequestBody Map postData,HttpSession httpSession){
+		return this.getTableDataList(postData, backIssueInBoundDetailQueryId);
+	}
+	
+	/**
+	 * 入库单明细上架
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/backIssueInBoundItemOnShelves")
+	@ResponseBody
+    public Object backIssueInBoundItemOnShelves(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"bi_id", "id", "o_id_onshelves"};
+
+		// 加入sp的名称
+		postData.put("spName", "u_np_storage_backissue_inbound_item_onshelves");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_onshelves", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		//System.out.println(postData.get("sd_id"));
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 入库单明细改架号
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/backIssueInBoundItemUpdate")
+	@ResponseBody
+    public Object backIssueInBoundItemUpdate(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"bi_id", "id", "rack_no", "is_overwrite"};
+        
+		postData.put("is_overwrite", true);  // 单个改架号是覆盖更新模式
+		// 加入sp的名称
+		postData.put("spName", "u_np_storage_backissue_inbound_item_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		//System.out.println(postData.get("sd_id"));
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 批量修改架号界面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toBackIssueInBoundItemRackNoUpdate",method=RequestMethod.GET)
+    public ModelAndView rackNoUpdate(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/backIssue/inBoundItemRackNoUpdate");
+        return mv;
+    }
+	
+	/**
+	 * 批量修改架号
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/batchUpdateBackIssueInBoundItemRackNo")
+	@ResponseBody
+	public Object batchUpdateBackIssueInBoundItemRackNo(HttpServletRequest request,@RequestParam Map postData,HttpSession httpSession){
+		String[] item_ids=request.getParameterValues("ids");
+		if(item_ids!=null&&item_ids.length>0){
+			for(int i=0;i<item_ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"bi_id", "id", "rack_no", "is_overwrite"};
+				
+				postData.put("is_overwrite", false);  // 批量改架号是按需更新模式
+				// 加入sp的名称
+				postData.put("spName", "u_np_storage_backissue_inbound_item_update");
+				
+				postData.put("id", item_ids[i]);
+						
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 批量上架
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/batchBackIssueInBoundItemOnShelves")
+	@ResponseBody
+	public Object batchBackIssueInBoundItemOnShelves(HttpServletRequest request,@RequestParam Map postData,HttpSession httpSession){
+		String[] item_ids=request.getParameterValues("ids");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_onshelves", user.getAccount());
+		
+		if(item_ids!=null&&item_ids.length>0){
+			for(int i=0;i<item_ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"bi_id", "id", "o_id_onshelves"};
+				// 加入sp的名称
+				postData.put("spName", "u_np_storage_backissue_inbound_item_onshelves");
+				
+				postData.put("id", item_ids[i]);
+						
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+	}
+}

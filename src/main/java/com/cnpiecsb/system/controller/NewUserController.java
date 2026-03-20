@@ -1,0 +1,250 @@
+package com.cnpiecsb.system.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 新版用户管理, 采用新框架
+ * 
+ * @author user
+ *
+ */
+@Controller
+@RequestMapping("/system")
+public class NewUserController extends ZtbkServiceController {
+	// 用户角色查询
+	private int userRoleManageQueryId = 1010003;	
+	private GridHeadConfig userRoleManageHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public NewUserController(){
+		userRoleManageHeadConfig = new GridHeadConfig(userRoleManageQueryId,true,false,true,false);
+	}
+	
+	@RequestMapping(value="/newUserAdd",method=RequestMethod.GET)
+    public ModelAndView newUserAdd(){
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("system/newUserAdd");
+        return mv;
+    }
+	
+	@RequestMapping(value="/newAddUser")
+	@ResponseBody
+    public Object newAddUser(@RequestParam Map postData) {
+		// 入参, 注意按照顺序
+		String paramNames[] = {"account","password","job_no","userName",
+				"mobile","email","roleId","org_code", "approve_role"};	
+		// 加入sp的名称
+		postData.put("spName", "u_system_user_new");
+		postData.put("password", DigestUtils.sha1Hex(postData.get("password").toString()));
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	@RequestMapping(value="/newUserEdit",method=RequestMethod.GET)
+    public ModelAndView newUserEdit(@RequestParam Map postData) throws JsonProcessingException{
+		Map<String, Object> oneQuery = baseService.getOneQuery(1010002, postData);
+		oneQuery.remove("password");  // 将密码去掉,界面上不显示
+		
+        ModelAndView mv = new ModelAndView();
+        mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("system/newUserEdit");
+        return mv;
+    }
+	
+	@RequestMapping(value="/newEditUser")
+	@ResponseBody
+    public Object newEditUser(@RequestParam Map postData) {
+		// 入参, 注意按照顺序
+		String paramNames[] = {"account","password","job_no","userName",
+				"mobile","email"};	
+		// 加入sp的名称
+		postData.put("spName", "u_system_user_update");
+		if (postData.get("password") != null && postData.get("password").toString().length() > 0){
+			postData.put("password", DigestUtils.sha1Hex(postData.get("password").toString()));
+		} else{
+			postData.put("password", null);
+		}
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 编辑角色管理界面
+	 * 
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/userRoleManage",method=RequestMethod.GET)
+    public ModelAndView userRoleManage(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        mv.setViewName("system/userRoleManage");
+        
+        String tableHeader = this.getTableHeader(httpSession,userRoleManageHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", userRoleManageQueryId);
+		
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-角色管理
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getUserRoleManageList")
+	@ResponseBody
+	public Object getUserRoleManageList(@RequestBody Map postData,HttpSession httpSession){
+		return this.getTableDataList(postData,userRoleManageQueryId);
+	}
+	
+	/**
+	 * 新增用户角色界面
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/userRoleAdd",method=RequestMethod.GET)
+    public ModelAndView userRoleAdd(){
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("system/userRoleAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增用户角色
+	 * 
+	 * @param postData
+	 * @return
+	 */
+	@RequestMapping(value="/addUserRole")
+	@ResponseBody
+    public Object addUserRole(@RequestParam Map postData) {
+		// 入参, 注意按照顺序
+		String paramNames[] = {"account","roleId","org_code", "approve_role", "is_default"};	
+		// 加入sp的名称
+		postData.put("spName", "u_system_userrole_new");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除角色操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteUserRole")
+	@ResponseBody
+    public Object deleteUserRole(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){	
+		String[] ids=request.getParameterValues("ids");
+		if(ids!=null && ids.length>0){
+			for(int i=0;i<ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"id", "account"};
+				// 加入sp的名称
+				postData.put("spName", "u_system_userrole_delete");					
+				
+				postData.put("id", ids[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}	
+		
+		return "{\"success\":true}";
+    }
+	
+	@RequestMapping(value="/userRoleEdit",method=RequestMethod.GET)
+    public ModelAndView userRoleEdit(@RequestParam Map postData) throws JsonProcessingException{
+		Map<String, Object> oneQuery = baseService.getOneQuery(1010003, postData);
+		
+        ModelAndView mv = new ModelAndView();
+        mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("system/userRoleEdit");
+        return mv;
+    }
+	
+	/**
+	 * 修改用户角色
+	 * 
+	 * @param postData
+	 * @return
+	 */
+	@RequestMapping(value="/editUserRole")
+	@ResponseBody
+    public Object editUserRole(@RequestParam Map postData) {
+		// 入参, 注意按照顺序
+		String paramNames[] = {"id", "account","roleId","org_code", "approve_role", "is_default"};	
+		// 加入sp的名称
+		postData.put("spName", "u_system_userrole_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 设置当前角色操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/setUserRoleDefault")
+	@ResponseBody
+    public Object setUserRoleDefault(@RequestParam Map postData,HttpSession httpSession){		
+		
+		String paramNames[] = {"id", "account"};
+		// 加入sp的名称
+		postData.put("spName", "u_system_userrole_set_default");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+}

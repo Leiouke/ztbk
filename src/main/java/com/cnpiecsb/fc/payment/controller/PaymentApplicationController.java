@@ -1,0 +1,644 @@
+package com.cnpiecsb.fc.payment.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.common.viewobject.AjaxResult;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.onInterface.service.GetMemberTokenServivce;
+import com.cnpiecsb.onInterface.service.PutPaymentApplicationService;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 付款申请页面
+ * @author by zc 2021/12/17
+ *
+ */
+@Controller
+@RequestMapping("/fc/payment")
+public class PaymentApplicationController extends BaseServiceController{
+	
+	    // 货源发票查询
+		private int applicationManageQueryId = 8430001;	
+		private GridHeadConfig applicationManageGridHeadConfig;
+		
+		// 预付单明细临时信息
+		private int advanceAddDetailQueryId = 8430002;
+		private GridHeadConfig advanceAddDetailHeadConfig;
+		
+		// 预付单明细引入查询
+		private int advanceStatementItemPullQueryId = 8430003;	
+		private GridHeadConfig advanceStatementItemPullHeadConfig;
+		
+		// 发票明细临时信息
+		private int invoiceAddDetailQueryId = 8430005;
+		private GridHeadConfig invoiceAddDetailHeadConfig;
+		
+		// 发票明细引入
+		private int invoiceStatementItemPullQueryId = 8430006;	
+		private GridHeadConfig invoiceStatementItemPullHeadConfig;
+		
+		// 单条发票查询
+		private int applicationOneQueryId = 8430004;
+		
+		//单条货源查询
+		private int factoryQueryId = 8000008;
+		
+		// 单条国外付款申请查询
+		private int applicationOverseasOneQueryId = 8431003;
+		
+		// 根据银行和币种信息获得付款账号列表
+		private int bankAccountQueryId = 8431004;
+		
+		private int getOaAccountQuery = 1400005; 
+		
+		//oa接口
+		@Autowired
+		GetMemberTokenServivce getMemberTokenServivce; //获取token接口
+		@Autowired
+		PutPaymentApplicationService putPaymentApplicationService;//推送付款申请接口
+		
+		/**
+		 * 初始化工作, 修改内容后需要重新启动服务生效
+		 * 
+		 */
+		public PaymentApplicationController(){
+			applicationManageGridHeadConfig = new GridHeadConfig(applicationManageQueryId,true,false,true,false);
+			applicationManageGridHeadConfig.setOperatorWidth(180);
+			
+			advanceAddDetailHeadConfig = new GridHeadConfig(advanceAddDetailQueryId,true,true,true,false);		
+			advanceStatementItemPullHeadConfig = new GridHeadConfig(advanceStatementItemPullQueryId,true,true,false,false);
+			
+			invoiceAddDetailHeadConfig = new GridHeadConfig(invoiceAddDetailQueryId,true,true,true,false);		
+			invoiceStatementItemPullHeadConfig = new GridHeadConfig(invoiceStatementItemPullQueryId,true,true,false,false);
+		}
+	
+	
+	/**
+	 * 付款申请界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/applicationManage", method=RequestMethod.GET)
+    public ModelAndView applicationManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/paymentApplication/applicationManage");
+        String tableHeader = this.getTableHeader(httpSession,applicationManageGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", applicationManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得付款申请界面数据
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getApplicationManageList")
+	@ResponseBody
+	public Object getApplicationManageList(@RequestBody Map postData, HttpSession httpSession){
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		return this.getTableDataList(postData,applicationManageQueryId);
+	}
+	
+	
+	/**
+	 * 新增和修改返回操作
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/returnPaymentApplication")
+	@ResponseBody
+    public Object returnPaymentApplication(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"guid"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_return");
+		
+		String paymentApplication_guid=(String)httpSession.getAttribute("paymentApplication_guid");
+		postData.put("guid", paymentApplication_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		httpSession.setAttribute("paymentApplication_guid", "");
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 引入预付单页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/paymentApplicationAdd",method=RequestMethod.GET)
+    public ModelAndView paymentApplicationAdd(@RequestParam Map postData, HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/paymentApplication/paymentApplicationAdd");
+        
+        String paymentApplication_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("paymentApplication_guid", paymentApplication_guid);
+        
+        //单据类型
+        String type = postData.get("type").toString();
+        
+        // 假如 是应收发票, 放结算单明细
+	   String tableHeader = this.getTableHeader(httpSession,advanceAddDetailHeadConfig);
+	   mv.addObject("tableHeader", tableHeader);
+	   mv.addObject("type", type);
+	   mv.addObject("queryId", advanceAddDetailQueryId);
+	   // 假如 是应收发票, 放结算单明细
+	   String invoicetableHeader = this.getTableHeader(httpSession,invoiceAddDetailHeadConfig);
+	   mv.addObject("invoiceQueryId", invoiceAddDetailQueryId);
+	   mv.addObject("invoicetableHeader", invoicetableHeader);
+        return mv;
+    }
+	
+	/**
+	 * 获得页面数据
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getPaymentApplicationItemList")
+	@ResponseBody
+	public Object getPaymentApplicationItemList(@RequestBody Map postData,HttpSession httpSession){
+		String paymentApplication_guid=(String)httpSession.getAttribute("paymentApplication_guid");
+		postData.put("guid", paymentApplication_guid);
+		if(((String)postData.get("fc_apply_type")).equals("0")){
+			return this.getTableDataList(postData,advanceAddDetailQueryId);
+		}else{
+			return this.getTableDataList(postData,invoiceAddDetailQueryId);
+		}
+		
+	}	
+	
+	
+	/**
+	 * 删除明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deletePaymentApplicationItem")
+	@ResponseBody
+    public Object deletePaymentApplicationItem(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){	
+		String paymentApplication_guid=(String)httpSession.getAttribute("paymentApplication_guid");
+		postData.put("guid", paymentApplication_guid);
+		
+		String[] bill_ids = request.getParameterValues("bill_ids");
+		if(bill_ids != null && bill_ids.length > 0){
+			for(int i=0;i<bill_ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"guid", "bill_id"};
+				// 加入sp的名称
+				postData.put("spName", "fc_payment_application_item_delete");					
+				
+				postData.put("bill_id", bill_ids[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}	
+		
+		return "{\"success\":true}";
+    }
+	
+	
+	/**
+	 * 引入明细页面 进货单明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/paymentApplicationStatementItemPull",method=RequestMethod.GET)
+    public ModelAndView paymentApplicationStatementItemPull(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+      //单据类型
+        String type = postData.get("type").toString();
+        Map<String, Object> oneQuery = new HashMap<String,Object>();
+        //带入货源
+		if(postData.get("f_id")==null || postData.get("f_id").equals("")){
+			oneQuery.put("f_id","");
+			mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		}else{
+			oneQuery = baseService.getOneQuery(factoryQueryId, postData);	
+			oneQuery.remove("o_id_input_name");
+			oneQuery.remove("o_id_input");
+			mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		}
+		//判断哪个页面
+        if(type.equals("0")){//0代表预付申请，进入预付引入界面
+        	 mv.setViewName("fc/paymentApplication/advanceApplicationStatementItemPull");
+             String tableHeader = this.getTableHeader(httpSession, advanceStatementItemPullHeadConfig);
+     		mv.addObject("tableHeader", tableHeader);
+     		mv.addObject("queryId", advanceStatementItemPullQueryId);
+        }else{//1代表发票申请，进入发票引入界面
+        	 mv.setViewName("fc/paymentApplication/invoiceApplicationStatementItemPull");
+             String tableHeader = this.getTableHeader(httpSession, invoiceStatementItemPullHeadConfig);
+     		mv.addObject("tableHeader", tableHeader);
+     		mv.addObject("queryId", invoiceStatementItemPullQueryId);
+        }
+        return mv;
+    }
+	
+	/**
+   	 * 获得动态列表数据-预付单引入
+   	 * 
+   	 * param postData
+   	 * return
+   	 */
+   	@RequestMapping(value="/getAdvanceStatementItemPullList")
+   	@ResponseBody
+   	public Object getAdvanceStatementItemPullList(@RequestBody Map postData,HttpSession httpSession) {
+   		// 获得权限代码参数
+   		AccessControlUtil.accessParams(postData, httpSession);
+   		return this.getTableDataList(postData, advanceStatementItemPullQueryId);
+   	}
+   	
+   	/**
+   	 * 获得动态列表数据-发票
+   	 * 
+   	 * param postData
+   	 * return
+   	 */
+   	@RequestMapping(value="/getInvoiceStatementItemPullList")
+   	@ResponseBody
+   	public Object getInvoiceStatementItemPullList(@RequestBody Map postData,HttpSession httpSession) {
+   		// 获得权限代码参数
+   		AccessControlUtil.accessParams(postData, httpSession);
+   		return this.getTableDataList(postData, invoiceStatementItemPullQueryId);
+   	}
+   	
+   	/**
+	 * 引入发票明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/pullPaymentInvoiceItem")
+	@ResponseBody
+    public Object pullPaymentInvoiceItem(@RequestBody List<Map<String,Object>> postData,HttpSession httpSession, HttpServletRequest request){
+		String paymentApplication_guid=(String)httpSession.getAttribute("paymentApplication_guid");
+		if(postData!=null&&postData.size()>0){
+			for(Map<String,Object> kp_map:postData){				
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"guid", "bill_id ", "c_real_money", "real_money"};
+				// 加入sp的名称
+				kp_map.put("spName", "fc_payment_application_item_pullin");				
+				kp_map.put("guid", paymentApplication_guid);			
+				int code = baseService.doCallSp(kp_map, paramNames, null);					
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增付款申请
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addPaymentApplication")
+	@ResponseBody
+    public Object addPaymentApplication(@RequestParam Map postData,HttpSession httpSession) {	
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","f_id","fc_apply_type","application_target","o_id_operator","o_id_input","currency","bank_id","memo","org_code","unit_code","is_agent","agent_c_id","oa_payment_type","oa_tax_type"};
+		// 出参, 有顺序
+		String returnNames[] = {"ap_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_new");
+		
+		String paymentApplication_guid=(String)httpSession.getAttribute("paymentApplication_guid");
+		postData.put("guid", paymentApplication_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下产生付款报表
+		postData.remove("paramNames");	
+		code = do_sp_payment_cw_classify_create(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/paymentApplicationEdit",method=RequestMethod.GET)
+    public ModelAndView paymentApplicationEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(applicationOneQueryId, postData);
+		oneQuery.remove("export_invoice_no");  // 外销发票号去掉
+		oneQuery.put("f_department", oneQuery.get("department_name"));
+		//ObjectMapper mapper = new ObjectMapper();
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		mv.addObject("is_detail", (String)postData.get("is_detail"));
+        mv.setViewName("fc/paymentApplication/paymentApplicationEdit");
+        
+        String type = (String)oneQuery.get("fc_apply_type");
+        
+     // 假如 是应收发票, 放结算单明细
+ 	   String tableHeader = this.getTableHeader(httpSession,advanceAddDetailHeadConfig);
+ 	   mv.addObject("tableHeader", tableHeader);
+ 	   mv.addObject("type", type);
+ 	   mv.addObject("queryId", advanceAddDetailQueryId);
+ 	   // 假如 是应收发票, 放结算单明细
+ 	   String invoicetableHeader = this.getTableHeader(httpSession,invoiceAddDetailHeadConfig);
+ 	   mv.addObject("invoiceQueryId", invoiceAddDetailQueryId);
+ 	   mv.addObject("invoicetableHeader", invoicetableHeader);
+        
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"ap_id","guid"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_toUpdate");
+		
+		String paymentApplication_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("paymentApplication_guid", paymentApplication_guid);
+		postData.put("guid", paymentApplication_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+        return mv;
+    }
+	
+	/**
+	 * 修改付款申请
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editPaymentApplication")
+	@ResponseBody
+    public Object editPaymentApplication(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"ap_id","guid","f_id","fc_apply_type","application_target","o_id_operator","currency","bank_id ","memo","unit_code","is_agent","agent_c_id","oa_payment_type","oa_tax_type"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_update");
+		
+		String paymentApplication_guid=(String)httpSession.getAttribute("paymentApplication_guid");
+		postData.put("guid", paymentApplication_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_modify", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下产生付款报表
+		postData.remove("paramNames");	
+		code = do_sp_payment_cw_classify_create(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除操作 -付款申请
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/paymentApplicationDelete")
+	@ResponseBody
+    public Object paymentApplicationDelete(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"ap_id","o_id_destroy"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_delete");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_destroy", user.getAccount());
+        
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	
+	/**
+	 * 提交操作 -付款申请
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/paymentApplicationSubmit")
+	@ResponseBody
+	public Object paymentApplicationSubmit(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"account","bill_code","flow_id","audit_status","audit_memo"};
+		// 加入sp的名称
+		postData.put("spName", "fc_process_approval_operate");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("account", user.getAccount());
+		postData.put("audit_status", "0"); //初次提交传0
+		postData.put("audit_memo", ""); 
+		
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		int result_code = oaApiDeal(postData,user.getAccount());
+		
+		if(result_code ==1){
+			AjaxResult result = new AjaxResult();
+			result.setSuccess(false);
+			result.setErrorMsg("接口报错");
+			return result;
+		}
+		
+		return "{\"success\":true}";
+	}
+	
+	// 作为申请单付款确认/申请单付款撤销 的后置
+	private int do_sp_payment_cw_classify_create(Map postData){
+		String paramNames[] = {"ap_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_cw_classify_create");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	/**
+	 * 进到国外汇款付款通知界面
+	 * 
+	 * @param postData
+	 * @param httpSession
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value="/toApplicationPaymentNotice",method=RequestMethod.GET)
+    public ModelAndView toFactoryBankEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException {  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(applicationOverseasOneQueryId, postData);
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		
+        mv.setViewName("fc/paymentApplication/applicationPaymentNotice");
+		
+        return mv;
+    }
+	
+	/**
+	 * 国外汇款付款通知生成
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/createApplicationPaymentNotice")
+	@ResponseBody
+	public Object createApplicationPaymentNotice(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"ap_id","fc_remittance_method","fx_amount","purchase_amount","fc_fx_account","fc_purchase_account","fc_submit_bank","fc_submit_method",
+				"fc_remittance_type","fc_remittance_nature","fc_remittance_category","remittance_information"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_overseas_create");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 根据银行和币种信息获得付款账号列表
+	 * 
+	 * @param fc_submit_bank
+	 * @param currency
+	 * @return
+	 */
+	@RequestMapping(value="/getBankAccountList")
+	@ResponseBody
+	public Object getBankAccountList(String fc_submit_bank, String currency){
+		Map<String,Object> postData=new HashMap<>();
+		postData.put("fc_submit_bank", fc_submit_bank);
+		postData.put("currency", currency);
+		
+		return this.getTableDataList(postData, bankAccountQueryId);
+	}
+	
+	/**
+	 * 重新推送到OA
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/paymentApplicationOa")
+	@ResponseBody
+	public Object paymentApplicationOa(@RequestParam Map postData,HttpSession httpSession){
+		User user=(User)httpSession.getAttribute("user");
+		
+		//提交后调用oa接口
+		int result_code= oaApiDeal(postData,user.getAccount());
+				
+		if(result_code ==1){
+			AjaxResult result = new AjaxResult();
+			result.setSuccess(false);
+			result.setErrorMsg("接口报错");
+			return result;
+		}
+				
+		return "{\"success\":true}";
+		
+	}
+	
+	// 执行oa接口
+	private int oaApiDeal(Map postData,String account){
+		
+		String loginName = "";
+		
+		postData.put("account", account);
+		
+		Map<String, Object> oneQuery = baseService.getOneQuery(getOaAccountQuery, postData);
+		
+		loginName = String.valueOf(oneQuery.get("oa_loginName"));
+		
+		String token = getMemberTokenServivce.getMemberToken(loginName,String.valueOf(postData.get("bill_code")));
+		
+		if(token.equals("0")){//为0表示接口有报错
+			return 1;
+		}
+		
+		postData.put("token",token);
+		
+		String return_code= putPaymentApplicationService.putPaymentApplication(token,String.valueOf(postData.get("bill_code")));
+		
+		if(return_code.equals("0")){//0表示有报错
+			return 1;
+		}else{//成功修改请假单的字段
+			updateSynOa(String.valueOf(postData.get("bill_code")));
+		}
+		
+		return 0;
+	}
+	
+	//记录oa接口日志
+	public void updateSynOa(String ap_id){
+		Map<String,Object> postData = new HashMap<String,Object>();
+						
+		postData.put("ap_id", ap_id);
+						
+		// 入参, 注意按照顺序
+		String paramNames[] = {"ap_id"};
+
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_synoa_update");//sp名称 todo
+							
+		int return_code = baseService.doCallSp(postData, paramNames, null);
+						
+	}
+}

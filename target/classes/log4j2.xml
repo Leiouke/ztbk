@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn">
+	<Appenders>
+	    <Console name="Console" target="SYSTEM_OUT">
+	    	打印格式: [INFO ] 2015-04-10 16:09:19,039 com.ronghui.system.controller.CrudAppController - 打印info信息
+        	<PatternLayout pattern="[%-5p] %d %c - %m%n" />
+	    </Console>
+	    
+	    <!-- 单文件>
+	    <File name="File" fileName="${web:rootDir}/log/my.log">
+			<PatternLayout pattern="[%-5p] %d %c - %m%n" />
+		</File -->
+		
+		<!-- 多文件,filePattern为归档文件格式>
+		<RollingFile name="RollingFile" fileName="f:/my1.log"
+                    filePattern="f:/logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="[%-5p] %d %c - %m%n" />
+            <Policies>
+	            <TimeBasedTriggeringPolicy />
+	            <SizeBasedTriggeringPolicy size="100 KB" />   文件大小超过100KB后归档
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>  默认最多同一文件夹下7个文件，这里设置了20 
+        </RollingFile -->
+        
+        <!-- 多文件,按天存储日志文件 -->
+        <RollingFile name="RollingFile-debug" fileName="${web:rootDir}/log/it-debug.log"
+             filePattern="${web:rootDir}/log/it_%d{yyyy-MM-dd}_%i.log">
+            <!-- PatternLayout pattern="%d %p %c{1.} [%t] %m%n"/ -->
+            <PatternLayout pattern="[%-5p] %d %c - %m%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy modulate="true" interval="24"/>
+                <SizeBasedTriggeringPolicy size="51200 KB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+			<Filters>
+                <ThresholdFilter level="info" onMatch="DENY" onMismatch="NEUTRAL"/>  <!-- info(包含)以上级别的日志都不要 -->
+                <ThresholdFilter level="trace" onMatch="ACCEPT" onMismatch="DENY"/> <!-- trace(包含)以上级别的日志都接收 -->
+            </Filters>
+        </RollingFile>
+		
+		<!-- 多文件,按天存储日志文件 -->
+        <RollingFile name="RollingFile-info" fileName="${web:rootDir}/log/it-info.log"
+             filePattern="${web:rootDir}/log/it_%d{yyyy-MM-dd}_%i.log">
+            <!-- PatternLayout pattern="%d %p %c{1.} [%t] %m%n"/ -->
+            <PatternLayout pattern="[%-5p] %d %c - %m%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy modulate="true" interval="24"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+			<Filters>
+                <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/> <!-- info(包含)以上级别的日志接收 -->
+            </Filters>
+        </RollingFile>
+	</Appenders>
+	
+	<Loggers>
+	    <Root level="DEBUG">  <!-- 为了打印mybatis的log4j sql， 必须为DEBUG模式 -->
+	    	<AppenderRef ref="Console" />
+        	<!-- AppenderRef ref="File" / -->
+        	<!-- AppenderRef ref="RollingFile-debug" />
+			<AppenderRef ref="RollingFile-info" / -->
+	    </Root>
+	</Loggers>
+</Configuration>

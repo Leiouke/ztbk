@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnpiecsb.system.dao.LogDao">
+	<resultMap type="com.cnpiecsb.system.entity.Log" id="logResultMap">
+		<result property="userAccount" column="USERACCOUNT"/>
+		<result property="context" column="CONTEXT"/>
+		<result property="logTime" column="LOGTIME"/>
+	</resultMap>
+
+	<!-- 添加日志 -->
+	<insert id="addLog" parameterType="com.cnpiecsb.system.entity.Log">
+		<![CDATA[
+			insert into it_system_log (userAccount, context, logTime) values 
+				(#{userAccount},#{context},#{logTime})
+		]]>
+	</insert>
+	
+	<!-- 分页的条件 -->
+	<sql id="pageCondition">
+		<if test="userAccount != null ">   
+			and userAccount = #{userAccount}   
+		</if>
+		<if test="context != null ">   
+			<bind name="context" value="'%' + context + '%'" />  <!--  这样写感觉不挑具体数据库 -->
+			and context like #{context}
+		</if>
+	</sql>
+	
+	<!-- 查询所有日志信息,分页查询 ,带查询条件 仅适用于mysql-->
+	<select id="getLogsByPage" resultMap="logResultMap">
+		<!-- sqlserver写法 -->
+		SELECT * FROM 
+		(
+			SELECT top (${offset} + ${limit}) ROW_NUMBER()OVER(order by logTime desc) 'Row',* FROM it_system_log where 1 = 1
+			<include refid="pageCondition"/>
+		) t
+		WHERE t.Row > #{offset}
+	</select>
+	
+	<!-- 查询所有的日志数,带查询条件-->
+	<select id="getLogsCount"  resultType="_int">
+		SELECT count(*) from it_system_log where 1=1
+		<include refid="pageCondition"/>
+	</select>
+</mapper>

@@ -1,0 +1,215 @@
+package com.cnpiecsb.fc.print.controller;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.cnpiecsb.common.constant.WebConstants;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.fc.print.utils.PrintUtil;
+import com.jacob.activeX.ActiveXComponent;
+import com.jacob.com.ComThread;
+import com.jacob.com.Dispatch;
+import com.jacob.com.Variant;
+
+/**
+ * 财务中心导出controller, 开票明细导出
+ * 
+ * @author user
+ *
+ */
+@Controller
+@RequestMapping("/fc/download")
+public class FcExportController extends BaseServiceController{
+	//销售开票-财务明细
+	private String kpFinanceExportFileTemplate;//模板文件名
+	private String kpFinanceExportFileTemp;//临时表明
+	private String kpFinanceExportFileName;//导出文件名
+	private int kpInvoiceFinanceExportListQueryId;
+	
+	//销售开票-外部开票明细
+	private String wbkpFinanceExportFileTemplate;//模板文件名
+	private String wbkpFinanceExportFileTemp;//临时表明
+	private String wbkpFinanceExportFileName;//导出文件名
+	private int wbkpInvoiceFinanceExportListQueryId;
+	
+	/**
+	 * 配置模板文件名称
+	 * 
+	 */
+	public FcExportController(){
+		// 销售开票财务明细-结算单直接开票
+		kpFinanceExportFileTemplate = "fc_KP_Finance_Export";
+		kpFinanceExportFileTemp = "fc_KP_Finance_Export_temp";
+		kpFinanceExportFileName = "fc_KP_Finance_Export";
+		kpInvoiceFinanceExportListQueryId = 8200001;
+		// 销售开票-外部开票明细
+		wbkpFinanceExportFileTemplate = "fc_wb_KP_Finance_Export";
+		wbkpFinanceExportFileTemp = "fc_wb_KP_Finance_Export_temp";
+		wbkpFinanceExportFileName = "fc_wb_KP_Finance_Export1";
+		wbkpInvoiceFinanceExportListQueryId = 8200002;
+	}
+	
+	/**
+	 * 销售发票导出财务明细
+	 * 
+	 * @param postData
+	 * @param response
+	 * @throws EncryptedDocumentException
+	 * @throws InvalidFormatException
+	 * @throws IOException
+	 */
+	@RequestMapping(value="/kpInvoiceFinanceExport")
+	@ResponseBody
+	public void kpInvoiceFinanceExport(@RequestParam Map postData, HttpServletResponse response) throws EncryptedDocumentException, InvalidFormatException, IOException{
+		//获取表格头部信息
+		Map<String, Object> one =  new HashMap<String, Object>();
+		//表格明细数据部分
+		String kp_ids=(String)postData.get("kp_ids");
+		
+		// 开票单号数组
+		String[] kp_id_array = kp_ids.split(",");
+		kp_ids = kp_ids.replaceAll(",", "\t");
+		postData.put("kp_ids", kp_ids);
+		List items = new ArrayList();
+		postData.put("queryId", kpInvoiceFinanceExportListQueryId);
+		items=this.getDataListByQueryId(postData);
+				
+		if(one!=null && items.size()>0){
+			one.put("items", items);  // 注意明细要使用items这个标签
+		}
+		
+		// 处理excel模板
+		byte[] bytes = PrintUtil.toHandle(kpFinanceExportFileTemplate+".xls", one,kpFinanceExportFileTemp+".xls");
+		
+        response.setContentType("application/x-msdownload");
+        response.setContentLength(bytes.length);
+        response.setHeader("Content-Disposition", "attachment;filename="+kpFinanceExportFileName + ".xls");
+        response.getOutputStream().write(bytes);
+	}
+	
+	/**
+	 * 销售发票导出外部开票明细
+	 * 
+	 * @param postData
+	 * @param response
+	 * @throws Exception 
+	 */
+	@RequestMapping(value="/wbkpInvoiceFinanceExport")
+	@ResponseBody
+	public void wbkpInvoiceFinanceExport(@RequestParam Map postData, HttpServletResponse response) throws Exception{
+		//获取表格头部信息
+		Map<String, Object> one =  new HashMap<String, Object>();
+		//表格明细数据部分
+		String kp_ids=(String)postData.get("kp_ids");
+		
+		// 开票单号数组
+		String[] kp_id_array = kp_ids.split(",");
+		kp_ids = kp_ids.replaceAll(",", "\t");
+		postData.put("kp_ids", kp_ids);
+		List items = new ArrayList();
+		postData.put("queryId", wbkpInvoiceFinanceExportListQueryId);
+		items=this.getDataListByQueryId(postData);
+				
+		if(one!=null && items.size()>0){
+			one.put("items", items);  // 注意明细要使用items这个标签
+		}
+		
+		// 处理excel模板
+		byte[] bytes = PrintUtil.toHandle(wbkpFinanceExportFileTemplate+".xls", one,wbkpFinanceExportFileTemp+".xls");
+		
+		byte[] bytes_new = xls2xlss(wbkpFinanceExportFileTemp,wbkpFinanceExportFileName);
+		
+        response.setContentType("application/x-msdownload");
+        response.setContentLength(bytes_new.length);
+        response.setHeader("Content-Disposition", "attachment;filename="+wbkpFinanceExportFileName + ".xlsx");
+        response.getOutputStream().write(bytes_new);
+	}
+	
+	/**
+	 * 通用下载文件模板数据
+	 * 
+	 * @param filename
+	 * @param response
+	 * @throws EncryptedDocumentException
+	 * @throws InvalidFormatException
+	 * @throws IOException
+	 */
+	@RequestMapping(value="/downloadTemplate")
+    public void downloadTemplate(String filename,HttpServletResponse response) throws EncryptedDocumentException, InvalidFormatException, IOException {
+		if(filename!=null&&!"".equals(filename)){
+			filename+=".xlsx";
+			ByteArrayOutputStream out = new ByteArrayOutputStream();  
+			
+			String webroot = System.getProperty(WebConstants.ITOMSWEBROOT);
+			FileInputStream fis = new FileInputStream(webroot + "template/fcDownloads/"+filename);
+			Workbook workbook = WorkbookFactory.create(fis);
+			
+			workbook.write(out);
+			//String filename = "import.xlsx";
+
+	        byte[] bytes = out.toByteArray();
+	        response.setContentType("application/x-msdownload");  
+	        response.setContentLength(bytes.length);  
+	        response.setHeader("Content-Disposition", "attachment;filename="  
+	                + filename);
+	        response.getOutputStream().write(bytes);
+		}	 
+    }
+	
+	public byte[] xls2xlss (String wbkpFinanceExportFileTemp,String wbkpFinanceExportFileName)throws Exception{
+		String srcPath = "c:/template/fcExcelReport/"+wbkpFinanceExportFileTemp+".xls";
+		String descPath = "C:\\template\\fcExcelReport\\"+wbkpFinanceExportFileName+".xlsx";
+		
+		//先删除导出文件
+		File file = new File(descPath);
+		if(file.exists()){//文件存在则先删除
+			file.delete();
+		}
+		
+		// 实例化ComThread线程与ActiveXComponent
+        ComThread.InitSTA();
+        ActiveXComponent wordApp = new ActiveXComponent("Excel.Application");
+        try {
+            // 文件隐藏时进行应用操作
+            wordApp.setProperty("Visible", new Variant(false));
+            // 实例化模板Workbooks对象
+            Dispatch workbooks = wordApp.getProperty("Workbooks").toDispatch();
+            // 打开Workbooks进行另存为操作 51 xlsx 1 xls
+            Dispatch doc = Dispatch.invoke(workbooks, "Open", Dispatch.Method, new Object[]{srcPath, new Variant(false), new Variant(true)}, new int[1]).toDispatch();
+            Dispatch.invoke(doc, "SaveAs", Dispatch.Method, new Object[]{descPath, new Variant(51)}, new int[1]);
+            Dispatch.call(doc, "Close", new Variant(false));
+            
+            ByteArrayOutputStream out = new ByteArrayOutputStream();  
+         		
+    		FileInputStream fis = new FileInputStream(descPath);
+    		Workbook workbook = WorkbookFactory.create(fis);
+    		workbook.write(out);
+
+            byte[] bytes = out.toByteArray();  
+            return bytes;
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            // 释放线程与ActiveXComponent
+            wordApp.invoke("Quit", new Variant[]{});
+            ComThread.Release();
+        }
+	}
+}

@@ -1,0 +1,467 @@
+package com.cnpiecsb.bd.controller;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.bd.util.DhBatchUtil;
+import com.cnpiecsb.common.listener.InitialBeanListener;
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Controller
+@RequestMapping("/bk/bd")
+public class dhBatchController extends ZtbkServiceController {
+	private int dhBatchManageQueryId = 10000030;	
+	private GridHeadConfig dhBatchManageGridHeadConfig;
+	
+	private int dhBatchOneQueryId = 10000030;	
+
+	private int dhBatchItemQueryId = 10000031;	
+	private GridHeadConfig dhBatchItemGridHeadConfig;
+	
+	// 明细引入
+	private int dhBatchItemPullQueryId = 10000029;	
+	private GridHeadConfig dhBatchItemPullHeadConfig;
+	
+	private DhBatchUtil dhBatchUtil = new DhBatchUtil();
+	
+	@Resource
+	private InitialBeanListener initialBeanListener;  //存放了system.property配置项
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public dhBatchController(){
+		dhBatchManageGridHeadConfig = new GridHeadConfig(dhBatchManageQueryId,true,false,true,false);
+		dhBatchManageGridHeadConfig.setOperatorWidth(180);
+		
+		dhBatchItemGridHeadConfig = new GridHeadConfig(dhBatchItemQueryId,true,true,true,false);
+		
+		dhBatchItemPullHeadConfig = new GridHeadConfig(dhBatchItemPullQueryId,true,true,true,false);
+	}
+	/**
+	 * 进货批次 by fjs
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/dhBatchManage",method=RequestMethod.GET)
+    public ModelAndView dhBatchManage(HttpSession httpSession)throws JsonProcessingException {
+		User user=(User)httpSession.getAttribute("user");
+		String userName = user.getUserName();
+		String account = user.getAccount();
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/dhBatch/dhBatchManage");
+        String tableHeader = this.getTableHeader(httpSession,dhBatchManageGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", dhBatchManageQueryId);
+		mv.addObject("userName", userName);
+		mv.addObject("account", account);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-进货批次管理 by fjs
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getDhBatchManageList")
+	@ResponseBody
+	public Object getDhBatchManageList(@RequestBody Map postData){
+		return this.getTableDataList(postData,dhBatchManageQueryId);
+	}
+	
+	/**
+	 * 新增进货批次页面 by fjs
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/dhBatchAdd",method=RequestMethod.GET)
+    public ModelAndView libraryDuplicateAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/dhBatch/dhBatchAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增进货批次操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addDhBatch")
+	@ResponseBody
+    public Object addDhBatch(@RequestParam Map postData,HttpSession httpSession,@RequestParam("customs_declaration_pdf")MultipartFile file,@RequestParam("tax_bill_pdf")MultipartFile file2) throws EncryptedDocumentException, InvalidFormatException, IOException {	
+		if(file.getSize()!=0){
+			postData.put("customs_declaration_pdf",file.getOriginalFilename());
+			if (file != null) {
+				// 首先获得图片存放的根路径
+				Properties props = initialBeanListener.getProps();
+				String imagePath = (String) props.get("images.rootPath");
+				System.out.println(imagePath);
+				// 目前以原文件名的方式上传, 后续在看看有无改进需要
+				String fileName = file.getOriginalFilename();
+				// 将上传的文件放到本地路径下
+				FileUtils.copyInputStreamToFile(file.getInputStream(), new File(imagePath + "/bidfile/" + fileName));
+			}	
+		}else{
+			postData.put("customs_declaration_pdf","");
+		}
+		
+		if(file2.getSize()!=0){
+			postData.put("tax_bill_pdf",file2.getOriginalFilename());
+			if (file2 != null) {
+				// 首先获得图片存放的根路径
+				Properties props = initialBeanListener.getProps();
+				String imagePath = (String) props.get("images.rootPath");
+				System.out.println(imagePath);
+				// 目前以原文件名的方式上传, 后续在看看有无改进需要
+				String fileName = file2.getOriginalFilename();
+				// 将上传的文件放到本地路径下
+				FileUtils.copyInputStreamToFile(file2.getInputStream(), new File(imagePath + "/bidfile/" + fileName));
+			}
+		}else{
+			postData.put("tax_bill_pdf","");
+		}
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = dhBatchUtil.getParamNames_batch_new();
+		// 出参, 有顺序
+		String returnNames[] = dhBatchUtil.getParamNames_batch_new_out();
+		// 加入sp的名称
+		postData.put("spName", dhBatchUtil.getSpName_batch_new());
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("created_by", user.getUserName());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 编辑进货批次页面
+	 */
+	@RequestMapping(value="/dhBatchEdit")
+    public ModelAndView editDhBatch(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+		 ModelAndView mv = new ModelAndView();        
+	     // 单记录查询
+	     Map<String, Object> oneQuery = baseService.getOneQuery(dhBatchOneQueryId, postData);
+			
+		 ObjectMapper mapper = new ObjectMapper();
+		 mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+	     mv.setViewName("bd/dhBatch/dhBatchEdit");
+
+	     return mv;
+    }
+	
+	//下载浏览器文件
+	@RequestMapping(value="/getFileDownLoad")
+	public void getFileDownLoad(HttpServletResponse response,HttpServletRequest request) throws EncryptedDocumentException, InvalidFormatException, IOException {
+		// 首先获得图片存放的根路径
+		Properties props = initialBeanListener.getProps();
+		String imagePath = (String) props.get("images.rootPath");
+			
+		String filename=request.getParameter("attached_file_memo");
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();  
+						
+		FileInputStream fis = new FileInputStream(imagePath + "/portrait/" + filename);
+						
+		byte[] buffer = new byte[1024];
+		int len;
+		while ((len = fis.read(buffer)) != -1 ) {  
+			out.write(buffer, 0, len);  
+		}
+		out.flush();
+
+		byte[] bytes = out.toByteArray();
+		response.setContentType("application/x-msdownload");    
+		response.setContentLength(bytes.length);  
+		response.setHeader("Content-Disposition", "attachment;filename="  
+			         + new String(filename.getBytes("gb2312"), "ISO8859-1"));
+		response.getOutputStream().write(bytes); 
+	}
+	
+	/**
+	 * 修改进货批次操作
+	 * @return
+	 * @throws IOException 
+	 * @throws InvalidFormatException 
+	 * @throws EncryptedDocumentException 
+	 */
+	@RequestMapping(value="/editDhBatch")
+	@ResponseBody
+	public Object editDhBatch(@RequestParam Map postData,HttpSession httpSession,@RequestParam("customs_declaration_pdf")MultipartFile file,@RequestParam("tax_bill_pdf")MultipartFile file2) throws EncryptedDocumentException, InvalidFormatException, IOException {	
+		if(file.getSize()!=0){
+			postData.put("customs_declaration_pdf",file.getOriginalFilename());
+			if (file != null) {
+				// 首先获得图片存放的根路径
+				Properties props = initialBeanListener.getProps();
+				String imagePath = (String) props.get("images.rootPath");
+				System.out.println(imagePath);
+				// 目前以原文件名的方式上传, 后续在看看有无改进需要
+				String fileName = file.getOriginalFilename();
+				// 将上传的文件放到本地路径下
+				FileUtils.copyInputStreamToFile(file.getInputStream(), new File(imagePath + "/bidfile/" + fileName));
+			}	
+		}else{
+			postData.put("customs_declaration_pdf","");
+		}
+		
+		if(file2.getSize()!=0){
+			postData.put("tax_bill_pdf",file2.getOriginalFilename());
+			if (file2 != null) {
+				// 首先获得图片存放的根路径
+				Properties props = initialBeanListener.getProps();
+				String imagePath = (String) props.get("images.rootPath");
+				System.out.println(imagePath);
+				// 目前以原文件名的方式上传, 后续在看看有无改进需要
+				String fileName = file2.getOriginalFilename();
+				// 将上传的文件放到本地路径下
+				FileUtils.copyInputStreamToFile(file2.getInputStream(), new File(imagePath + "/bidfile/" + fileName));
+			}
+		}else{
+			postData.put("tax_bill_pdf","");
+		}
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = dhBatchUtil.getParamNames_batch_update();
+		// 加入sp的名称
+		postData.put("spName", dhBatchUtil.getSpName_batch_update());
+				
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("updated_by", user.getAccount());
+		postData.put("country", postData.get("qa_id"));
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+				
+		return "{\"success\":true}";
+	}
+	
+
+	/**
+	 * 删除进货批次
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteDhBatch")
+	@ResponseBody
+    public Object deleteDhBatch(@RequestParam Map postData, HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"batch_id", "operator"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_dh_batch_delete");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("operator", user.getUserName());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 进货批次明细界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/dhBatchItem", method=RequestMethod.GET)
+    public ModelAndView dhBatchItem(HttpServletRequest request,HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/dhBatch/dhBatchItem");
+        // 从请求参数获取 batch_id
+        String batchId = request.getParameter("batch_id");
+        httpSession.setAttribute("batch_id", batchId);
+        String tableHeader = this.getTableHeader(httpSession,dhBatchItemGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", dhBatchItemQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-进货批次明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getDhBatchItemList")
+	@ResponseBody
+	public Object getDhBatchItemList(@RequestBody Map postData){
+		return this.getTableDataList(postData, dhBatchItemQueryId);
+	}
+	
+	/**
+	 * 引入发票明细页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/dhBatchItemPull",method=RequestMethod.GET)
+    public ModelAndView saleInvoiceItemPull(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/dhBatch/dhBatchItemPull");
+        String tableHeader_result = this.getTableHeader(httpSession,dhBatchItemPullHeadConfig);
+		mv.addObject("tableHeader_result", tableHeader_result);
+		mv.addObject("queryId", dhBatchItemPullQueryId);
+        return mv;
+    }
+	
+	/**
+   	 * 获得动态列表数据-引入发票
+   	 * 
+   	 * param postData
+   	 * return
+   	 */
+   	@RequestMapping(value="/getDhBatchPullList")
+   	@ResponseBody
+   	public Object getDhBatchPullList(@RequestBody Map postData,HttpSession httpSession) {
+   		return this.getTableDataList(postData,dhBatchItemPullQueryId);
+   	}
+   	
+   	/**
+	 * 引入发票明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/pullDhBatchItem")
+	@ResponseBody
+    public Object pullDhBatchItem(@RequestBody List<Map<String,Object>> postData,HttpSession httpSession,HttpServletRequest request){
+		String batch_id=(String)httpSession.getAttribute("batch_id");
+		User user=(User)httpSession.getAttribute("user");
+		if(postData!=null&&postData.size()>0){
+			for(Map<String,Object> inv_map:postData){				
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"batch_id", "invoice_id", "operator"};
+				// 加入sp的名称
+				inv_map.put("spName", "bk_qk_dh_batch_invoice_new");				
+				inv_map.put("batch_id", batch_id);		
+				inv_map.put("operator", user.getUserName());
+				int code = baseService.doCallSp(inv_map, paramNames, null);					
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteDhBatchItem")
+	@ResponseBody
+    public Object deleteSaleInvoiceItem(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){	
+		String batch_id=(String)httpSession.getAttribute("batch_id");
+		User user=(User)httpSession.getAttribute("user");
+		
+		String[] inv_ids=request.getParameterValues("inv_ids");
+		if(inv_ids!=null && inv_ids.length>0){
+			for(int i=0;i<inv_ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"batch_id", "invoice_id", "operator"};
+				// 加入sp的名称
+				postData.put("spName", "bk_qk_dh_batch_invoice_delete");					
+				
+				postData.put("invoice_id", inv_ids[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}	
+		
+		return "{\"success\":true}";
+    }
+   	
+   	/**
+	 * 确认到货页面
+	 */
+	@RequestMapping(value="/dhBatchConfirm")
+    public ModelAndView dhBatchConfirm(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+		 ModelAndView mv = new ModelAndView();        
+	     // 单记录查询
+	     Map<String, Object> oneQuery = baseService.getOneQuery(dhBatchOneQueryId, postData);
+			
+		 ObjectMapper mapper = new ObjectMapper();
+		 mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+	     mv.setViewName("bd/dhBatch/dhBatchConfirm");
+
+	     return mv;
+    }
+	
+	/**
+	 * 确认到货操作   sp还没写
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/confirmDhBatch")
+	@ResponseBody
+    public Object confirmDhBatch(@RequestParam Map postData, HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"Batch_no","Batch_Name", "job_no"};
+		// 加入sp的名称
+		postData.put("spName", "u_clawler_task_update");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("job_no", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+}

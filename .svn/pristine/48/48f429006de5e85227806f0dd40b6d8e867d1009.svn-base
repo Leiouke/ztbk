@@ -1,0 +1,84 @@
+package com.cnpiecsb.csu.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.cnpiecsb.csu.service.BaseService;
+import com.cnpiecsb.csu.service.CommonConfigService;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.Role;
+import com.cnpiecsb.system.entity.User;
+
+/**
+ * 基础业务库数据服务, 不能被继承 看来要写三个 后续看看有什么优化方案
+ * 
+ * @author user
+ *
+ */
+@Controller
+@RequestMapping("/csu")
+public class BaseDataServiceController {	
+	// 需要用到通用配置服务
+	@Resource(name="commonConfigService")
+	protected CommonConfigService commonConfigService;
+	
+	@Resource(name="baseService")
+	protected BaseService baseService;
+
+    /**
+     * 获得table的列汇总数据
+     * 
+     * @param postData  界面传入的查询条件
+     * @param queryId
+     * @param account
+     * @return
+     */
+	@RequestMapping(value="/getTableCollectData")
+	@ResponseBody
+    public Map<String, Object> getTableCollectData(@RequestParam Map postData, HttpSession httpSession){
+    	Map searchMap = new HashMap();  //封装查询条件
+    	
+    	int queryId = Integer.parseInt(postData.get("queryId").toString());
+    	// 获得当前用户
+    	User user = (User) httpSession.getAttribute("user");
+    	Role role = (Role)httpSession.getAttribute("role");
+    	if(postData.get("guidname")!=null){
+    		postData.put("guid", httpSession.getAttribute(postData.get("guidname").toString()));
+    	}
+    	
+    	// 这部分是权限代码, 汇总的时候也需要有
+    	postData.put("user_account", user.getAccount());
+		if(role!=null)
+			postData.put("user_role_code", role.getRoleId());
+		else
+			postData.put("user_role_code", "");
+		postData.put("user_dep_org_code", user.getDep_org_code()==null?"a":user.getDep_org_code());
+		postData.put("user_office_org_code", user.getOffice_org_code()==null?"a":user.getOffice_org_code());
+		postData.put("user_group_org_code", user.getGroup_org_code()==null?"a":user.getGroup_org_code());
+		
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		
+    	// 获得queryId的所有参数
+    	List<String> paramNameList = commonConfigService.getParamName(queryId);
+    	for (String paramName : paramNameList) {
+    		if (postData.get(paramName) != null && StringUtils.isNotEmpty(postData.get(paramName).toString())){
+    			searchMap.put(paramName, postData.get(paramName).toString().trim());
+    		}
+		}
+		
+		Map<String, Object> result = baseService.getCollectData(searchMap, queryId, user.getAccount());
+		
+		return result;
+    }
+}

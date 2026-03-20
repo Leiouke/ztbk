@@ -1,0 +1,1207 @@
+package com.cnpiecsb.np.finance.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.common.viewobject.AjaxResult;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.csu.service.YhService;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/np")
+public class StatementController extends ZtbkServiceController {
+	// 结算单表头查询
+	private int statementManageQueryId = 5110007;	
+	private GridHeadConfig statementManageQueryHeadConfig;
+	
+	// 结算单分类明细查询
+	private int statementItemsQueryId = 5110008;	
+	private GridHeadConfig statementItemsQueryHeadConfig;
+	
+	// 代销引入查询
+	private int statementAgencyPullQueryId = 5110001;
+	private GridHeadConfig statementAgencyPullHeadConfig;
+	
+	// 代销明细查询
+	private int statementAgencyItemsQueryId = 5110002;
+	private GridHeadConfig statementAgencyItemsHeadConfig;
+	
+	// 费用引入查询
+	private int statementCostPullQueryId = 5110003;
+	private GridHeadConfig statementCostPullHeadConfig;
+	
+	// 收订引入查询
+	private int statementSubscriptionPullQueryId = 5110005;
+	private GridHeadConfig statementSubscriptionPullHeadConfig;
+	
+	// 收订明细查询
+	private int statementSubscriptionItemsQueryId = 5110006;
+	private GridHeadConfig statementSubscriptionItemsHeadConfig;
+	
+	// 结算单明细临时信息查询
+	private int statementAddDetailQueryId = 5110031;	
+	private GridHeadConfig statementAddDetailHeadConfig;
+	
+	// 销售开票内容明细查询
+	private int invoiceKpContentItemQueryId = 5130001;	
+	private GridHeadConfig invoiceKpContentItemHeadConfig;
+	
+	// 结算单财务报表明细
+	private int statementCwItemsQueryId = 5110015;	
+	private GridHeadConfig statementCwItemsGridHeadConfig;
+	
+	// 结算单期刊明细查询
+	private int statementQkItemsQueryId = 5110040;	
+	private GridHeadConfig statementQkItemsQueryHeadConfig;
+	
+	// 需要跟益华数据库进行交互的, 主要是sp的交换 可以直接方式来写
+	@Autowired
+	private YhService yhService;
+	
+	public StatementController(){
+		statementManageQueryHeadConfig = new GridHeadConfig(statementManageQueryId,true,true,true,false);
+		statementManageQueryHeadConfig.setOperatorWidth(190);
+		
+		statementItemsQueryHeadConfig = new GridHeadConfig(statementItemsQueryId,true,false,false,false);
+		
+		statementAgencyPullHeadConfig = new GridHeadConfig(statementAgencyPullQueryId,true,true,true,false);
+		statementAgencyPullHeadConfig.setOperatorWidth(80);
+		
+		statementAgencyItemsHeadConfig = new GridHeadConfig(statementAgencyItemsQueryId,true,false,false,false);
+		
+		statementCostPullHeadConfig = new GridHeadConfig(statementCostPullQueryId,true,true,false,false);
+		
+		statementSubscriptionPullHeadConfig = new GridHeadConfig(statementSubscriptionPullQueryId,true,true,true,false);
+		statementSubscriptionPullHeadConfig.setOperatorWidth(80);
+		
+		statementSubscriptionItemsHeadConfig = new GridHeadConfig(statementSubscriptionItemsQueryId,true,false,false,false);
+		
+		statementAddDetailHeadConfig = new GridHeadConfig(statementAddDetailQueryId,true,false,true,false);
+		
+		invoiceKpContentItemHeadConfig = new GridHeadConfig(invoiceKpContentItemQueryId,true,true,true,false);
+		invoiceKpContentItemHeadConfig.setOperatorWidth(100);
+		
+		statementCwItemsGridHeadConfig = new GridHeadConfig(statementCwItemsQueryId,true,false,true,false);
+		
+		statementQkItemsQueryHeadConfig = new GridHeadConfig(statementQkItemsQueryId,true,false,false,false);
+	}
+	
+	/**
+	 * 进入结算单管理界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/statementManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView statementManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementManage");
+        String tableHeader = this.getTableHeader(httpSession,statementManageQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得结算单数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getStatementList")
+	@ResponseBody
+	public Object getStatementList(@RequestBody Map postData){
+		return this.getTableDataList(postData,statementManageQueryId);
+	}
+	
+	/**
+	 * 进入结算单分类明细界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/statementItems")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView statementItems(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementItems");
+        String tableHeader = this.getTableHeader(httpSession,statementItemsQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementItemsQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得结算单分类明细数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getStatementItemsList")
+	@ResponseBody
+	public Object getStatementItemsList(@RequestBody Map postData){
+		return this.getTableDataList(postData,statementItemsQueryId);
+	}
+	
+	/**
+	 * 进入引入结算单界面-代销引入
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/statementAgencyItemPull")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView statementAgencyItemPull(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementAgencyItemPull");
+        String tableHeader = this.getTableHeader(httpSession,statementAgencyPullHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementAgencyPullQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得明细处理数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getStatementAgencyItemPullList")
+	@ResponseBody
+	public Object getStatementAgencyItemPullList(@RequestBody Map postData){
+		return this.getTableDataList(postData,statementAgencyPullQueryId);
+	}
+	
+	/**
+	 * 进入代销业务分类明细界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/statementAgencyItems")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView statementAgencyItems(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementAgencyItems");
+        String tableHeader = this.getTableHeader(httpSession,statementAgencyItemsHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementAgencyItemsQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得代销业务分类明细数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getStatementAgencyItemsList")
+	@ResponseBody
+	public Object getStatementAgencyItemsList(@RequestBody Map postData){
+		return this.getTableDataList(postData,statementAgencyItemsQueryId);
+	}
+	
+	/**
+	 * 修改分类明细的码洋值
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editDetailTotalMoney")
+	@ResponseBody
+    public Object editDetailTotalMoney(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"statement_no","inc_no","total_money"};	
+		// 加入sp的名称
+		postData.put("spName", "u_finance_statement_detail_money_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 引入结算单--可以是3种类型的
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/importStatementItem")
+	@ResponseBody
+	public Object importStatementItem(@RequestBody List<Map<String,Object>> postData,HttpSession httpSession){
+		//List<Map<String, Object>> item_list=(List<Map<String, Object>>) postData.get("item_ids_codes");
+		User user = (User)httpSession.getAttribute("user");
+//		Map<String,Object> bd_map = new HashMap<String, Object>();
+		if(postData != null && postData.size()>0){
+			for(Map<String,Object> item_map : postData){
+				String paramNames[] = new String[]{"custom_s_id", "source_no", "sourece_type", "real_money", "total_money", 
+						"input_code", "memo"};
+				// 出参, 有顺序
+				String returnNames[] = {"statement_no", "err_msg"};  // err_msg 没用的 实际 先放着吧
+				// 加入sp的名称
+				item_map.put("spName", "u_np_statement_new");
+				item_map.put("input_code", user.getAccount());
+						
+				int code = baseService.doCallSp(item_map, paramNames, returnNames);
+				if (code != 0) {
+					AjaxResult result = this.getAjaxResult(code);
+					// 假如是 刊号 和  财务分类没有关联上, 给出明确的来源单号提示
+					if (code == 99999) {
+						result.setErrorMsg(result.getErrorMsg() + " 来源单号：" + item_map.get("source_no"));
+					}
+					return result;
+				}
+				
+				paramNames = new String[]{"source_no", "sourece_type"};
+				code = yhService.doCallSp(item_map, paramNames, null);
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}		
+		}				
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 进入引入结算单界面-费用引入
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/statementCostItemPull")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView statementCostItemPull(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementCostItemPull");
+        String tableHeader = this.getTableHeader(httpSession,statementCostPullHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementCostPullQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得明细处理数据-费用引入
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getStatementCostItemPullList")
+	@ResponseBody
+	public Object getStatementCostItemPullList(@RequestBody Map postData){
+		return this.getTableDataList(postData,statementCostPullQueryId);
+	}
+	
+	/**
+	 * 进入引入结算单界面-收订引入
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/statementSubscriptionItemPull")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView statementSubscriptionItemPull(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementSubscriptionItemPull");
+        String tableHeader = this.getTableHeader(httpSession,statementSubscriptionPullHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementSubscriptionPullQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得明细处理数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getStatementSubscriptionItemPullList")
+	@ResponseBody
+	public Object getStatementSubscriptionItemPullList(@RequestBody Map postData){
+		return this.getTableDataList(postData,statementSubscriptionPullQueryId);
+	}
+	
+	/**
+	 * 进入收订业务分类明细界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/statementSubscriptionItems")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView statementSubscriptionItems(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementSubscriptionItems");
+        String tableHeader = this.getTableHeader(httpSession,statementSubscriptionItemsHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementSubscriptionItemsQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得代销业务分类明细数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getStatementSubscriptionItemsList")
+	@ResponseBody
+	public Object getStatementSubscriptionItemsList(@RequestBody Map postData){
+		return this.getTableDataList(postData,statementSubscriptionItemsQueryId);
+	}
+	
+	/**
+	 * 退回结算单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/gobackStatement")
+	@ResponseBody
+    public Object gobackStatement(@RequestParam Map postData,HttpSession httpSession){
+		User user = (User)httpSession.getAttribute("user");
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"statement_no","input_code"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_statement_del");
+		postData.put("input_code", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		paramNames = new String[]{"source_no", "sourece_type"};
+		code = yhService.doCallSp(postData, paramNames, null);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 批量退回结算单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/batchGobackStatement")
+	@ResponseBody
+    public Object batchGobackStatement(@RequestBody List<Map<String,Object>> postData,HttpSession httpSession){
+		Map<String,Object> bd_map=new HashMap<String, Object>();
+		User user = (User)httpSession.getAttribute("user");
+		if(postData!=null&&postData.size()>0){
+			for(Map<String,Object> item_map: postData){		
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"statement_no","input_code"};
+				// 加入sp的名称
+				item_map.put("spName", "u_np_statement_del");
+				item_map.put("input_code", user.getAccount());
+						
+				int code = baseService.doCallSp(item_map, paramNames, null);
+				
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+				
+				paramNames = new String[]{"source_no", "sourece_type"};
+				code = yhService.doCallSp(item_map, paramNames, null);
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 记账操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/accountStatement")
+	@ResponseBody
+    public Object accountStatement(@RequestParam Map postData,HttpServletRequest request,HttpSession httpSession){
+		String[] statement_nos=request.getParameterValues("statement_nos");
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("account_person", user.getAccount());
+		if(statement_nos !=null && statement_nos.length>0){
+			for(int i=0;i < statement_nos.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"statement_no","account_person","account_month"};
+				// 加入sp的名称
+				postData.put("spName", "u_finance_statement_account");
+				
+				postData.put("statement_no", statement_nos[i]);
+						
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 撤销记账操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteStatementAccount")
+	@ResponseBody
+    public Object deleteStatementAccount(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){		
+		String[] statement_nos=request.getParameterValues("statement_nos");
+		if(statement_nos !=null && statement_nos.length>0){
+			for(int i=0; i < statement_nos.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"statement_no"};
+				// 加入sp的名称
+				postData.put("spName", "u_finance_statement_account_cancel");					
+				
+				postData.put("statement_no", statement_nos[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+     * 进入开票申请界面-未申请状态
+     * 
+     * @param postData
+     * @param httpSession
+     * @return
+     * @throws JsonProcessingException
+     */
+	@RequestMapping(value="/toStatementClaimKp",method=RequestMethod.GET)
+    public ModelAndView toStatementClaimKp(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException {  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();     
+        
+        Map<String, Object> bankDataList = this.getTableDataList(postData,5000008);
+        List<Map> bankList = (List<Map>) bankDataList.get("rows");
+        mv.addObject("bankList", bankList);
+
+        if (postData.get("bank_id")==null && bankList.size() > 0) {
+        	postData.put("bank_id", bankList.get(0).get("id"));
+        }
+        // 未申请开票的, 读取结算单含客户信息的发票
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(5110014, postData);
+		
+		//oneQuery.put("kp_mail","notice@qiye.163.com");
+        
+        if (Float.parseFloat(oneQuery.get("claim_kp_money").toString()) == 0) {
+			oneQuery.put("claim_kp_money", oneQuery.get("can_kp_money"));
+		}
+		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("np/statement/statementClaimKp");
+		
+        return mv;
+    }
+	
+	/**
+	 * 结算单申请开票
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/statementClaimKp")
+	@ResponseBody
+    public Object statementClaimKp(@RequestParam Map postData, HttpSession httpSession) {
+		User user = (User)httpSession.getAttribute("user");
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"statement_no","kp_type","tax_rate","is_item","claim_kp_money", "o_id_input",
+				"kp_content", "kp_amount", "kp_unit", "kp_memo", "bank_id","kp_mail"};
+		String returnNames[] = new String[]{"kp_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_statement_claim_kp");
+		postData.put("o_id_input", user.getAccount());
+			
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 重算这次发票对应的结算单明细的已开票金额
+		paramNames = new String[]{"kp_id", "is_to_edit"};
+		postData.put("is_to_edit", 0);
+		postData.put("spName", "u_finance_invoice_kp_statement_item_calculate");
+		code = baseService.doCallSp(postData, paramNames, null);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 结算单撤销申请开票
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/statementCancelClaimKp")
+	@ResponseBody
+    public Object statementCancelClaimKp(@RequestParam Map postData, HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"statement_no"};
+		String returnNames[] = new String[]{"kp_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_statement_cancel_claim_kp");
+				
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下做发票作废操作
+		// 入参, 注意按照顺序
+		paramNames = new String[]{"kp_id","o_id_destroy"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_invoice_kp_delete");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_destroy", user.getAccount());
+        
+		code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		paramNames = new String[]{"kp_id", "is_to_edit"};
+		postData.put("is_to_edit", 0);
+		postData.put("spName", "u_finance_invoice_kp_statement_item_calculate");
+		code = baseService.doCallSp(postData, paramNames, null);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 批量申请开票操作
+	 * 业务逻辑： 每个结算单必须要有开票银行信息才可以申请开票, 批量申请也包括批量提交
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/batchStatementClaimKp")
+	@ResponseBody
+    public Object batchStatementClaimKp(@RequestParam Map postData,HttpServletRequest request,HttpSession httpSession){
+		String[] statement_nos = request.getParameterValues("statement_nos");
+		User user = (User) httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		if(statement_nos !=null && statement_nos.length>0){
+			for(int i=0;i < statement_nos.length;i++){
+				postData.put("statement_no", statement_nos[i]);
+				// 可以批量开票的条件有 1.客户必须有默认的银行信息 2.开到明细字段为否
+				Map<String, Object> oneQuery = baseService.getOneQuery(5110009, postData);	
+				
+				// 查到1条记录是合适的
+				if (oneQuery != null) {
+					// 入参, 注意按照顺序
+					String paramNames[] = new String[]{"statement_no","kp_type","tax_rate","is_item","claim_kp_money", "o_id_input",
+							"kp_content", "kp_amount", "kp_unit", "kp_memo", "bank_id"};
+					String returnNames[] = new String[]{"kp_id"};
+					// 加入sp的名称
+					postData.put("spName", "u_finance_statement_claim_kp");
+					postData.put("kp_type", oneQuery.get("kp_type"));
+					postData.put("tax_rate", oneQuery.get("tax_rate"));
+					postData.put("is_item", oneQuery.get("is_item"));
+					postData.put("claim_kp_money", oneQuery.get("claim_kp_money"));
+					postData.put("kp_content", oneQuery.get("kp_content"));
+					postData.put("kp_amount", oneQuery.get("kp_amount"));
+					postData.put("kp_unit", oneQuery.get("kp_unit"));
+					postData.put("bank_id", oneQuery.get("id"));
+							
+					int code = baseService.doCallSp(postData, paramNames, returnNames);
+					
+					if (code != 0) {
+						System.out.println("不允许申请开票！");
+						continue;
+					}
+					
+					// 重算这次发票对应的结算单明细的已开票金额
+					paramNames = new String[]{"kp_id", "is_to_edit"};
+					postData.put("is_to_edit", 0);
+					postData.put("spName", "u_finance_invoice_kp_statement_item_calculate");
+					code = baseService.doCallSp(postData, paramNames, null);
+					if (code != 0) {
+						continue;
+					}
+					
+					// 以下做销售开票单提交操作
+					paramNames = new String[]{"statement_no", "kp_id"};
+					// 加入sp的名称
+					postData.put("spName", "u_finance_invoice_kp_claim_commit");
+							
+					code = baseService.doCallSp(postData, paramNames, null);
+					
+					if (code != 0) {
+						continue;
+					}
+					
+				}
+			}
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增结算单页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/statementAdd",method=RequestMethod.GET)
+    public ModelAndView statementAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementAdd");
+        
+        String statement_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("statement_guid", statement_guid);
+        String tableHeader = this.getTableHeader(httpSession,statementAddDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementAddDetailQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-新增结算单明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getStatmentAddItemList")
+	@ResponseBody
+	public Object getInvoiceAddItemList(@RequestBody Map postData,HttpSession httpSession){
+		String statement_guid=(String)httpSession.getAttribute("statement_guid");
+		postData.put("guid", statement_guid);
+		return this.getTableDataList(postData,statementAddDetailQueryId);
+	}	
+	
+	/**
+	 * 新增结算单财务分类页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/statementCwItemAdd",method=RequestMethod.GET)
+    public ModelAndView statementCwItemAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementCwItemAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增明细分类
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/addStatementCwItem")
+	@ResponseBody
+    public Object addStatementCwItem(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        String statement_guid = (String)httpSession.getAttribute("statement_guid");
+		postData.put("guid", statement_guid);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","cw_type","real_money", "total_money"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_statement_detail_temp_new");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增和修改返回操作
+	 * 
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/returnStatement")
+	@ResponseBody
+    public Object returnStatement(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_statement_return");
+		
+		String statement_guid=(String)httpSession.getAttribute("statement_guid");
+		postData.put("guid", statement_guid);	
+		
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		httpSession.setAttribute("statement_guid", "");
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除明细分类
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/deleteStatementCwItem")
+	@ResponseBody
+    public Object deleteStatementCwItem(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        String statement_guid = (String)httpSession.getAttribute("statement_guid");
+		postData.put("guid", statement_guid);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","inc_no"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_statement_detail_temp_delete");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增结算单操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addStatement")
+	@ResponseBody
+    public Object addInvoiceDh(@RequestParam Map postData,HttpSession httpSession) {	
+		String statement_guid = (String)httpSession.getAttribute("statement_guid");
+		postData.put("guid", statement_guid);
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","custom_f_id","custom_s_id","source_type","real_money","total_money","input_code","memo"};
+		// 出参, 有顺序
+		String returnNames[] = {"statement_no"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_statement_head_new");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("input_code", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除结算单(没有益华操作部分!)
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteStatement")
+	@ResponseBody
+    public Object deleteStatement(@RequestParam Map postData,HttpSession httpSession){
+		User user = (User)httpSession.getAttribute("user");
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"statement_no","input_code"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_statement_del");
+		postData.put("input_code", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 结算单申请开票界面-- 已申请做明细维护操作
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toStatementNextClaimKp",method=RequestMethod.GET)
+    public ModelAndView toStatementNextClaimKp(@RequestParam Map postData, HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        // 已申请开票的
+        Map<String, Object> oneQuery = baseService.getOneQuery(statementManageQueryId, postData);	
+        if (Float.parseFloat(oneQuery.get("claim_kp_money").toString()) == 0) {
+			oneQuery.put("claim_kp_money", oneQuery.get("can_kp_money"));
+		}
+		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		mv.setViewName("np/statement/statementNextClaimKp");
+        
+        String tableHeader = this.getTableHeader(httpSession,invoiceKpContentItemHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", invoiceKpContentItemQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-开票内容明细界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getSaleInvoiceContentItemList")
+	@ResponseBody
+	public Object getSaleInvoiceContentItemList(@RequestBody Map postData,HttpSession httpSession){
+		return this.getTableDataList(postData,invoiceKpContentItemQueryId);
+	}	
+	
+	/**
+	 * 新增开票内容明细页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/saleInvoiceContentItemAdd",method=RequestMethod.GET)
+    public ModelAndView saleInvoiceContentItemAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/saleInvoiceContentItemAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增开票内容明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/addSaleInvoiceContentItem")
+	@ResponseBody
+    public Object addSaleInvoiceContentItem(@RequestParam Map postData)throws JsonProcessingException{
+		int code = this.addOneSaleInvoiceContentItem(postData);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除开票内容明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteSaleInvoiceContentItem")
+	@ResponseBody
+    public Object deleteSaleInvoiceContentItem(@RequestParam Map postData){
+		int code = this.deleteOneSaleInvoiceContentItem(postData);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改开票内容明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/editSaleInvoiceContentItem")
+	@ResponseBody
+    public Object editSaleInvoiceContentItem(@RequestParam Map postData)throws JsonProcessingException{
+		// 入参, 注意按照顺序
+		String paramNames[] = {"id","kp_content","kp_amount", "kp_unit", "kp_money", "kp_memo", "total_money", "discount", "tax_class_code"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_invoice_kp_item_content_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改开票内容明细界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/toSaleInvoiceContentItemEdit", method=RequestMethod.GET)
+    public ModelAndView toSaleInvoiceContentItemEdit(@RequestParam Map postData) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/saleInvoiceContentItemEdit");
+        
+        // 单记录查询
+     	Map<String, Object> oneQuery = baseService.getOneQuery(invoiceKpContentItemQueryId, postData);
+     	mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        return mv;
+    }
+	
+	/**
+	 * 新增开票内容明细页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toSaleInvoiceContentItemMerge",method=RequestMethod.GET)
+    public ModelAndView toSaleInvoiceContentItemMerge(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/saleInvoiceContentItemMerge");
+        return mv;
+    }
+	
+	/**
+	 * 合并开票内容明细
+	 * 逻辑：先新增合并后的明细, 然后删除待合并的明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/mergeSaleInvoiceContentItem")
+	@ResponseBody
+    public Object mergeSaleInvoiceContentItem(@RequestParam Map postData)throws JsonProcessingException{
+		String[] ids = postData.get("ids").toString().split(",");
+		// 先保存
+		int code = this.addOneSaleInvoiceContentItem(postData);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		for (String id : ids) {
+			postData.put("id", id);
+			code = this.deleteOneSaleInvoiceContentItem(postData);
+			if (code != 0) {
+				return this.getAjaxResult(code);
+			}
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增开票内容明细
+	 * 
+	 * @param postData
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	private int addOneSaleInvoiceContentItem(Map postData) {
+		// 入参, 注意按照顺序
+		String paramNames[] = {"kp_id","kp_content","kp_amount", "kp_unit", "kp_money", "kp_memo", "total_money", "discount", "tax_class_code"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_invoice_kp_item_content_new");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		return code;
+    }
+	
+	/**
+	 * 删除开票内容明细
+	 * 
+	 * param postData
+	 * return
+	 */
+    private int deleteOneSaleInvoiceContentItem(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_invoice_kp_item_content_delete");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		return code;
+    }
+    
+    /**
+	 * 结算单提交申请开票
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/statementCommitClaimKp")
+	@ResponseBody
+    public Object statementCommitClaimKp(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"statement_no", "kp_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_invoice_kp_claim_commit");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 结算单财务分类明细界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/statementCwItems", method=RequestMethod.GET)
+    public ModelAndView statementCwItems(@RequestParam Map postData, HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementCwItems");
+        String tableHeader = this.getTableHeader(httpSession,statementCwItemsGridHeadConfig);
+        
+        Map<String, Object> oneQuery = baseService.getOneQuery(statementManageQueryId, postData);			
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementCwItemsQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-销售报表明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getStatementCwItemsList")
+	@ResponseBody
+	public Object getSaleReportCwItemsList(@RequestBody Map postData){
+		return this.getTableDataList(postData, statementCwItemsQueryId);
+	}
+	
+	/**
+	 * 结算单财务分类明细新增
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/statementCwItem1Add", method=RequestMethod.GET)
+    public ModelAndView statementCwItem1Add(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementCwItem1Add");
+        return mv;
+    }
+	
+	/**
+	 * 新增结算单财务分类明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addStatementCwItem1")
+	@ResponseBody
+    public Object addStatementCwItem1(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"statement_no", "purchase_cw_type", "real_money", "total_money"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_statement_sale_cw_new");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除结算单财务分类明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteStatementCwItem1")
+	@ResponseBody
+    public Object deleteStatementCwItem1(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"statement_no", "cw_type"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_statement_sale_cw_delete");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改结算单财务分类明细金额
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/updateStatementCwItem")
+	@ResponseBody
+    public Object updateStatementCwItem(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"statement_no", "cw_type", "real_money", "total_money"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_statement_sale_cw_update");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 进入结算单期刊明细界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/statementQkItems")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView statementQkItems(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/statement/statementQkItems");
+        String tableHeader = this.getTableHeader(httpSession,statementQkItemsQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementQkItemsQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得结算单期刊明细数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getStatementQkItemsList")
+	@ResponseBody
+	public Object getStatementQkItemsList(@RequestBody Map postData){
+		return this.getTableDataList(postData, statementQkItemsQueryId);
+	}
+}

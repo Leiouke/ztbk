@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnpiecsb.system.dao.SubsystemDao">
+	<resultMap type="com.cnpiecsb.system.entity.Subsystem" id="subsystemResultMap">
+
+	</resultMap>	
+	
+	<!-- 查询所有子系统信息,分页查询 ,带查询条件 仅适用于sqlserver -->
+	<select id="getSubsystemsByPage" resultMap="subsystemResultMap">
+		<!-- sqlserver写法 -->
+		SELECT * FROM 
+		(
+			SELECT top (${offset} + ${limit}) ROW_NUMBER()OVER(ORDER BY sortNo) 'Row',* FROM it_system_subsystem where 1 = 1
+		) t
+		WHERE t.Row > #{offset}
+	</select>
+	
+	<!-- 查询所有有效的角色数,带查询条件-->
+	<select id="getSubsystemsCount"  resultType="_int">
+		SELECT count(*) from it_system_subsystem
+	</select>
+	
+	<!-- 添加子系统 -->
+	<insert id="addSubsystem" parameterType="com.cnpiecsb.system.entity.Subsystem">
+		<![CDATA[
+			insert into it_system_subsystem (name, sortNo) values 
+				(#{name}, #{sortNo})
+		]]>
+	</insert>
+	
+	<!-- 修改子系统信息 -->
+	<update id="editSubsystem" parameterType="com.cnpiecsb.system.entity.Subsystem">
+		update it_system_subsystem 
+	    <set>
+	    	<if test="name != null ">   
+	      		name = #{name},
+	      	</if>
+	      	<if test="sortNo != null ">   
+	      		sortNo = #{sortNo}
+	      	</if>
+	    </set>
+	    where id = #{id}
+	</update>
+	
+	<!-- 删除子系统 -->
+	<delete id="deleteSubsystem">
+		delete from it_system_subsystem where id = #{id}
+	</delete>
+	
+	<!-- 添加角色菜单信息 -->
+	<insert id="addSubsystemMenu">
+		<![CDATA[
+			insert into it_system_subsystemmenu (subsystemId, menuId) values 
+			(
+				#{subsystemId},
+				#{menuId}
+			)
+		]]>
+	</insert>
+	
+	<!-- 删除子系统对应的菜单 -->
+	<delete id="deleteSubsystemMenu">
+		delete from it_system_subsystemmenu where subsystemId = #{subsystemId}
+	</delete>
+</mapper>

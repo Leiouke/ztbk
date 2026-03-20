@@ -1,0 +1,114 @@
+package com.cnpiecsb.np.basic.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 报刊期刊号 对应 财务分类的映射关系 相关控制器
+ * 
+ * @author user
+ *
+ */
+@Controller
+@RequestMapping("/npBasic")
+public class QkNoCwtypeMappingController extends BaseServiceController {
+	private int qkNoCwtypeMappingManageQueryId = 6200001;	
+	private GridHeadConfig qkNoCwtypeMappingManageGridHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public QkNoCwtypeMappingController(){
+		qkNoCwtypeMappingManageGridHeadConfig = new GridHeadConfig(qkNoCwtypeMappingManageQueryId,true,false,true,false);
+		qkNoCwtypeMappingManageGridHeadConfig.setOperatorWidth(80);
+	}
+	
+	/**
+	 * 映射关系查询界面
+	 * 
+	 * @param httpSession
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value="/qkNoCwtypeMappingManage",method=RequestMethod.GET)
+    public ModelAndView qkNoCwtypeMappingManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/basic/qkNoCwtypeMappingManage");
+        String tableHeader = this.getTableHeader(httpSession, qkNoCwtypeMappingManageGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", qkNoCwtypeMappingManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-映射关系
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getQkNoCwtypeMappingManageList")
+	@ResponseBody
+	public Object getQkNoCwtypeMappingManageList(@RequestBody Map postData){
+		return this.getTableDataList(postData, qkNoCwtypeMappingManageQueryId);
+	}
+	
+	/**
+	 * 进入修改财务分类页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/qkNoCwtypeMappingEdit",method=RequestMethod.GET)
+    public ModelAndView qkNoCwtypeMappingEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(qkNoCwtypeMappingManageQueryId, postData);
+		oneQuery.put("purchase_cw_type", oneQuery.get("cw_type"));
+		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("np/basic/qkNoCwtypeMappingEdit");
+        return mv;
+    }
+	
+	/**
+	 * 修改财务分类操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editQkNoCwtypeMapping")
+	@ResponseBody
+    public Object editQkNoCwtypeMapping(@RequestParam Map postData,HttpSession httpSession){
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("input_code",user.getAccount());
+		postData.put("input_name",user.getUserName());
+		
+		// 入参
+		String paramNames[] = {"qk_no","purchase_cw_type","is_tuangou","input_code","input_name"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_cw_type_mapping_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);			
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+}

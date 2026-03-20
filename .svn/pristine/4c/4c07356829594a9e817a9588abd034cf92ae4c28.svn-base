@@ -1,0 +1,171 @@
+package com.cnpiecsb.system.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.context.support.GenericXmlApplicationContext;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.service.BaseService;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/system")
+public class NoticeController extends ZtbkServiceController {
+	/**
+	 * 公告列表页面
+	 * 
+	 * @param 
+	 * @return
+	 */
+	@RequestMapping(value="/noticeManage",method=RequestMethod.GET)
+    public ModelAndView noticeManage(){
+		ModelAndView mv = new ModelAndView();
+        mv.setViewName("system/noticeManage");
+        return mv;
+    }
+	
+	/**
+	 * 发布公告页面
+	 * 
+	 * @param 
+	 * @return
+	 */
+	@RequestMapping(value="/noticeAdd",method=RequestMethod.GET)
+    public ModelAndView noticeAdd(){
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("system/noticeAdd");
+        return mv;
+    }
+	
+	/**
+	 * 发布消息页面
+	 * 
+	 * @param
+	 * @return
+	 */
+	@RequestMapping(value="/dialogAdd",method=RequestMethod.GET)
+    public ModelAndView dialogAdd(){
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("system/dialogAdd");
+        return mv;
+    }
+	/**
+	 * 消息列表页面
+	 * 
+	 * @param 
+	 * @return
+	 */
+	@RequestMapping(value="/dialogManage",method=RequestMethod.GET)
+    public ModelAndView dialogManage(){
+		ModelAndView mv = new ModelAndView();
+        mv.setViewName("system/dialogManage");
+        return mv;
+    }
+	/**
+	 * 发送公告或消息
+	 * 
+	 * @param postData
+	 * @return
+	 */
+	@RequestMapping(value="/sendNotice")
+	@ResponseBody
+    public Object sendNotice(HttpSession httpSession, @RequestParam Map postData){
+		// 入参, 注意按照顺序 
+		// messageType 字典数据 公告-- 发送的类型是公告, 消息-- 发送的类型为消息
+		// receivers 只有发送消息的时候才需要传入值, 多人接收需要用逗号隔开账号名, 形如 "wkh,xc,xc1"
+		// 如果是消息的话, 不需要传入title内容了, 只要content就好
+		String paramNames[] = {"account","name","title", "content", "messageType", "receivers"};  // 
+		
+		User user = (User) httpSession.getAttribute("user");
+		postData.put("account", user.getAccount());
+		postData.put("name", user.getUserName());
+		// 加入sp的名称
+		postData.put("spName", "sp_notice_send");	
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 获得公告列表, 这个列表不是在grid中显示就不需要配置用户列
+	 * 
+	 * @param postData, 可以传入limit\offset作截取记录, 不传的话就获得全部 
+	 * @return
+	 */
+	@RequestMapping(value="/getNoticeList")
+	@ResponseBody
+	public Object getNoticeList(@RequestBody Map postData){
+		return this.getTableDataList(postData, 1000001);
+	}
+	
+	/**
+	 * 获得发给当前用户的消息列表, 可以传入limit\offset作截取记录, 不传的话就获得全部 
+	 * 
+	 * @param postData
+	 * @return
+	 */
+	@RequestMapping(value="/getDialogList")
+	@ResponseBody
+	public Object getDialogList(HttpSession httpSession, @RequestBody Map postData){
+		User user = (User) httpSession.getAttribute("user");
+		postData.put("account", user.getAccount());
+		return this.getTableDataList(postData, 1000002);
+	}
+	
+	/**
+	 * 进入公告详情界面
+	 * 
+	 * @param postData
+	 * @return
+	 */
+	@RequestMapping(value="/noticeDetail",method=RequestMethod.GET)
+    public ModelAndView noticeDetail(@RequestParam Map postData){  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();
+        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(1000003, postData);
+		mv.addObject("one", oneQuery);
+        mv.setViewName("system/noticeDetail");
+        return mv;
+    }
+	
+	
+	public static void main(String[] args) throws JsonProcessingException {
+    	// 以下代码可以脱离web容器
+		GenericXmlApplicationContext context = new GenericXmlApplicationContext();
+		context.setValidating(false);  
+		context.load("classpath*:spring-*.xml"); 
+		context.refresh(); 
+		
+		BaseService baseService = (BaseService) context.getBean("baseService");		
+		
+		String paramNames[] = {"account","title", "content", "messageType", "receivers"};  // messageType,  公告-- 发送的类型是公告, 信息-- 发送的类型为信息 
+		
+		Map postData = new HashMap();
+		postData.put("account", "wkh");
+		postData.put("title", "测试消息1");
+		postData.put("content", "好好看！");
+		postData.put("messageType", "消息");
+		postData.put("receivers", "xc");
+		postData.put("spName", "sp_notice_send");		
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		System.out.println(code);
+	}
+}

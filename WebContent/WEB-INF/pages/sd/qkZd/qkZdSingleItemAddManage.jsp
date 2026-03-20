@@ -1,0 +1,183 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->  
+	    <jsp:include page="../../include/h_superHead.jsp"></jsp:include>
+	    <link rel="stylesheet" type="text/css" href="${context}/css/plugins/webuploader/webuploader.css">
+	    <link href="${context}/css/boocup_style.css" rel="stylesheet">
+	    <!-- Bootstrap table -->
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+	</head>
+	<body>
+		<div class="sonpage-body">
+			<div class="col-md-12">
+			   <form id="form_search" class="form-inline">			        
+	            	<div class="row">
+	            		<div class="form-group small-space col-xs-4">
+				        	<label >刊号：</label>
+				        	<input type="text" name="mail_code" id = "mail_code">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				        	<label >条码：</label>
+				        	<input type="text" name="instance_tm" id = "instance_tm">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				        	<label >刊名：</label>
+				        	<input type="text" name="qk_name" id = "qk_name">
+				        </div>
+					</div>	
+					<div class="row">
+						<div class="form-group small-space col-xs-4">
+				        	<label >刊期：</label>
+				        	<input type="text" name="kq_id" id = "kq_id">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				        	<label >自定义期次：</label>
+				        	<input type="text" name="period_name" id = "period_name">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				        	<label >货源期次：</label>
+				        	<input type="text" name="period_name_jh" id = "period_name_jh">
+				        </div>
+					</div>
+					<div class="row">
+						<div class="form-group small-space col-xs-4">
+				            <label >报订截止日期：</label>
+							<input name="end_bd_date" id="end_bd_date" type="text" class="form-control search-items layer-date" style = "width:68%;">
+				        </div>
+						<div class="form-group small-space col-xs-4">
+				            <label >收订开始日期：</label>
+							<input name="start_sd_date" id="start_sd_date" type="text" class="form-control search-items layer-date" style = "width:68%;">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				            <label >收订截止日期：</label>
+							<input name="end_sd_date" id="end_sd_date" type="text" class="form-control search-items layer-date" style = "width:68%;">
+				        </div>
+					</div>	
+					<div class="row">
+						<div class="form-group small-space col-xs-4">
+				            <label >出版日期：</label>
+							<input name="pub_date" id="pub_date" type="text" class="form-control search-items layer-date" style = "width:68%;">
+				        </div>
+						<div class="form-group small-space col-xs-4">
+				            <label >最后进货日期：</label>
+							<input name="last_jh_date" id="last_jh_date" type="text" class="form-control search-items layer-date" style = "width:68%;">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				        	<button id="search" class="btn btn-primary" type="button" style="float: right;">查询</button>
+				        	<!--<button type="button" class="btn btn-white" id="reset" style="float: right;">清空</button>-->
+				        </div>
+					</div>
+		       </form>
+			 </div>
+		</div>
+		<div class="ibox float-e-margins">
+	            <div class="ibox-content ibox-content-table">
+	                <div class="row row-lg">                    
+	                    <div class="col-sm-12">
+	                        <div class="btn-group hidden-xs" id="tableTool" role="group">
+	                            <button type="button" class="btn btn-outline btn-default" id="config">
+	                               <i class="glyphicon glyphicon-cog" aria-hidden="true"></i>
+	                            </button>
+	                            <select class="form-control" >
+	                           	   <option value="all">导出全部</option>
+					               <option value="basic">导出当页</option>	
+					            </select>
+	                        </div>
+	                        <table id="table" data-mobile-responsive="true">
+	                            
+	                        </table>
+	                    </div>
+	                </div>
+	            </div>
+        </div> 
+		<div class="sonpage-footer">
+	        <button id="save" class="btn btn-primary" type="button">引入</button>
+	        <button id="cancel" class="btn btn-white" type="button">取消</button>
+		</div>
+	</body>
+	<!-- Bootstrap table -->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <!-- Bootstrap table export-->
+    <script src="${context}/js/plugins/bootstrap-table/export/bootstrap-table-export.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/tableExport.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/js-xlsx/xlsx.core.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.plugin.autotable.js"></script>
+    
+	<script src="${context}/js/common/common.js"></script>
+	<script src="${context}/js/plugins/layer/layer.min.js"></script>
+	<script src="${context}/js/plugins/webuploader/webuploader.min.js"></script>
+	<!-- layerDate plugin javascript -->
+    <!-- <script src="${context}/js/plugins/layer/laydate/laydate.js"></script>--> 
+    <script src="${context}/js/plugins/layer/laydate-new/laydate.js"></script>
+    <!-- plugins -->
+ 	<script src="${context}/js/plugins/suggest/bootstrap-suggest-new.min.js"></script>
+	<script type="text/javascript">
+	
+	    var $table = $('#table');
+	    function queryParams(param) {
+			var json_obj=formToJson($("#form_search"));
+			json_obj['limit'] =param.limit;
+   	      	json_obj['offset'] =param.offset;
+   	     	json_obj['sortName'] =this.sortName;
+   	  		json_obj['sortOrder'] =this.sortOrder;
+   	        return json_obj;
+		}
+	    
+		$(document).ready(function () {
+			
+			$(".layer-date").each(function(){
+				inistal_one_data('#'+$(this).attr('id'));
+			});
+			
+			$('#search').on('click', function () {
+				var json_data_list=formToJson($("#form_search"));
+				 json_data_list['queryId']='${queryId}';
+				 search_sum_list("${context}/csu/getTableCollectData",json_data_list,"getQkZdSingleItemList",$table);		
+			 });
+			
+			$('#save').on('click', function () {
+				var qk_items= $.map($table.bootstrapTable('getSelections'), function (row) {
+	                return {'qk_id':row.qk_id,'period_id':row.period_id,'h_price':row.instance_price,'f_id':row.f_id,'stock_amount':row.stock_amount};
+	            });
+				
+				if(qk_items.length!=0) {
+					//ajax_function_ask_and_close("确认选择商品?","addQkZdSingleItemTempList","post",{'qk_items': qk_items},"引入成功!");
+					ajax_function_ask_and_close_json_data("确认引入？","addQkZdSingleItemTempList","post",JSON.stringify(qk_items),'引入成功');
+				} else {
+					layer.msg("未选择明细！");
+				}
+			 });
+
+			//加载字典数据
+			get_dictionary("${context}",null);
+			
+			//bootstrap初始化
+			initialize_table($table,"",${tableHeader},queryParams,"#tableTool",400);
+			
+			//表格配置 layer
+			var $config=$("#config");
+			
+			table_column_config_layer($config,2,'表格属性配置','${context}/csu/columnConfig?queryId=${queryId}');
+			
+			//自动搜索填补
+			initialize_bsSuggest_bk_factory("${context}", "f_department", "f_id");
+			initialize_bsSuggest_bk_client("${context}", "c_department", "c_id");
+			
+			$('#c_id').val('${c_id}');
+			$('#c_department').val('${c_department}');
+			
+		});
+		    
+		   
+		  
+	</script>
+	
+</html>

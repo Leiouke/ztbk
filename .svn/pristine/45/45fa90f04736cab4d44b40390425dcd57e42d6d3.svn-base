@@ -1,0 +1,5 @@
+# sqlserver的ws正式库
+ws.jdbc.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
+ws.jdbc.url=jdbc:sqlserver://192.168.100.103:1433;databaseName=ztwebshop
+ws.jdbc.user=WS_ERP_User_2016
+ws.jdbc.pass=DNB201683BAC92A+

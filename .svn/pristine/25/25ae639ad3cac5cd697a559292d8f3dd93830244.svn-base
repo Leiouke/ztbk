@@ -1,0 +1,233 @@
+package com.cnpiecsb.fc.payment.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 付款确认页面
+ * @author by zc 2022/1/5
+ *
+ */
+@Controller
+@RequestMapping("/fc/payment")
+public class PaymentApplicationPayController extends BaseServiceController{
+	
+	// 货源发票查询
+	private int  paymentApplicationPayManageQueryId = 8440001;	
+	private GridHeadConfig paymentApplicationPayManageGridHeadConfig;
+	
+	public PaymentApplicationPayController(){
+		paymentApplicationPayManageGridHeadConfig = new GridHeadConfig(paymentApplicationPayManageQueryId,true,false,true,false);
+		paymentApplicationPayManageGridHeadConfig.setOperatorWidth(150);
+	}
+	
+
+	/**
+	 * 付款确认页面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/applicationPayManage", method=RequestMethod.GET)
+    public ModelAndView applicationPayManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/paymentApplicationPay/applicationPayManage");
+        String tableHeader = this.getTableHeader(httpSession,paymentApplicationPayManageGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", paymentApplicationPayManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得付款确认页面数据
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getApplicationPayManageList")
+	@ResponseBody
+	public Object getApplicationPayManageList(@RequestBody Map postData, HttpSession httpSession){
+		// 获得权限代码参数
+		return this.getTableDataList(postData,paymentApplicationPayManageQueryId);
+	}
+	
+	
+	/**
+	 * 撤销付款操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/returnPaymentApplicationPay")
+	@ResponseBody
+    public Object returnPaymentApplicationPay(@RequestParam Map postData,HttpSession httpSession) {	
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"ap_id", "o_id_withdraw"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_pay_withdraw");
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_withdraw", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		code = do_sp_payment_application_item_fw_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		code = do_sp_payment_factory_balance_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		code = do_sp_payment_discount_adjustment_new(postData,httpSession);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		return "{\"success\":true}";
+    }
+	
+	
+	// 重算预付单/货源发票的付款实洋
+	private int do_sp_payment_application_item_fw_calculate(Map postData){
+		String paramNames[] = {"ap_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_item_fw_calculate");
+			
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	// 作为申请单付款确认/申请单付款撤销 的后置
+	private int do_sp_payment_factory_balance_calculate(Map postData){
+		String paramNames[] = {"f_id","currency"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_factory_balance_calculate");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	
+	// 作为申请单付款确认/申请单付款撤销 的后置 产生差价调整单 分类明细 和 表头
+	private int do_sp_payment_discount_adjustment_new(Map postData,HttpSession httpSession){
+		String paramNames[] = {"bill_id","f_id","currency","o_id_operator"};
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_operator", user.getAccount());
+		postData.put("bill_id", postData.get("ap_id"));
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_discount_adjustment_new");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	/**
+	 * 新增页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/paymentApplicationToPay",method=RequestMethod.GET)
+    public ModelAndView paymentApplicationToPay(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(paymentApplicationPayManageQueryId, postData);
+		oneQuery.remove("export_invoice_no");  // 外销发票号去掉
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("fc/paymentApplicationPay/applicationPayAdd");
+		
+        return mv;
+    }
+	
+	
+	/**
+	 * 确认付款
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/applicationPayComplete")
+	@ResponseBody
+    public Object applicationPayComplete(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"ap_id","pay_date","o_id_input","pay_money"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_pay_complete");
+	
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		code = do_sp_payment_application_item_fw_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		code = do_sp_payment_factory_balance_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		code = do_sp_payment_discount_adjustment_new(postData,httpSession);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 财务终止操作 -付款申请
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/paymentApplicationFinancialTerminate")
+	@ResponseBody
+    public Object paymentApplicationFinancialTerminate(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"ap_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_payment_application_financial_terminate");
+        
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+}

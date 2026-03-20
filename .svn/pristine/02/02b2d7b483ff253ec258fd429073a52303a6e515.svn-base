@@ -1,0 +1,627 @@
+package com.cnpiecsb.basic.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Controller
+@RequestMapping("/bk/basic")
+public class BkClientController extends ZtbkServiceController {
+	private int clientManageQueryId = 10000002;		//客户信息表头查询
+	private GridHeadConfig clientManageGridHeadConfig;
+	
+	private int clientOneQueryId = 10000002; //单条查询
+	
+	private int addressQueryId = 10000011;  //地址信息表
+	private GridHeadConfig addressGridHeadConfig;
+	
+	private int contentQueryId = 10000012;  //事件信息表
+	private GridHeadConfig contentGridHeadConfig;
+	
+	private int provinceQueryId = 10000040; //省份信息
+	
+	private int cityQueryId = 10000041; //城市信息
+	
+	private int arrearsQueryId = 10000042; //地区信息
+	
+	private int bankQueryId = 5000005;	   //银行信息
+	private GridHeadConfig bankGridHeadConfig;
+
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public BkClientController(){
+		clientManageGridHeadConfig = new GridHeadConfig(clientManageQueryId,true,false,true,false);
+		clientManageGridHeadConfig.setOperatorWidth(80);
+		clientManageGridHeadConfig.setLineNoWidth(40);
+		
+		addressGridHeadConfig = new GridHeadConfig(addressQueryId,true,false,true,false);
+		contentGridHeadConfig = new GridHeadConfig(contentQueryId,true,false,true,false);
+		
+		bankGridHeadConfig = new GridHeadConfig(bankQueryId,true,false,true,false);
+	}
+	
+	
+	/**
+	 * 客户管理界面
+	 * 
+	 * @param httpSession
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value="/clientManage",method=RequestMethod.GET)
+    public ModelAndView clientManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("basic/client/clientManage");
+        String tableHeader = this.getTableHeader(httpSession, clientManageGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", clientManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-客户
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientList")
+	@ResponseBody
+	public Object getClientList(@RequestBody Map postData){
+		return this.getTableDataList(postData, clientManageQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-地址信息
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getAddressList")
+	@ResponseBody
+	public Object getAddressList(@RequestBody Map postData){
+		return this.getTableDataList(postData,addressQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-付汇
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientBankList")
+	@ResponseBody
+	public Object getClientBankList(@RequestBody Map postData){
+		return this.getTableDataList(postData, bankQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-客户事件
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getContentList")
+	@ResponseBody
+	public Object getContentList(@RequestBody Map postData){
+		return this.getTableDataList(postData,contentQueryId);
+	}
+	
+	/**
+	 * 新增页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/clientAdd",method=RequestMethod.GET)
+    public ModelAndView clientAdd(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("basic/client/clientAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addClient")
+	@ResponseBody
+    public Object addClient(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {
+		          "cc_id",
+		          "c_create",
+		          "c_birth",
+		          "c_contact_man",
+		          "c_department",
+		          "c_address",
+		          "c_tel",
+		          "c_fax",
+		          "c_level",
+		          "c_help_input",
+		          "c_account",
+		          "c_bank",
+		          "c_tax",
+		          "c_zip",
+		          "c_mail",
+		          "c_tax_account",
+		          "c_tax_bank",
+		          "o_id",
+		          "cm_id",
+		          "c_mem",
+		          "c_charge_man",
+		          "a_id",
+		          "p_id",
+		          "city_id",
+		          "clients_credit",
+		          "c_address_song",
+		          "consignment_style",
+		          "c_station",
+		          "c_account_name",
+		          "c_hy_id",
+		          "c_department_simple",
+		          "c_jb",
+		          "c_source",
+		          "c_phase",
+		          "c_money",
+		          "c_law_man",
+		          "c_abstract",
+		          "last_mod_date",
+		          "last_trans_date",
+		          "limit_money",
+		          "limit_day",
+		          "c_discount",
+		          "c_back",
+		          "notrigger",
+		          "station_id",
+		          "back_limit_date",
+		          "station_account",
+		          "parent_client",
+		          "discountmethod",
+		          "discountrise",
+		          "i_class_id",
+		          "station_id_xs",
+		          "passwd",
+		          "arrear_c_id",
+		          "card_id",
+		          "c_handset",
+		          "least_discount",
+		          "c_hc_id",
+		          "account_limit",
+		          "o_id_input",
+		          "custom_id",
+		          "c_bak1",
+		          "c_bak2",
+		          "c_bak3",
+		          "c_bak4",
+		          "c_ms_id",
+		          "c_department_Foreign",
+		          "line_id",
+		          "road_name",
+		          "tablet_value",
+		          "c_verify_style",
+		          "c_area_id",
+		          "c_certificate",
+		          "c_company_en",
+		          "c_address_en",
+		          "c_property",
+		          "accept_man",
+		          "send_type",
+		          "c_country",
+		          "accept_man_en",
+		          "is_sh",
+		          "address_id",
+		          "flag_move_class",
+		          "zs_type",
+		          "off_discount"};
+		// 出参, 有顺序
+		String returnNames[] = {"c_id"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_db_clients_new");
+		User user=(User)httpSession.getAttribute("user");		
+		postData.put("o_id", user.getAccount());
+		postData.put("station_id", "ZT02"); //为了视图能查询出来，先写死
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}		
+		// 以下获得出参值
+//		System.out.println(postData.get("h_id"));
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/clientEdit",method=RequestMethod.GET)
+    public ModelAndView clientEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(clientOneQueryId, postData);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("basic/client/clientEdit");
+        
+		//地址信息表
+        String tableHeader_address = this.getTableHeader(httpSession,addressGridHeadConfig);
+		mv.addObject("tableHeader_address", tableHeader_address);		
+		mv.addObject("queryId_address", this.addressQueryId);
+		
+		//客户事件表
+        String tableHeader_content = this.getTableHeader(httpSession,contentGridHeadConfig);
+		mv.addObject("tableHeader_content", tableHeader_content);		
+		mv.addObject("queryId_content", this.contentQueryId);
+		
+		//银行表
+		String tableHeader_bank = this.getTableHeader(httpSession,bankGridHeadConfig);
+		mv.addObject("tableHeader_bank", tableHeader_bank);		
+		mv.addObject("queryId_bank", this.bankQueryId);
+
+        return mv;
+    }
+	
+	/**
+	 * 新增事件页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/clientContentAdd",method=RequestMethod.GET)
+    public ModelAndView clientContentAdd(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("basic/client/clientContentAdd");
+        mv.addObject("c_id", postData.get("c_id"));
+        return mv;
+    }
+	
+	/**
+	 * 修改客户资料操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editClient")
+	@ResponseBody
+    public Object editClient(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {
+				  "c_id",
+		          "cc_id",
+		          "c_create",
+		          "c_birth",
+		          "c_contact_man",
+		          "c_department",
+		          "c_address",
+		          "c_tel",
+		          "c_fax",
+		          "c_level",
+		          "c_help_input",
+		          "c_account",
+		          "c_bank",
+		          "c_tax",
+		          "c_zip",
+		          "c_mail",
+		          "c_tax_account",
+		          "c_tax_bank",
+		          "o_id",
+		          "cm_id",
+		          "c_mem",
+		          "c_charge_man",
+		          "a_id",
+		          "p_id",
+		          "city_id",
+		          "clients_credit",
+		          "c_address_song",
+		          "consignment_style",
+		          "c_station",
+		          "c_account_name",
+		          "c_hy_id",
+		          "c_department_simple",
+		          "c_jb",
+		          "c_source",
+		          "c_phase",
+		          "c_money",
+		          "c_law_man",
+		          "c_abstract",
+		          "last_mod_date",
+		          "last_trans_date",
+		          "limit_money",
+		          "limit_day",
+		          "c_discount",
+		          "c_back",
+		          "notrigger",
+		          "station_id",
+		          "back_limit_date",
+		          "station_account",
+		          "parent_client",
+		          "discountmethod",
+		          "discountrise",
+		          "i_class_id",
+		          "station_id_xs",
+		          "passwd",
+		          "arrear_c_id",
+		          "card_id",
+		          "c_handset",
+		          "least_discount",
+		          "c_hc_id",
+		          "account_limit",
+		          "o_id_input",
+		          "custom_id",
+		          "c_bak1",
+		          "c_bak2",
+		          "c_bak3",
+		          "c_bak4",
+		          "c_ms_id",
+		          "c_department_Foreign",
+		          "line_id",
+		          "road_name",
+		          "tablet_value",
+		          "c_verify_style",
+		          "c_area_id",
+		          "c_certificate",
+		          "c_company_en",
+		          "c_address_en",
+		          "c_property",
+		          "accept_man",
+		          "send_type",
+		          "c_country",
+		          "accept_man_en",
+		          "is_sh",
+		          "address_id",
+		          "flag_move_class",
+		          "zs_type",
+		          "off_discount"
+		};		// 出参, 有顺序
+		// 加入sp的名称
+		postData.put("spName", "n_bk_db_clients_update");
+		User user=(User)httpSession.getAttribute("user");		
+		postData.put("o_id", user.getAccount());
+		postData.put("station_id", "ZT02"); //为了视图能查询出来，先写死
+		int code = baseService.doCallSp(postData, paramNames, null);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增客户地址
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addClientAddress")
+	@ResponseBody
+    public Object addClientAddress(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {
+		          "cf_id",
+		          "cf_class",
+		          "cf_zip",
+		          "cf_address",
+		          "cf_address_old",
+		          "cf_tel",
+		          "cf_fax",
+		          "cf_mail",
+		          "a_id",
+		          "type",
+		          "where1",
+		          "where2",
+		          "cf_exist",
+		          "last_trans_date",
+		          "last_mod_date",
+		          "notrigger",
+		          "begin_date",
+		          "end_date",
+		          "line_id",
+		          "send_type",
+		          "accept_man",
+		          "c_country",
+		          "address_description",
+		          "input_date",
+		          "account",
+		          "bank",
+		          "bak1",
+		          "bak2",
+		          "bak3",
+		          "int1",
+		          "is_sh",
+		          "c_department",
+		          "fd_flag",
+		          "line_sort",
+		          "o_id_input"
+		};		// 出参, 有顺序
+		String returnNames[] = {"address_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_bk_db_address_new");
+		User user=(User)httpSession.getAttribute("user");		
+		postData.put("o_id_input", user.getAccount());
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除客户地址
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteAddress")
+	@ResponseBody
+    public Object deleteAddress(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {
+		          "address_id"
+		};		// 出参, 有顺序
+		// 加入sp的名称
+		postData.put("spName", "u_bk_db_address_delete");
+//		User user=(User)httpSession.getAttribute("user");		
+//		postData.put("o_id_input", user.getAccount());
+		int code = baseService.doCallSp(postData, paramNames, null);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增客户事件
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addClientContent")
+	@ResponseBody
+    public Object addClientContent(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {
+				  "c_id",
+		          "create_date",
+		          "c_mem",
+		          "c_level",
+		          "c_mem_class",
+		          "class",
+		          "o_id_input",
+		          "time_type"
+		};		// 出参, 有顺序
+		// 加入sp的名称
+		postData.put("spName", "n_bk_db_clients_content_new");
+		
+		postData.put("c_level", postData.get("c_content_level"));
+		int code = baseService.doCallSp(postData, paramNames, null);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除客户事件
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteContent")
+	@ResponseBody
+    public Object deleteContent(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {
+		          "content_id"
+		};		// 出参, 有顺序
+		// 加入sp的名称
+		postData.put("spName", "n_bk_db_clients_content_delete");
+		User user=(User)httpSession.getAttribute("user");		
+		postData.put("o_id_input", user.getAccount());
+		int code = baseService.doCallSp(postData, paramNames, null);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 获得动态列表数据-获得省份
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientprovinceList")
+	@ResponseBody
+	public Object getClientprovinceList(@RequestBody Map postData){
+		return this.getTableDataList(postData,provinceQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-获得城市
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientCityList")
+	@ResponseBody
+	public Object getClientCityList(@RequestBody Map postData){
+		return this.getTableDataList(postData,cityQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-获得区域
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientArrearsList")
+	@ResponseBody
+	public Object getClientArrearsList(@RequestBody Map postData){
+		return this.getTableDataList(postData,arrearsQueryId);
+	}
+	
+	/**
+	 * 新增银行
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addClientBank")
+	@ResponseBody
+    public Object addClientBank(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"f_id","f_companyName","f_registMark","f_companyAddress",
+				"f_companyPhone","f_payment","f_bank","f_account","swift_code","iban","aba","f_default","f_bankAddress","f_bankPhone","memo","my_bank","my_account",
+				"kp_type", "tax_rate", "is_item" , "kp_content", "kp_amount", "kp_unit"};	
+		// 加入sp的名称
+		postData.put("spName", "u_basic_bank_new");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除操作 银行
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteClientBank")
+	@ResponseBody
+    public Object deleteClientBank(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"id"};
+		// 加入sp的名称
+		postData.put("spName", "u_basic_bank_delete");
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+}

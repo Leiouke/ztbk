@@ -1,0 +1,381 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%
+	String context = request.getContextPath();
+	request.setAttribute("context",context);
+%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+	    <!-- Bootstrap table -->
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+	    <link href="${context}/css/boocup_style.css" rel="stylesheet">
+	    <jsp:include page="../../include/h_superHead.jsp"></jsp:include>
+	</head>
+	<body>
+	<div class="wrapper wrapper-content animated fadeInRight">
+         <div class="ibox float-e-margins">
+            <div class="ibox-title">
+                <h5>查询</h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content search-content">
+	            <form id="form_search" class="form-inline">
+	            <div class="col-xs-11">					  
+					  <div class="form-group inline-small done">
+					  	<label >出库下架单号：</label>
+					    <input type="text" name="downshelf_id" class="form-control search-items" >
+					  </div>					  
+					  <div class="form-group inline-small done">
+					    <label >录入日期：</label>
+					    <input type="text" class="form-control  layer-date search-items" name="input_time_start" id="input_time_start">
+					    -
+					    <input type="text" class="form-control  layer-date search-items" name="input_time_end" id="input_time_end">
+					  </div>
+					  <div class="form-group inline-small done">
+					    <label >下架日期：</label>
+					    <input type="text" class="form-control  layer-date search-items" name="downshelves_time_start" id="downshelves_time_start">
+					    -
+					    <input type="text" class="form-control  layer-date search-items" name="downshelves_time_end" id="downshelves_time_end">
+					  </div>
+<!-- 					  <div class="form-group inline-small"> -->
+<!-- 					  	<label >书号：</label> -->
+<!-- 					    <input type="text" name="h_isbn" class="form-control search-items" > -->
+<!-- 					  </div> -->
+					  <div class="form-group input-group inline-small done">
+							<label >录入员：</label>
+							<input type="text" name="o_id_input_name" class="form-control search-items">
+							<div class="input-group-btn">
+                            	<button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+                                	<span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                 </ul>
+                             </div>
+                        	 <input type="hidden" name="o_id_input" class="form-control search-items">
+					  </div>
+					  <div class="form-group input-group inline-small done">
+							<label >下架人：</label>
+							<input type="text" name="o_id_downshelves_name" class="form-control search-items">
+							<div class="input-group-btn">
+                            	<button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+                                	<span class="caret"></span>
+                             	</button>
+                                <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                </ul>
+                            </div>
+                            <input type="hidden" name="o_id_downshelves" class="form-control search-items">
+					  </div>
+					  <div class="form-group inline-small done">
+					    <label >是否已下架：</label>
+					    <select name="is_downshelves" class="form-control dictionary isboolean search-items">
+					    	<option></option>
+					    </select>
+					  </div>
+					  <div class="form-group input-group inline-small ready">
+							<label >主营业务员：</label>
+							<input type="text" name="c_charge_man_name" id = "c_charge_man_name" class="form-control search-items" value="${sessionScope.user.userName}">
+							<div class="input-group-btn">
+                            	<button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+                                	<span class="caret"></span>
+                             	</button>
+                                <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                </ul>
+                            </div>
+                            <input type="hidden" name="c_charge_man" id="c_charge_man" class="form-control search-items" value="${sessionScope.user.job_no}">
+					  </div>
+					  <div class="form-group input-group inline-middle ready">
+					  		<label >客户编号：</label>
+							<input type="text" name="c_id" class="form-control search-items" >
+							<div class="input-group-btn">
+                            	<button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+                                 	<span class="caret"></span>
+                                 </button>
+                                 	<ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                    </ul>
+                             </div>
+					  </div>
+					  <div class="form-group inline-large ready">
+							<label >户号(_客户名称)：</label>
+							<input type="text" name="c_department" class="form-control search-items" disabled>
+					  </div>
+					  <div class="form-group inline-small">
+					    <label >通知状态：</label>
+					    <select id="advice-state" class="form-control search-items" >
+					    	<option value="1" selected>未通知</option>
+					    	<option value="2">通知未提交</option>
+					    	<option value="3">通知已提交</option>
+					    </select>
+					  </div>
+					  <div class="form-group inline-small ready">
+					    <label >触发集货：</label>
+					    <select id="can_notice" name = "can_notice" class="form-control search-items" >
+					    	<option></option>
+					    	<option value="1" selected>触发</option>
+					    	<option value="0">未触发</option>
+					    </select>
+					  </div>
+					  <div class="form-group inline-small ready">
+							<label >可通知库存数：</label>
+							<input type="text" name="can_notice_amount" class="form-control search-items">
+					  </div>
+<!-- 					  <div class="form-group inline-small"> -->
+<!-- 					    <label >是否已确认：</label> -->
+<!-- 					    <select name="is_verify" class="form-control  search-items"> -->
+<!-- 					    	<option></option> -->
+<!-- 					    	<option value = "1">是</option> -->
+<!-- 					    	<option value = "0">否</option> -->
+<!-- 					    </select> -->
+<!-- 					  </div> -->
+						<input type="hidden" name="is_verify" id = "is_verify">
+				 </div>
+				 <div class="col-xs-1 search-group-button">
+					  	<button type="button" class="btn btn-primary btn-xs" id="search">查询</button>
+					  	<button type="button" class="btn btn-default btn-xs" id="reset" >清空</button>
+				 </div>
+				</form>
+            </div>
+        </div>
+        <div class="ibox float-e-margins">
+            <div class="ibox-title">
+                <h5>下架通知</h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content">
+                <div class="row row-lg" id = "ready">
+                    <div class="col-sm-12">
+                                <div class="btn-group hidden-xs" id="tableTool_ready" role="group">
+                                    <button type="button" class="btn btn-outline btn-default" id="config_ready">
+                                        <i class="glyphicon glyphicon-cog" aria-hidden="true"></i>
+                                    </button>
+                                   <select class="form-control export" >
+                                   		<option value="all">导出全部</option>
+						                <option value="basic">导出当页</option>	
+						            </select>
+                                </div>
+                                <table id="table_ready" data-mobile-responsive="true">
+                                    
+                                </table>
+                    </div>
+                </div>
+                <div class="row row-lg" id = "done">
+                    <div class="col-sm-12">
+                                <div class="btn-group hidden-xs" id="tableTool_done" role="group">
+                                    <button type="button" class="btn btn-outline btn-default" id="config_done">
+                                        <i class="glyphicon glyphicon-cog" aria-hidden="true"></i>
+                                    </button>
+                                   <select class="form-control export" >
+                                   		<option value="all">导出全部</option>
+						                <option value="basic">导出当页</option>	
+						            </select>
+                                </div>
+                                <table id="table_done" data-mobile-responsive="true">
+                                    
+                                </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+	</body>
+	    
+	<!-- 自定义js -->
+    <script src="${context}/js/content.js?v=1.0.0"></script>
+
+
+    <!-- Bootstrap table -->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <!-- Bootstrap table export-->
+    <script src="${context}/js/plugins/bootstrap-table/export/bootstrap-table-export.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/tableExport.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/js-xlsx/xlsx.core.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.plugin.autotable.js"></script>
+    <!-- Layer-->
+    <script src="${context}/js/plugins/layer/layer.min.js"></script>
+	<!-- plugins -->
+ 	<script src="${context}/js/plugins/suggest/bootstrap-suggest-new.min.js"></script>
+	<!-- layerDate plugin javascript -->
+    <script src="${context}/js/plugins/layer/laydate/laydate.js"></script>
+    
+	<script type="text/javascript">
+		inistal_data('#input_time_start','#input_time_end');
+		inistal_data('#downshelves_time_start','#downshelves_time_end');
+		function queryParams(param) {
+			var json_obj=formToJson($("#form_search"));
+			json_obj['limit'] =param.limit;
+   	      	json_obj['offset'] =param.offset;
+   	     	json_obj['sortName'] =this.sortName;
+   	  		json_obj['sortOrder'] =this.sortOrder;
+   	        return json_obj;
+		}
+		
+		var $table_ready = $('#table_ready');
+		var $table_done = $('#table_done');
+		
+		 $(document).ready(function () {
+			 //加载时默认未通知，隐藏通知的查询条件和表格
+			 $(".done").hide();
+			 $("#done").hide();
+			 
+			//加载字典数据
+			get_dictionary("${context}",null);
+			//bootstrap初始化
+			initialize_table($table_ready,"",${tableHeader_ready},queryParams,"#tableTool_ready",400);
+			initialize_table($table_done,"",${tableHeader_done},queryParams,"#tableTool_done",400);
+			
+			//增加条目layer
+// 			var $add=$("#add");
+// 			button_click_windows_refresh($add,2,"出库下架单新增",'outBoundAdd',$table,true);
+			
+			
+			//表格配置 layer
+			var $config_ready=$("#config_ready");
+			var $config_done=$("#config_done");
+			table_column_config_layer($config_ready,2,'表格属性配置','${context}/csu/columnConfig?queryId=${queryId_ready}');
+			table_column_config_layer($config_done,2,'表格属性配置','${context}/csu/columnConfig?queryId=${queryId_done}');
+			
+			$('#tableTool_ready').find('select').change(function () {				 
+				 $table_ready.bootstrapTable('refreshOptions',{exportDataType: $(this).val()});
+		     });
+			 $('#tableTool_done').find('select').change(function () {				 
+				 $table_done.bootstrapTable('refreshOptions',{exportDataType: $(this).val()});
+		     });
+			 
+			 $("#advice-state").change(function(){
+				 var advice_state=$("#advice-state").val();
+				 if(advice_state==1){
+					 	var c_charge_man_name = '${sessionScope.user.userName}';
+					 	var c_charge_man = '${sessionScope.user.job_no}';
+					 	$(".done").find("input, select").not(".export").val("");
+				 		$(".ready").show();
+				 		$("#c_charge_man").val(c_charge_man);
+				 		$("#c_charge_man_name").val(c_charge_man_name);
+				 		$("#can_notice").val("1");
+				 		$(".done").hide();
+				 	}else if(advice_state==2){
+				 		$(".ready").find("input, select").not(".export").val("");
+				 		$("#is_verify").val("0");
+				 		$(".done").show();
+				 		$(".ready").hide();
+				 	}else if(advice_state==3){
+				 		$(".ready").find("input, select").not(".export").val("");
+				 		$("#is_verify").val("1");
+				 		$(".done").show();
+				 		$(".ready").hide();
+				 	}else{
+				 		return ;
+				 	}
+			 });
+			 
+			
+			 $("#search").on('click',function(){
+				 var advice_state=$("#advice-state").val();
+				 	if(advice_state==1){
+				 		$("#ready").show();
+				 		$("#done").hide();
+				 		var json_data_list=formToJson($("#form_search"));
+				 		json_data_list['queryId']='${queryId_ready}';
+						search_sum_list("${context}/csu/getTableCollectDataBK",json_data_list,"getClientList",$table_ready);
+				 	}else if(advice_state==2){
+				 		$("#done").show();
+				 		$("#ready").hide();
+				 		var json_data_list=formToJson($("#form_search"));
+				 		json_data_list['queryId']='${queryId_done}';
+				 		json_data_list['is_verify']="0";
+						search_sum_list("${context}/csu/getTableCollectDataBK",json_data_list,"getOutBoundNoticeList",$table_done);
+				 	}else if(advice_state==3){
+				 		$("#done").show();
+				 		$("#ready").hide();
+				 		var json_data_list=formToJson($("#form_search"));
+				 		json_data_list['queryId']='${queryId_done}';
+				 		json_data_list['is_verify']="1";
+						search_sum_list("${context}/csu/getTableCollectDataBK",json_data_list,"getOutBoundNoticeList",$table_done);
+				 	}else{
+				 		return ;
+				 	}
+			 });
+			 //自动搜索填补
+			 initialize_bsSuggest_user_by_dept("${context}", "o_id_input_name", "o_id_input", "2000");      // 放用户信息(报刊的)
+			 initialize_bsSuggest_user_by_dept("${context}", "o_id_downshelves_name", "o_id_downshelves", "2000");      // 放用户信息(报刊的)
+			 initialize_bsSuggest_bk_client("${context}", "c_department", "c_id");
+			 initialize_bsSuggest_user_by_dept("${context}", "c_charge_man_name", "c_charge_man", "2000");      // 放用户信息(报刊的)
+	     });
+		 
+		 function toShowReady(c_id,c_department){
+			 open_layer_refresh(2,'出库下架单新增','outBoundAdd?c_id='+c_id+'&c_department='+c_department,$table_ready,['360px', '380px'],true);
+		 }
+		 function toShowDone(downshelf_id){
+			 open_layer_refresh(2,'下架通知明细','outBoundEdit?downshelf_id='+downshelf_id,$table_done,['360px', '380px'],true);
+		 }
+		 
+	 	function toCommit(downshelf_id){
+			ajax_function_ask_and_refresh("确认提交","commitOutBound","post",{'downshelf_id':downshelf_id},"提交成功",$table_done);
+	 	}
+	 	
+		 function toDel(downshelf_id){
+		 	ajax_function_ask_and_refresh("是否删除","deleteOutBound","post",{'downshelf_id':downshelf_id},"删除成功",$table_done);
+	 	}
+		 
+		 function renderOperator(value,row,index){
+			 	var advice_state=$("#advice-state").val();
+			 	if(advice_state==1){
+			 		return "<a onclick=\"toShowReady('"+row.c_id+"','"+row.c_department+"')\">详情</a>";
+			 	}else if(advice_state==2){
+			 		 var str = "";
+			 		 str+="<a onclick=\"toShowDone('"+row.downshelf_id+"')\">详情</a>";
+	 				 str+="&nbsp;&nbsp;<a onclick=\"toCommit('"+row.downshelf_id+"')\">提交</a>";
+	 				 str+="&nbsp;&nbsp;<a onclick=\"toDel('"+row.downshelf_id+"')\">删除</a>";
+			 		return str;
+			 	}else if(advice_state==3){
+			 		return "<a onclick=\"toShowDone('"+row.downshelf_id+"')\">详情</a>";
+			 	}else{
+			 		return "-";
+			 	}
+				
+		 }
+		 
+// 		 function toDel(downshelf_id){
+// 			 ajax_function_ask_and_refresh("是否删除","deleteOutBound","post",{'downshelf_id':downshelf_id},"删除成功",$('#table'));
+// 		 }
+		 
+// 		 function toEdit(downshelf_id){
+// 			 open_layer_refresh(2,'编辑出库通知','outBoundEdit?downshelf_id='+downshelf_id,$table,['360px', '380px'],true);
+// 		 }
+		 
+// 		function toCommit(downshelf_id){
+// 			ajax_function_ask_and_refresh("确认提交","commitOutBound","post",{'downshelf_id':downshelf_id},"提交成功",$('#table'));
+// 	 	}
+		
+// 		 function renderOperator(value,row,index){
+// 			 var str = "";
+			 
+// 			 if(row.is_verify==0||!row.is_verify){
+// 				 str="<a onclick=\"toEdit('"+row.downshelf_id+"')\">编辑</a>"
+// 				 str+="&nbsp;&nbsp;<a onclick=\"toCommit('"+row.downshelf_id+"')\">提交</a>";
+// 				 str+="&nbsp;&nbsp;<a onclick=\"toDel('"+row.downshelf_id+"')\">删除</a>";
+// 			 }else{
+// 				 str="<a onclick=\"toEdit('"+row.downshelf_id+"')\">详情</a>"
+// 			 }
+				 
+				 
+			
+// 			return str;
+// 		 }
+	</script>
+</html>

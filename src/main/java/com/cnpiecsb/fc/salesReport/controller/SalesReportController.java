@@ -1,0 +1,297 @@
+package com.cnpiecsb.fc.salesReport.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/fc/salesReport")
+public class SalesReportController extends BaseServiceController {
+	// 报表查看
+	private int salesReportManageQueryId = 8140001;	
+	private GridHeadConfig salesReportManageGridHeadConfig;
+	
+	// 应收报表明细
+	private int salesReportItemsQueryId = 8140002;	
+	private GridHeadConfig salesReportItemsGridHeadConfig;
+	
+	// 预收报表明细
+	private int salesReportAdvanceItemsQueryId = 8140003;	
+	private GridHeadConfig salesReportAdvanceItemsGridHeadConfig;
+	
+	// 预收冲销报表明细
+	private int salesReportAdvanceAgainstItemsQueryId = 8140004;	
+	private GridHeadConfig salesReportAdvanceAgainstItemsGridHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public SalesReportController() {
+		salesReportManageGridHeadConfig = new GridHeadConfig(salesReportManageQueryId,true,false,true,false);
+		salesReportManageGridHeadConfig.setOperatorWidth(130);
+		
+		salesReportItemsGridHeadConfig = new GridHeadConfig(salesReportItemsQueryId,true,false,false,false);
+		
+		salesReportAdvanceItemsGridHeadConfig = new GridHeadConfig(salesReportAdvanceItemsQueryId,true,false,false,false);
+		
+		salesReportAdvanceAgainstItemsGridHeadConfig = new GridHeadConfig(salesReportAdvanceAgainstItemsQueryId,true,false,false,false);
+	}
+	
+	/**
+	 * 销售报表查询界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/salesReportManage", method=RequestMethod.GET)
+    public ModelAndView salesReportManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/salesReport/salesReportManage");
+        String tableHeader = this.getTableHeader(httpSession, salesReportManageGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", salesReportManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-销售报表管理
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getSalesReportManageList")
+	@ResponseBody
+	public Object getSalesReportManageList(@RequestBody Map postData, HttpSession httpSession){
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		return this.getTableDataList(postData, salesReportManageQueryId);
+	}
+	
+	/**
+	 * 新增销售报表界面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/salesReportAdd",method=RequestMethod.GET)
+    public ModelAndView salesReportAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/salesReport/salesReportAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增销售报表操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addSalesReport")
+	@ResponseBody
+    public Object addSalesReport(@RequestParam Map postData,HttpSession httpSession) {		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_type", "report_description", "account_month", "o_id_input", "dep_org_code", "unit_code"};
+		// 出参, 有顺序
+		String returnNames[] = {"report_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_sales_report_new");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改销售报表操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editSalesReport")
+	@ResponseBody
+    public Object editSalesReport(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_id","report_description"};
+		// 加入sp的名称
+		postData.put("spName", "fc_sales_report_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除销售报表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteSalesReport")
+	@ResponseBody
+    public Object deleteSalesReport(@RequestParam Map postData, HttpSession httpSession) {
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_delete", user.getAccount());
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_id", "o_id_delete"};
+		// 加入sp的名称
+		postData.put("spName", "fc_sales_report_delete");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 提交销售报表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/commitSalesReport")
+	@ResponseBody
+    public Object commitSalesReport(@RequestParam Map postData, HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_id", "o_id_commit"};
+		// 加入sp的名称
+		postData.put("spName", "fc_sales_report_commit");
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_commit", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 退回销售报表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/backSalesReport")
+	@ResponseBody
+    public Object backSalesReport(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_sales_report_back");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 归档销售报表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/fileSalesReport")
+	@ResponseBody
+    public Object fileSalesReport(@RequestParam Map postData, HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_id", "o_id_file"};
+		// 加入sp的名称
+		postData.put("spName", "fc_sales_report_tofile");
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_file", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 销售报表明细界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/salesReportItems", method=RequestMethod.GET)
+    public ModelAndView salesReportItems(@RequestParam Map postData, HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/salesReport/salesReportItems");
+        
+        String report_type = postData.get("report_type").toString();
+        
+        if (report_type.equals("0") || report_type.equals("1")) {
+        	String tableHeader = this.getTableHeader(httpSession, salesReportItemsGridHeadConfig);
+            mv.addObject("tableHeader", tableHeader);
+    		mv.addObject("queryId", salesReportItemsQueryId);
+        } else if (report_type.equals("2")) {
+        	String tableHeader = this.getTableHeader(httpSession, salesReportAdvanceItemsGridHeadConfig);
+            mv.addObject("tableHeader", tableHeader);
+    		mv.addObject("queryId", salesReportAdvanceItemsQueryId);
+        } else if (report_type.equals("3")) {
+        	String tableHeader = this.getTableHeader(httpSession, salesReportAdvanceAgainstItemsGridHeadConfig);
+            mv.addObject("tableHeader", tableHeader);
+    		mv.addObject("queryId", salesReportAdvanceAgainstItemsQueryId);
+        }
+        
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-销售报表明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getSalesReportItemsList")
+	@ResponseBody
+	public Object getSalesReportItemsList(@RequestBody Map postData){
+		String report_type = postData.get("report_type").toString();
+		
+		Map<String, Object> tableDataList = null;
+		if (report_type.equals("0") || report_type.equals("1")) {
+			tableDataList = this.getTableDataList(postData, salesReportItemsQueryId);
+		} else if (report_type.equals("2")) {
+			tableDataList = this.getTableDataList(postData, salesReportAdvanceItemsQueryId);
+		} else if (report_type.equals("3")) {
+			tableDataList = this.getTableDataList(postData, salesReportAdvanceAgainstItemsQueryId);
+		}
+		return tableDataList;
+	}
+}

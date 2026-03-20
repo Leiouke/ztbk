@@ -1,0 +1,302 @@
+package com.cnpiecsb.fc.purchaseReport.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/fc/purchaseReport")
+public class PurchaseReportController extends BaseServiceController{
+	// 报表查看
+	private int purchaseReportManageQueryId = 8470001;	
+	private GridHeadConfig purchaseReportManageGridHeadConfig;
+		
+	// 报表明细(实时数据)
+	private int purchaseReportItemsQueryId = 8470002;	
+	private GridHeadConfig purchaseReportItemsGridHeadConfig;
+	
+	// 报表明细(归档数据)
+	private int purchaseReportItemsFileQueryId = 8470003;	
+	private GridHeadConfig purchaseReportItemsFileGridHeadConfig;
+		
+	/**
+	* 初始化工作, 修改内容后需要重新启动服务生效
+	* 
+	*/
+	public PurchaseReportController() {
+		purchaseReportManageGridHeadConfig = new GridHeadConfig(purchaseReportManageQueryId,true,false,true,false);
+		purchaseReportManageGridHeadConfig.setOperatorWidth(130);
+			
+		purchaseReportItemsGridHeadConfig = new GridHeadConfig(purchaseReportItemsQueryId,true,false,false,false);
+		
+		purchaseReportItemsFileGridHeadConfig = new GridHeadConfig(purchaseReportItemsFileQueryId,true,false,true,false);
+	}
+		
+	/**
+	* 报表查询界面
+	* 
+	* param postData
+	* return
+	*/
+	@RequestMapping(value="/purchaseReportManage", method=RequestMethod.GET)
+	public ModelAndView purchaseReportManage(HttpSession httpSession) throws JsonProcessingException {
+		ModelAndView mv = new ModelAndView();
+	    mv.setViewName("fc/purchaseReport/purchaseReportManage");
+	    String tableHeader = this.getTableHeader(httpSession, purchaseReportManageGridHeadConfig);
+	    mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", purchaseReportManageQueryId);
+	    return mv;
+	}
+		
+	/**
+	* 获得动态列表数据-销售报表管理
+	* 
+	* param postData
+	* return
+	*/
+	@RequestMapping(value="/getPurchaseReportManageList")
+	@ResponseBody
+	public Object getPurchaseReportManageList(@RequestBody Map postData, HttpSession httpSession){
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		return this.getTableDataList(postData, purchaseReportManageQueryId);
+	}
+
+	/**
+	 * 报表明细(实时)界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/purchaseReportItems", method=RequestMethod.GET)
+    public ModelAndView purchaseReportItems(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/purchaseReport/purchaseReportItems");
+        String tableHeader = this.getTableHeader(httpSession, purchaseReportItemsGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", purchaseReportItemsQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-进货报表明细(实时)
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getPurchaseReportItemsList")
+	@ResponseBody
+	public Object getPurchaseReportItemsList(@RequestBody Map postData){
+		return this.getTableDataList(postData, purchaseReportItemsQueryId);
+	}
+		
+	/**
+	* 新增报表界面
+	* 
+	* 
+	*/
+	@RequestMapping(value="/purchaseReportAdd",method=RequestMethod.GET)
+	public ModelAndView purchaseReportAdd(HttpSession httpSession)throws JsonProcessingException{
+		ModelAndView mv = new ModelAndView();
+	    mv.setViewName("fc/purchaseReport/purchaseReportAdd");
+	    return mv;
+	}
+		
+	/**
+	* 新增报表操作
+	* 
+	* param postData
+	* return
+	*/
+	@RequestMapping(value="/addPurchaseReportAddReport")
+	@ResponseBody
+	public Object addPurchaseReportAddReport(@RequestParam Map postData,HttpSession httpSession) {		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_type", "report_description", "account_month", "o_id_input", "dep_org_code", "unit_code"};
+		// 出参, 有顺序
+		String returnNames[] = {"report_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_purchase_report_new");
+			
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+			
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+			
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+			
+		return "{\"success\":true}";
+	 }
+	
+	/**
+	 * 删除销售报表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deletePurchaseReport")
+	@ResponseBody
+    public Object deletePurchaseReport(@RequestParam Map postData, HttpSession httpSession){
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_delete", user.getAccount());
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_id", "o_id_delete"};
+		// 加入sp的名称
+		postData.put("spName", "fc_purchase_report_delete");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 提交进货报表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/commitPurchaseReport")
+	@ResponseBody
+    public Object commitPurchaseReport(@RequestParam Map postData, HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_id", "o_id_commit"};
+		// 加入sp的名称
+		postData.put("spName", "fc_purchase_report_commit");
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_commit", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 提交后 将明细放到归档表中
+		paramNames = new String[]{"report_id"};
+		postData.put("spName", "fc_purchase_report_item_into_file");
+		
+		code = baseService.doCallSp(postData, paramNames, null);
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 退回销售报表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/backPurchaseReport")
+	@ResponseBody
+    public Object backPurchaseReport(@RequestParam Map postData){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_purchase_report_back");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 归档销售报表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/filePurchaseReport")
+	@ResponseBody
+    public Object filePurchaseReport(@RequestParam Map postData, HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_id", "o_id_file"};
+		// 加入sp的名称
+		postData.put("spName", "fc_purchase_report_tofile");
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_file", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改进货报表操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editPurchaseReport")
+	@ResponseBody
+    public Object editPurchaseReport(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"report_id","report_description"};
+		// 加入sp的名称
+		postData.put("spName", "fc_purchase_report_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 报表明细(归档)界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/purchaseReportItemsFile", method=RequestMethod.GET)
+    public ModelAndView purchaseReportItemsFile(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/purchaseReport/purchaseReportItemsFile");
+        String tableHeader = this.getTableHeader(httpSession, purchaseReportItemsFileGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", purchaseReportItemsFileQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-进货报表明细(归档)
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getPurchaseReportItemsFileList")
+	@ResponseBody
+	public Object getPurchaseReportItemsFileList(@RequestBody Map postData){
+		return this.getTableDataList(postData, purchaseReportItemsFileQueryId);
+	}
+}

@@ -1,0 +1,67 @@
+package com.cnpiecsb.system.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+
+/**
+ * 主要根据部门来查找该部门的员工信息, 用于自动完成框
+ * 
+ * @author user
+ *
+ */
+@Controller
+@RequestMapping("/system")
+public class AutoSearchController extends ZtbkServiceController{		
+	private int clerkAutoSearchQueryId = 1000004;
+	
+	private int commonUserSearchQueryId = 8000005;
+	
+	/**
+	 * 获得动态列表数据-业务员-搜索自动补全, 可根据部门来查
+	 * 
+	 * @param keyword
+	 * @param dep_org_code
+	 * @return
+	 */
+	@RequestMapping(value="/getUserListSearch")
+	@ResponseBody
+	public Object getUserListSearch(String keyword, String dep_org_code){
+		Map<String,Object> postData=new HashMap<>();
+		postData.put("keyword", keyword);
+		postData.put("status", 0);
+		if (dep_org_code != null) {
+			postData.put("dep_org_code", dep_org_code);  // 部门编号
+		}
+		return this.getTableDataList(postData, clerkAutoSearchQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-业务员-搜索自动补全, 根据权限来查, 更通用
+	 * 
+	 * @param keyword
+	 * @param httpSession
+	 * @return
+	 */
+	@RequestMapping(value="/getUserListCommonSearch")
+	@ResponseBody
+	public Object getUserListCommonSearch(String keyword, HttpSession httpSession){
+		Map<String,Object> postData=new HashMap<>();
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		
+		postData.put("keyword", keyword);
+		postData.put("status", 0);
+		
+		return this.getTableDataList(postData, commonUserSearchQueryId);
+	}
+}

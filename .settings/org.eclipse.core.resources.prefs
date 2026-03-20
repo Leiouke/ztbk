@@ -1,0 +1,7 @@
+eclipse.preferences.version=1
+encoding//WebContent/js/json/dictionary.json=UTF-8
+encoding//src/main/java/com/cnpiecsb/fc/payment/controller/PaymentApplicationController.java=UTF-8
+encoding//src/main/resources/persistence-oracle-edi.properties=UTF-8
+encoding//src/main/resources/persistence-sqlserver-base.properties=UTF-8
+encoding//src/main/resources/persistence-sqlserver-ws.properties=UTF-8
+encoding//src/main/resources/persistence-sqlserver-yh.properties=UTF-8

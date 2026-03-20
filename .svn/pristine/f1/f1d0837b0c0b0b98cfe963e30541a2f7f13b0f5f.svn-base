@@ -1,0 +1,75 @@
+package com.cnpiecsb.system.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+
+@Controller
+@RequestMapping("/system")
+public class SingleMenuController extends ZtbkServiceController{
+	
+	private int singleMenuSearchQuery = 1000032;
+	private GridHeadConfig singleMenuSearchQueryHeadConfig;
+	
+	public SingleMenuController() {
+		singleMenuSearchQueryHeadConfig = new GridHeadConfig(singleMenuSearchQuery,true,false,true,false);
+		singleMenuSearchQueryHeadConfig.setOperatorWidth(100);
+	}
+
+	/**
+	 * 进入菜单担任设置界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/singleMenuManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView singleMenuManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("system/singleMenuManage");
+        String tableHeader = this.getTableHeader(httpSession,singleMenuSearchQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", singleMenuSearchQuery);
+        return mv;
+    }
+	
+	/**
+	 * 获得人员数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getSingleMenuList")
+	@ResponseBody
+	public Object getSingleMenuList(@RequestBody Map postData, HttpSession httpSession) {
+		return this.getTableDataList(postData, singleMenuSearchQuery);
+	}
+	
+	/**
+	 * 菜单修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/singleMenuEdit",method=RequestMethod.GET)
+    public ModelAndView singleMenuEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+
+        mv.setViewName("system/singleMenuEdit");
+		
+        return mv;
+    }
+}

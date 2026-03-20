@@ -1,0 +1,96 @@
+package com.cnpiecsb.fc.flow.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 流程页面
+ * @author by zc 2021/12/17
+ *
+ */
+@Controller
+@RequestMapping("/fc/flow")
+public class FlowManageController extends BaseServiceController{
+	
+	//流程查询
+	private int flowSearchManageQueryId = 8500001;	
+	private GridHeadConfig flowSearchManageQueryHeadConfig;
+		
+	public FlowManageController() {
+		flowSearchManageQueryHeadConfig = new GridHeadConfig(flowSearchManageQueryId,true,false,false,false);
+	}
+		
+	/**
+	* 进入流程界面
+	* 
+	* @return
+	* @throws JsonProcessingException 
+	*/
+	@RequestMapping(value="/oneExistFlowDetial")  // 这里不写method, 说明既可以post也可以get
+	public ModelAndView oneExistFlowDetial(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+		 String bill_code=(String)postData.get("bill_code");
+	     ModelAndView mv = new ModelAndView();
+	     mv.setViewName("fc/flow/flowManage");
+	     String tableHeader = this.getTableHeader(httpSession,flowSearchManageQueryHeadConfig);
+	     mv.addObject("tableHeader", tableHeader);
+	     mv.addObject("bill_code", bill_code);
+	     mv.addObject("queryId", flowSearchManageQueryId);
+	     //取完整流程
+	     Map map = new HashMap<String,Object>();
+	     map.put("bill_code", bill_code);
+	     List<Map<String,Object>> list_data=(List<Map<String,Object>>)this.getTableDataList(postData, flowSearchManageQueryId).get("rows");
+	     String return_name = "";
+	     if(list_data.size() > 0){
+	    	 map.put("flow_id", list_data.get(0).get("flow_id"));
+		     map.put("account", list_data.get(0).get("account"));
+			 return_name= getReturnName(map);
+	     }
+	     mv.addObject("return_name", return_name);
+	      return mv;
+	  }
+		
+	/**
+	 * 获得流程界面数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getFlowDetialList")
+	@ResponseBody
+	public Object getFlowDetialList(@RequestBody Map postData, HttpSession httpSession) {
+		return this.getTableDataList(postData, flowSearchManageQueryId);
+	}
+	
+	//获取返回的流程名称字符串
+	public String getReturnName(Map postData) {
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"account","bill_code","flow_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_process_approval_collect_all");
+		
+		//加入返回值
+		String returnNames[] = {"name_return"};
+				
+		int code = baseService.doCallSp(postData, paramNames, returnNames);		
+		
+		String name_return = (String)postData.get("name_return");
+		
+		return name_return;
+	}
+
+}

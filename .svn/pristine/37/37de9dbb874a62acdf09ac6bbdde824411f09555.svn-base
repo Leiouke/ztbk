@@ -1,0 +1,636 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->  
+	    <jsp:include page="../../include/h_superHead.jsp"></jsp:include>
+	    <link rel="stylesheet" type="text/css" href="${context}/css/plugins/webuploader/webuploader.css">
+	    <!-- Bootstrap table -->
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+	    <link href="${context}/css/boocup_style.css" rel="stylesheet">	
+	</head>
+	<body>
+		<div class="sonpage-body">
+			<div class="col-md-12">	        
+                <div class="tabs-container">
+                    <ul class="nav nav-tabs">
+                        <li class="active"><a data-toggle="tab" id="tab-1-title" href="#tab-1" aria-expanded="true"> 客户信息</a>
+                        </li>
+                        <!-- 
+                        <li class=""><a data-toggle="tab" id="tab-2-title" href="#tab-2" aria-expanded="false">地址信息</a>
+                        </li>
+                        <li class=""><a data-toggle="tab" id="tab-3-title" href="#tab-3" aria-expanded="false">开票信息</a>
+                        </li>
+                         -->
+                    </ul>
+                    <div class="tab-content" style = "height:70%;">                    
+                        <div id="tab-1" class="tab-pane active">
+                            <div class="panel-body">
+                            <form id="form" class="form-inline">
+	                            <div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>客户编号*：</label>
+				                        <input type="text" name="c_id" disabled>  <!-- 如果没有赋值, 那么传到数据库是null 不是空字符串了 -->
+				                	</div>
+							        <div class="form-group small-space col-xs-4">
+				                  		<label>级别*：</label>
+				                        <select name="c_jb" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>建档日期：</label>
+							            <input type="text" class="layer-date search-items date-type" name="c_create" id="c_create">
+							        </div>
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4" >
+							            <label >名称*：</label>
+							            <input type="text" name="c_department" >
+							        </div>	    
+							        <div class="form-group small-space col-xs-4" >
+							            <label >简称：</label>
+							            <input type="text" name="c_department_simple" >
+							        </div>	
+							        <div class="form-group small-space col-xs-4" >
+							            <label >译名：</label>
+							            <input type="text" name="c_department_Foreign" >
+							        </div> 
+							    </div>						    
+							    <div class="row">
+							    	<div class="form-group small-space col-xs-4">
+							            <label >客户类别*：</label>
+							            <select name="cc_id" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4">
+				                  		<label>退货率：</label>
+										<input type="text" name="c_back" >
+				                	</div>
+							        <div class="form-group small-space col-xs-4">
+				                  		<label>退货期限：</label>
+										<input type="text" name="back_limit_date" >
+				                	</div>  			
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >最大欠款：</label>
+				                        <input type="text" name="limit_money" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >结算期限：</label>
+				                        <input type="text" name="limit_day" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >最小折扣：</label>
+				                        <input type="text" name="discountrise" >
+				                	</div> 		
+							    </div>
+							    <div class="row">
+							    	<div class="form-group small-space col-xs-4">
+				                  		<label >户号：</label>
+				                        <input type="text" name="custom_id" >
+				                	</div>
+							    	<div class="form-group small-space col-xs-4" >
+							            <label >销售方式：</label>
+							            <select name="cm_id" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>		
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >客户来源：</label>
+				                        <select name="c_source" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>				        						       	
+							    </div>
+							    <div class="row">
+							    	<div class="form-group small-space col-xs-4">
+				                  		<label >外商编号：</label>
+				                        <input type="text" name="c_bak2" >
+				                	</div>    
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >ORDER：</label>
+				                        <input type="text" name="c_bak1" >
+				                	</div>       
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >TYO：</label>
+				                        <input type="text" name="c_bak3" >
+				                	</div>          	
+							    </div>
+							    <div class="row">	
+							    	<div class="form-group small-space col-xs-4">
+				                  		<label >行业分类：</label>
+				                        <select name="c_hy_id" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>   	
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >主管业务员：</label>
+							            <input type="text" name="c_charge_man_name">
+									    <div class="input-group-btn">
+				                         <button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+				                             <span class="caret"></span>
+				                         </button>
+				                         <ul class="dropdown-menu dropdown-menu-right" role="menu" style="margin-left:580px"></ul>
+				                        </div>
+				                        <input type="hidden" name="c_charge_man">
+				                	</div>
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >联系人：</label>
+				                        <input type="text" name="c_contact_man" >
+				                	</div>     	
+							    </div>
+							    <div class="row">
+							    	<div class="form-group small-space col-xs-4">
+				                  		<label >通讯地址：</label>
+				                        <input type="text" name="c_address" >
+				                	</div>
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >邮政编码：</label>
+				                        <input type="text" name="c_zip" >
+				                	</div>    
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >电话：</label>
+				                        <input type="text" name="c_tel" >
+				                	</div> 				       	
+							    </div>							    
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >移动电话：</label>
+				                        <input type="text" name="c_handset" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >传真：</label>
+				                        <input type="text" name="c_fax" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >电子邮件：</label>
+				                        <input type="text" name="c_mail" >
+				                	</div> 		
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >政审等级：</label>
+				                        <select name="zs_type" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >阶段：</label>
+				                        <select name="c_phase" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >业务属性：</label>
+				                        <select name="flag_move_class" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 		
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >货物到站：</label>
+				                        <select name="c_station" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >发货方式：</label>
+				                        <select name="consignment_style" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >货场名称：</label>
+				                        <select name="c_hc_id" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 		
+							    </div>
+							    <div class="row">
+							    	<div class="form-group small-space col-xs-4">
+							    		<label >所属客户：</label>
+							    		<input type="text" name="parent_client" >
+							    		<div class="input-group-btn">
+                                        	<button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+                                            	<span class="caret"></span>
+                                            </button>
+                                            	<ul class="dropdown-menu dropdown-menu-right" role="menu" style="margin-left:580px">
+                                            	</ul>
+                                 		</div>
+							  		</div>
+									<div class="form-group small-space col-xs-4">
+										<label >客户名称：</label>
+										<input type="text" name="parent_client_Name"  disabled>
+									</div>	
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >所属户号：</label>
+				                        <input type="text" name="" disabled>
+				                	</div> 
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >账期：</label>
+				                        <input type="text" name="account_limit" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >是否有效*：</label>
+				                        <select name="c_level" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >信用管制：</label>
+				                        <select name="clients_credit" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 		
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >折扣设置*：</label>
+				                        <select name="discountmethod" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4" >
+							            <label >财务编码：</label>
+							            <input type="text" name="finance" >
+							        </div>
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >客户属性：</label>
+				                        <select name="attribute" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 
+							    </div>
+							    
+<!-- 							    <br> -->
+							    
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4" >
+							            <label >证件号：</label>
+							            <input type="text" name="c_certificate" >
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >订户性质：</label>
+							            <select name="c_property" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >收货地址：</label>
+							            <input type="text" name="c_address_song" disabled>
+							        </div>
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4" >
+							            <label >收件人：</label>
+							            <input type="text" name="accept_man" disabled>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >是否本地：</label>
+							            <select name="is_sh">
+							                <option></option>
+							            	<option value="1">是</option>
+						                	<option value="0">否</option>	
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >国家：</label>
+							            <input type="text" name="c_country" disabled>
+							        </div>
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4" >
+							            <label >所在省：</label>
+							            <input type="text" name="a_id" disabled>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >所在市：</label>
+							            <input type="text" name="p_id" disabled>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >所在区：</label>
+							            <input type="text" name="city_id" disabled>
+							        </div>
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4" >
+							            <label >路名：</label>
+							            <input type="text" name="road_name" disabled>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >门牌号：</label>
+							            <input type="text" name="tablet_value" disabled>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >送件方式：</label>
+							            <input type="text" name="send_type" disabled>
+							        </div>
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4" >
+							            <label >送件线路：</label>
+							            <input type="text" name="line_id" disabled>
+							        </div>
+							    </div>
+							    <div class="row">
+							    	<div class="form-group large-space col-xs-12" >
+							            <label >备注：</label>
+							            <textarea name="c_mem" cols="50" rows="5"></textarea>
+							        </div>
+							    </div>
+							</form>
+						    </div><!-- panel-body1-->
+                        </div>
+                        <!--  
+                        <div id="tab-2" class="tab-pane">
+                            <div class="panel-body">
+                            	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>地址类别：</label>
+				                        <select name="cf_class" class="dictionary">
+				                  			<option></option>
+				                  		</select>
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>本地客户：</label>
+							            <select name="is_sh" class="dictionary">
+				                  			<option></option>
+				                  		</select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" style="display: inline-block;" >
+							            <label>起止时间：</label>
+							            <input type="text" class="layer-date search-items" name="begin_date" id="begin_date" style="width: 169px;">
+							            -
+							            <input type="text" class="layer-date search-items" name="end_date" id="end_date" style="width: 169px;">
+							        </div> 			
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>客户名称：</label>
+				                        <input type="text" name="c_department">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>国家：</label>
+							            <select name="c_country" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>所在省：</label>
+							            <select name="a_id" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>所在市：</label>
+				                        <select name="p_id" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>区域：</label>
+							            <select name="city_id" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>路名：</label>
+							            <input type="text" name="road_name">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>门牌号：</label>
+				                        <input type="text" name="tablet_value">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>地址：</label>
+							            <input type="text" name="cf_address">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>邮编：</label>
+							            <input type="text" name="cf_zip">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>收件人：</label>
+				                        <input type="text" name="accept-man">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>电话：</label>
+							            <input type="text" name="cf_tel">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>E-mail：</label>
+							            <input type="text" name="cf_mail">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>送件方式：</label>
+				                        <input type="text" name="send_type">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>线路：</label>
+							            <input type="text" name="line_id">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>传真：</label>
+							            <input type="text" name="cf_fax">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>周期类型：</label>
+				                        <select name="send_type" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>月/周：</label>
+							            <input type="text" name="where_1">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>日/星期：</label>
+							            <input type="text" name="where_2">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>操作员：</label>
+				                  		<input type="text" name="o_id_input" disabled>
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>增量标志：</label>
+							            <select name="" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>楼盘：</label>
+							            <input type="text" name="cf_address-old">
+							        </div>
+						    	</div>
+                            </div>   panel-body2 
+                        </div>
+                        <div id="tab-3" class="tab-pane"> 
+                            <div class="panel-body">
+                            	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>庆典日期：</label>
+				                  		<input type="text" class="layer-date search-items date-type" name="c_birth" id="c_birth">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>助记码：</label>
+							            <input type="text" name="c_help_input">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>注册资金：</label>
+							            <input type="text" name="c_money">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>法人：</label>
+				                  		<input type="text" name="c_law_man">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>户名：</label>
+							            <input type="text" name="c_account_name">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>帐号：</label>
+							            <input type="text" name="c_account">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>税号：</label>
+				                  		<input type="text" name="c_tax">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>开户银行：</label>
+							            <input type="text" name="c_bank">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>卡号：</label>
+							            <input type="text" name="card_id">
+							        </div>
+						    	</div>
+						    	
+						    	<br>
+						    	
+                            	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>是否免税：</label>
+				                  		<select name="c_ms_id" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>免税区域：</label>
+							            <select name="c_area_id" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>核价方式：</label>
+							            <select name="c_verify_style" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>公司简介：</label>
+				                        <input type="text" name="" disabled>
+				                	</div>
+						    	</div>
+						    	
+						    	<br>
+						    	
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>英文收件人：</label>
+				                        <input type="text" name="accept_man_en">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >英文公司名：</label>
+							            <input type="text" name="c_company_en">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >英文地址：</label>
+							            <input type="text" name="c_address_en">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>图书文献边界：</label>
+				                        <input type="text" name="off_discount">
+				                	</div>
+						    	</div>
+                            </div>     panel-body3 
+                        </div> 
+            		-->
+                    </div>                    
+                    
+                </div>
+			 </div>
+		</div>
+		<div class="sonpage-footer">
+			<button id="save" class="btn btn-primary" type="button">保存</button>
+			<button id="cancel" class="btn btn-white" type="button">取消</button>
+		</div>
+	</body>
+	<!-- Bootstrap table -->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <!-- Bootstrap table export-->
+    <script src="${context}/js/plugins/bootstrap-table/export/bootstrap-table-export.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/tableExport.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/js-xlsx/xlsx.core.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.plugin.autotable.js"></script>
+    
+	<script src="${context}/js/common/common.js"></script>
+	<script src="${context}/js/plugins/layer/layer.min.js"></script>
+	<script src="${context}/js/plugins/webuploader/webuploader.min.js"></script>
+	
+	<!-- plugins -->
+ 	<script src="${context}/js/plugins/suggest/bootstrap-suggest-new.min.js"></script>
+ 	<!-- layerDate plugin javascript -->
+    <script src="${context}/js/plugins/layer/laydate-new/laydate.js"></script>
+ 	
+	<script type="text/javascript">
+	
+	$(document).ready(function () {
+		$(".layer-date").each(function(){
+			inistal_one_data('#'+$(this).attr('id'));
+		});
+		//加载字典数据
+		get_dictionary("${context}",null);
+		
+		initialize_bsSuggest_user_by_dept("${context}", "c_charge_man_name", "c_charge_man", "2000");      // 放用户信息(报刊的)
+		
+		initialize_bsSuggest_bk_client("${context}", "parent_client_Name", "parent_client");
+			
+		$('#save').on('click', function () {
+			if(!has_null($("#form")))
+				ajax_function("addClient","post",$('#form').serialize(),'新增成功');		
+		 });
+	});
+	</script>
+</html>

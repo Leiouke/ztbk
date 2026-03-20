@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans     
+        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.0.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+        ">
+      
+    <!-- 配置监听器 -->  
+	<bean id="initialBeanListener" class="com.cnpiecsb.common.listener.InitialBeanListener"/>  <!-- 这个监听器得不到servletContext -->
+	<bean id="initSpringServletContext" class="com.cnpiecsb.common.listener.InitSpringServletContext"/>  <!-- 这个监听器能得到servletContext -->
+	
+	<!-- 配置日志Aop -->
+	
+	<!-- 启动自动扫描该包下所有的Bean(例如@Component), 被扫描到的bean才可以注入其他bean -->
+    <context:component-scan base-package="com.cnpiecsb.common.aop.*" />
+	<bean id="systemLogAspect" class="com.cnpiecsb.common.aop.SystemLogAspect"/>
+	
+	<aop:config>
+		<aop:pointcut id="pointcut_add" expression="execution(* com.cnpiecsb.*.service..*.add*(..)) and @annotation(com.cnpiecsb.common.aop.BussinessAnnotation)"/> 
+		<aop:pointcut id="pointcut_edit" expression="execution(* com.cnpiecsb.*.service..*.edit*(..)) and @annotation(com.cnpiecsb.common.aop.BussinessAnnotation)"/> 
+		<aop:pointcut id="pointcut_delete" expression="execution(* com.cnpiecsb.*.service..*.delete*(..)) and @annotation(com.cnpiecsb.common.aop.BussinessAnnotation)"/>
+		<aop:pointcut id="pointcut_do" expression="execution(* com.cnpiecsb.*.service..*.do*(..)) and @annotation(com.cnpiecsb.common.aop.BussinessAnnotation)"/> 
+		<aop:pointcut id="pointcut_operate" expression="@annotation(com.cnpiecsb.common.aop.OperationLogAnnotation)"/>
+		<!--<aop:pointcut id="pointcut_operate" expression="execution(* com.cnpiecsb.fc.receivable.controller.ReceivableStatementController.statementManage(..)) "/>-->
+		<aop:aspect ref="systemLogAspect">
+			<aop:after-returning pointcut-ref="pointcut_add" method="createLog" returning="result"/>
+			<aop:after-returning pointcut-ref="pointcut_edit" method="createLog" returning="result"/>
+			<aop:after-returning pointcut-ref="pointcut_delete" method="createLog" returning="result"/>
+			<aop:after-returning pointcut-ref="pointcut_do" method="createLog" returning="result"/> 
+			<aop:after-returning pointcut-ref="pointcut_operate" method="createOperationLog" returning="result"/>
+		</aop:aspect>
+	</aop:config>
+</beans>

@@ -1,0 +1,448 @@
+package com.cnpiecsb.sd.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+/**
+ * 下架通知页面
+ * @author guanliyuan
+ *
+ */
+@Controller
+@RequestMapping("/bk/sd")
+public class outBoundNoticeController extends ZtbkServiceController{
+	
+	// 下架通知表头查询
+	private int outBoundNoticeManageQueryId = 10000038;	
+	private GridHeadConfig outBoundNoticeManageQueryHeadConfig;
+			
+	// 下架通知明细临时表查询
+	private int outBoundNoticeItemManageQueryId = 10000039;	
+	private GridHeadConfig outBoundNoticeItemManageQueryHeadConfig;
+	
+	// 客户可发库存查询
+	private int canOutBoundQueryId = 10000051;//10000037;	
+	private GridHeadConfig canOutBoundQueryHeadConfig;
+	
+	private int clientManageQueryId = 10000002;		//客户信息表头查询
+	private GridHeadConfig clientManageGridHeadConfig;
+	
+	public outBoundNoticeController(){
+		
+		outBoundNoticeManageQueryHeadConfig = new GridHeadConfig(outBoundNoticeManageQueryId,true,false,true,false);
+		outBoundNoticeManageQueryHeadConfig.setOperatorWidth(100);
+		
+		outBoundNoticeItemManageQueryHeadConfig = new GridHeadConfig(outBoundNoticeItemManageQueryId,true,true,true,false);
+		outBoundNoticeItemManageQueryHeadConfig.setOperatorWidth(100);
+		
+		canOutBoundQueryHeadConfig = new GridHeadConfig(canOutBoundQueryId,true,true,false,false);
+		
+		clientManageGridHeadConfig = new GridHeadConfig(clientManageQueryId,true,false,true,false);
+	}
+	
+	/**
+	 * 进入下架通知界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/outBoundNoticeManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView outBoundNoticeManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("sd/outBoundNotice/outBoundNoticeManage");
+        
+        String tableHeader_ready = this.getTableHeader(httpSession,clientManageGridHeadConfig);
+        mv.addObject("tableHeader_ready", tableHeader_ready);
+		mv.addObject("queryId_ready", clientManageQueryId);
+        
+        String tableHeader_done = this.getTableHeader(httpSession,outBoundNoticeManageQueryHeadConfig);
+        mv.addObject("tableHeader_done", tableHeader_done);
+		mv.addObject("queryId_done", outBoundNoticeManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得下架通知数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getOutBoundNoticeList")
+	@ResponseBody
+	public Object getOutBoundNoticeList(@RequestBody Map postData, HttpSession httpSession) {
+		postData.put("out_type", "01");//下架通知只能配送出库
+		return this.getTableDataList(postData, outBoundNoticeManageQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-客户
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientList")
+	@ResponseBody
+	public Object getClientList(@RequestBody Map postData){
+		return this.getTableDataList(postData, clientManageQueryId);
+	}
+	
+	/**
+	 * 新增出库单页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/outBoundAdd",method=RequestMethod.GET)
+    public ModelAndView outBoundAdd(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        //获取guid
+        String outBound_guid = GuidUtil.create32Guid();
+        httpSession.setAttribute("outBound_guid", outBound_guid);
+        
+        //临时表表头和query
+        String tableHeader = this.getTableHeader(httpSession, outBoundNoticeItemManageQueryHeadConfig);
+		
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", outBoundNoticeItemManageQueryId);
+		
+		//查询表表头和query
+		String canOutBoundTableHeader = this.getTableHeader(httpSession, canOutBoundQueryHeadConfig);
+		
+        mv.addObject("canOutBoundTableHeader", canOutBoundTableHeader);
+		mv.addObject("canOutBoundqueryId", canOutBoundQueryId);
+		
+		mv.addObject("c_id", postData.get("c_id"));
+		mv.addObject("c_department", postData.get("c_department"));
+        
+        mv.setViewName("sd/outBoundNotice/outBoundAdd");
+        return mv;
+    }
+	
+	/**
+	 * 获得入库单新增明细临时表数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getOutBoundItemTempList")
+	@ResponseBody
+	public Object getOutBoundItemTempList(@RequestBody Map postData, HttpSession httpSession) {
+		String outBound_guid = (String)httpSession.getAttribute("outBound_guid");
+		postData.put("guid", outBound_guid);
+		return this.getTableDataList(postData, outBoundNoticeItemManageQueryId);
+	}
+	
+	/**
+	 * 引入临时表明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/addOutBound")
+	@ResponseBody
+    public Object addOutBound(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+		
+		
+		String outBound_guid = (String)httpSession.getAttribute("outBound_guid");
+		postData.put("guid", outBound_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		
+		postData.put("o_id_input", user.getAccount());
+				
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","out_type","o_id_input"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_downshelf_new");
+		
+		String returnNames[] = {"downshelf_id"};
+				
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 作废出库单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteOutBound")
+	@ResponseBody
+    public Object deleteOutBound(@RequestParam Map postData,HttpSession httpSession){
+		User user=(User)httpSession.getAttribute("user");
+		
+		postData.put("o_id_destroy", user.getAccount());
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"downshelf_id","o_id_destroy"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_downshelf_delete");
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除临时表明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/deleteOutBoundItemTemp")
+	@ResponseBody
+    public Object deleteOutBoundItemTemp(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request)throws JsonProcessingException{
+		
+		String[] inc_nos = request.getParameterValues("inc_nos");
+		if(inc_nos != null && inc_nos.length > 0){
+			for(int i=0;i<inc_nos.length;i++){
+		        String outBound_guid = (String)httpSession.getAttribute("outBound_guid");
+				postData.put("guid", outBound_guid);
+				
+				// 入参, 注意按照顺序
+				String paramNames[] = {"guid","inc_no"};
+				// 加入sp的名称
+				postData.put("spName", "n_bk_qk_downshelf_item_temp_delete");
+				
+				postData.put("inc_no", inc_nos[i]);
+				
+				int code = baseService.doCallSp(postData, paramNames, null);
+				
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增临时表明细页面(no use)
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+//	@RequestMapping(value="/outBoundItemTempAdd",method=RequestMethod.GET)
+//    public ModelAndView outBoundItemTempAdd(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+//        ModelAndView mv = new ModelAndView();        
+//        mv.setViewName("sd/outBoundNotice/outBoundItemTempAdd");
+//		
+//		String tableHeader = this.getTableHeader(httpSession, canOutBoundQueryHeadConfig);
+//		mv.addObject("tableHeader", tableHeader);
+//		mv.addObject("queryId", canOutBoundQueryId);
+//		
+//        return mv;
+//    }
+	
+	/**
+	 * 获得引入客户可发库存
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getCanOutBoundItemTempList")
+	@ResponseBody
+	public Object getCanOutBoundItemTempList(@RequestBody Map postData, HttpSession httpSession) {
+		String outBound_guid = (String)httpSession.getAttribute("outBound_guid");
+		postData.put("guid", outBound_guid);
+		return this.getTableDataList(postData, canOutBoundQueryId);
+	}
+	
+	/**
+	 * 引入临时表明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/addOutBoundItemTemp")
+	@ResponseBody
+    public Object addOutBoundItemTemp(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request)throws JsonProcessingException{
+		
+		String[] stock_ids = request.getParameterValues("stock_ids");
+		if(stock_ids != null && stock_ids.length > 0){
+			for(int i=0;i<stock_ids.length;i++){
+		        String outBound_guid = (String)httpSession.getAttribute("outBound_guid");
+				postData.put("guid", outBound_guid);
+				
+				// 入参, 注意按照顺序
+				String paramNames[] = {"guid","stock_id"};
+				// 加入sp的名称
+				postData.put("spName", "n_bk_qk_downshelf_item_temp_new");
+				
+				postData.put("stock_id", stock_ids[i]);
+				
+				int code = baseService.doCallSp(postData, paramNames, null);
+				
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/outBoundEdit",method=RequestMethod.GET)
+    public ModelAndView outBoundEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+		ModelAndView mv = new ModelAndView();      
+		
+		//获取guid
+		String outBound_guid = GuidUtil.create32Guid();
+        httpSession.setAttribute("outBound_guid", outBound_guid);
+		
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(outBoundNoticeManageQueryId, postData);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		
+		String tableHeader = this.getTableHeader(httpSession, outBoundNoticeItemManageQueryHeadConfig);
+		
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", outBoundNoticeItemManageQueryId);
+        
+        mv.setViewName("sd/outBoundNotice/outBoundEdit");
+        
+        // 入参, 注意按照顺序
+     	String paramNames[] = new String[]{"guid", "downshelf_id"};
+     	// 加入sp的名称
+     	postData.put("spName", "n_bk_qk_downshelf_item_temp_getdata");
+     				
+     	httpSession.setAttribute("outBound_guid", outBound_guid);
+     	postData.put("guid", outBound_guid);
+     				
+     	int code = baseService.doCallSp(postData, paramNames, null);
+			        
+        return mv;
+    }
+	
+	/**
+	 * 编辑出库单（no use）
+	 * 
+	 * param postData
+	 * return
+	 */
+//	@RequestMapping(value="/editOutBound")
+//	@ResponseBody
+//    public Object editOutBound(@RequestParam Map postData,HttpSession httpSession){
+//		String outBound_guid = (String)httpSession.getAttribute("outBound_guid");
+//		
+//		postData.put("guid", outBound_guid);
+//		
+//		User user=(User)httpSession.getAttribute("user");
+//		
+//		postData.put("o_id_input", user.getAccount());
+//		
+//		// 入参, 注意按照顺序
+//		String paramNames[] = {"guid",
+//				  "downshelf_id",
+//		          "out_type",
+//		          "o_id_input"};
+//		// 加入sp的名称
+//		postData.put("spName", "n_bk_qk_downshelf_update");
+//		
+//		int code = baseService.doCallSp(postData, paramNames, null);
+//		
+//		if (code != 0) {
+//			return this.getAjaxResult(code);
+//		}
+//		
+//		if(Integer.parseInt(postData.get("is_commit").toString())==1){
+//			// 入参, 注意按照顺序
+//			String paramNames_commit[] = {
+//							  "downshelf_id",
+//					          "o_id_input"};
+//			// 加入sp的名称
+//			postData.put("spName", "n_bk_qk_downshelf_commit");
+//					
+//			int code_commit = baseService.doCallSp(postData, paramNames_commit, null);
+//			
+//			if (code_commit != 0) {
+//				return this.getAjaxResult(code_commit);
+//			}
+//		}
+//		
+//		return "{\"success\":true}";
+//    }
+	
+	/**
+	 * 提交出库通知单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/commitOutBound")
+	@ResponseBody
+    public Object commitOutBound(@RequestParam Map postData,HttpSession httpSession){
+		
+		User user=(User)httpSession.getAttribute("user");
+		
+		postData.put("o_id_input", user.getAccount());
+		
+		// 入参, 注意按照顺序
+		String paramNames_commit[] = {
+							 "downshelf_id",
+					         "o_id_input"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_downshelf_commit");
+					
+		int code_commit = baseService.doCallSp(postData, paramNames_commit, null);
+			
+		if (code_commit != 0) {
+			return this.getAjaxResult(code_commit);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改临时表明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/updateOutBoundItemTemp")
+	@ResponseBody
+    public Object updateOutBoundItemTemp(@RequestParam Map postData,HttpSession httpSession) {
+		String outBound_guid = (String)httpSession.getAttribute("outBound_guid");
+		
+		postData.put("guid", outBound_guid);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid", "inc_no","h_amount"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_downshelf_item_temp_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+
+}

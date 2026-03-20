@@ -1,0 +1,861 @@
+[	
+	{
+      	"id":"8",
+      	"name": "invoice_type",
+      	"z_name":"销售发票类型",
+      	"type": "key"
+    },
+    {
+      	"id":"9",
+      	"name": "tax_rate",
+      	"z_name":"发票税率",
+      	"type": "key"
+    },
+    {
+      	"id":"10",
+      	"name": "sale_class",
+      	"z_name":"销售分类",
+      	"type": "key"
+    },
+    {
+      	"id":"11",
+      	"name": "pay_type",
+      	"z_name":"来款方式",
+      	"type": "key"
+    },
+    {
+      	"id":"12",
+      	"name": "attribute",
+      	"z_name":"客户属性",
+      	"type": "key"
+    },
+    {
+      	"id":"13",
+      	"name": "pay_source",
+      	"z_name":"客户收支来源",
+      	"type": "key"
+    },
+    {
+      	"id":"14",
+      	"name": "invoice_class",
+      	"z_name":"进货发票类型",
+      	"type": "key"
+    },
+    {
+      	"id":"15",
+      	"name": "invoice_dh_status",
+      	"z_name":"进货发票状态",
+      	"type": "key"
+    },
+    {
+      	"id":"16",
+      	"name": "currency",
+      	"z_name":"外币币种",
+      	"type": "key"
+    },
+    {
+      	"id":"16",
+      	"name": "money_type",
+      	"z_name":"外币币种(币制)",
+      	"type": "key"
+    },
+    {
+      	"id":"17",
+      	"name": "invoice_family",
+      	"z_name":"发票类别",
+      	"type": "key"
+    },
+    {
+      	"id":"18",
+      	"name": "fh_status",
+      	"z_name":"申汇单状态",
+      	"type": "key"
+    },
+    {
+      	"id":"19",
+      	"name": "fw_mode",
+      	"z_name":"付汇方式",
+      	"type": "key"
+    },
+    {
+      	"id":"20",
+      	"name": "region_catagory",
+      	"z_name":"区域类别",
+      	"type": "key"
+    },
+    {
+      	"id":"23",
+      	"name": "f_country",
+      	"z_name":"国家",
+      	"type": "key"
+    },
+    {
+      	"id":"24",
+      	"name": "fc_id",
+      	"z_name":"货源类别",
+      	"type": "key"
+    },
+    {
+      	"id":"16",
+      	"name": "f_sxxe",
+      	"z_name":"币种-赊销限额",
+      	"type": "key"
+    },
+    {
+    	"id":"26",
+      	"name": "f_type",
+      	"z_name":"业务类型-货源 ",
+      	"type": "key"
+    	
+    },
+    {
+      	"id":"19",
+      	"name": "f_payment",
+      	"z_name":"付汇方式",
+      	"type": "key"
+    },
+    {
+      	"id":"26",
+      	"name": "source_type",
+      	"z_name":"开票类别",
+      	"type": "key"
+    },
+    {
+      	"id":"28",
+      	"name": "report_type",
+      	"z_name":"销售发票类型",
+      	"type": "key"
+    },
+    {
+      	"id":"25",
+      	"name": "cw_type",
+      	"z_name":"财务分类(业务用)",
+      	"type": "key"
+    },
+    {
+      	"id":"29",
+      	"name": "kp_type",
+      	"z_name":"开票类型",
+      	"type": "key"
+    },
+    {
+      	"id":"30",
+      	"name": "f_contact_category",
+      	"z_name":"地址类别",
+      	"type": "key"
+    },
+    {
+      	"id":"31",
+      	"name": "tax_class_code",
+      	"z_name":"税收分类编码",
+      	"type": "key"
+    },
+    {
+      	"id":"32",
+      	"name": "project_type",
+      	"z_name":"项目类型",
+      	"type": "key"
+    },
+    {
+      	"id":"33",
+      	"name": "backup_type",
+      	"z_name":"备份类型",
+      	"type": "key"
+    },
+    {
+      	"id":"34",
+      	"name": "payment_type",
+      	"z_name":"费用类型",
+      	"type": "key"
+    },
+    {
+      	"id":"35",
+      	"name": "pc_status",
+      	"z_name":"支付单状态",
+      	"type": "key"
+    },
+    {
+      	"id":"36",
+      	"name": "station_id",
+      	"z_name":"库房站点",
+      	"type": "key"
+    },
+    {
+      	"id":"38",
+      	"name": "station_id_aim",
+      	"z_name":"调入站点",
+      	"type": "key"
+    },
+    {
+      	"id":"37",
+      	"name": "purchase_cw_type",
+      	"z_name":"财务分类",
+      	"type": "key"
+    },
+    {
+      	"id":"40",
+      	"name": "approve_role",
+      	"z_name":"审批角色",
+      	"type": "key"
+    },
+    {
+      	"id":"41",
+      	"name": "crawler_type",
+      	"z_name":"爬取来源",
+      	"type": "key"
+    },
+    {
+      	"id":"43",
+      	"name": "fc_kp_form",
+      	"z_name":"财务中心-开票类别",
+      	"type": "key"
+    },
+    {
+      	"id":"45",
+      	"name": "fc_tax_class_code",
+      	"z_name":"财务中心-税收分类编码",
+      	"type": "key"
+    },
+    {
+      	"id":"47",
+      	"name": "fc_kp_family",
+      	"z_name":"财务中心-销售发票类别",
+      	"type": "key"
+    },
+    {
+      	"id":"49",
+      	"name": "fc_invoice_class",
+      	"z_name":"财务中心-货源发票类型",
+      	"type": "key"
+    },
+    {
+      	"id":"50",
+      	"name": "fc_invoice_status",
+      	"z_name":"财务中心-货源发票状态",
+      	"type": "key"
+    },
+    {
+      	"id":"52",
+      	"name": "fc_ap_status",
+      	"z_name":"财务中心-付款申请状态",
+      	"type": "key"
+    },
+    {
+      	"id":"53",
+      	"name": "approval_result",
+      	"z_name":"财务中心-单据审批结果",
+      	"type": "key"
+    },
+    {
+      	"id":"55",
+      	"name": "fc_sr_status",
+      	"z_name":"财务中心-销售报表状态",
+      	"type": "key"
+    },
+    {
+      	"id":"58",
+      	"name": "fc_pr_status",
+      	"z_name":"财务中心-进货报表类型",
+      	"type": "key"
+    },
+    {
+      	"id":"59",
+      	"name": "claim_source",
+      	"z_name":"财务中心-来款认领来源",
+      	"type": "key"
+    },
+    {
+      	"id":"60",
+      	"name": "application_target",
+      	"z_name":"财务中心-付款申请去向",
+      	"type": "key"
+    },
+    {
+      	"id":"61",
+      	"name": "cost_classification",
+      	"z_name":"财务中心-进货结算单成本分类",
+      	"type": "key"
+    },
+    {
+      	"id":"62",
+      	"name": "factory_status",
+      	"z_name":"报刊-货源审核状态",
+      	"type": "key"
+    },
+    {
+      	"id":"63",
+      	"name": "company_type",
+      	"z_name":"财务中心保证金-招标单位类别",
+      	"type": "key"
+    },
+    {
+      	"id":"64",
+      	"name": "project_classify",
+      	"z_name":"财务中心保证金-招标信息之项目分类",
+      	"type": "key"
+    },
+    {
+      	"id":"65",
+      	"name": "bids_manner",
+      	"z_name":"财务中心保证金-招标信息之招标方式",
+      	"type": "key"
+    },
+    {
+      	"id":"66",
+      	"name": "status",
+      	"z_name":"财务中心保证金-招投标状态",
+      	"type": "key"
+    },
+    {
+      	"id":"67",
+      	"name": "fee_type",
+      	"z_name":"财务中心保证金-费用类型",
+      	"type": "key"
+    },
+    {
+      	"id":"69",
+      	"name": "competitor",
+      	"z_name":"财务中心保证金-竞标方",
+      	"type": "key"
+    },
+    {
+      	"id":"70",
+      	"name": "resource_type",
+      	"z_name":"员工资源管理-资源类型",
+      	"type": "key"
+    },
+    {
+      	"id":"71",
+      	"name": "ac_status",
+      	"z_name":"员工资源管理-资源状态",
+      	"type": "key"
+    },
+    {
+      	"id":"77",
+      	"name": "tran_type",
+      	"z_name":"事务提醒管理-事务类型",
+      	"type": "key"
+    },
+    {
+      	"id":"78",
+      	"name": "fc_pc_status",
+      	"z_name":"财务中心备用金-状态",
+      	"type": "key"
+    },
+    {
+    	"id":"79",
+      	"name": "fc_tax_rate",
+      	"z_name":"财务中心-发票税率",
+      	"type": "key"
+    },
+    {
+    	"id":"80",
+      	"name": "cost_form",
+      	"z_name":"财务中心-成本类型",
+      	"type": "key"
+    },
+    {
+    	"id":"81",
+      	"name": "inventory",
+      	"z_name":"报刊过刊-库房",
+      	"type": "key"
+    },
+    {
+    	"id":"82",
+      	"name": "company_title",
+      	"z_name":"财务收付对象",
+      	"type": "key"
+    },
+    {
+    	"id":"83",
+      	"name": "br_type",
+      	"z_name":"招待类型",
+      	"type": "key"
+    },
+    {
+    	"id":"84",
+      	"name": "o_id_title",
+      	"z_name":"差旅职别",
+      	"type": "key"
+    },
+    {
+    	"id":"85",
+      	"name": "p_result",
+      	"z_name":"采购处理结果",
+      	"type": "key"
+    },
+    {
+    	"id":"86",
+      	"name": "d_status",
+      	"z_name":"分发状态",
+      	"type": "key"
+    },
+    {
+    	"id":"90",
+      	"name": "ca_status",
+      	"z_name":"分发状态",
+      	"type": "key"
+    },
+    {
+    	"id":"91",
+      	"name": "taxback_status",
+      	"z_name":"报关退税状态",
+      	"type": "key"
+    },
+    {
+    	"id":"93",
+      	"name": "export_place",
+      	"z_name":"报关出口地",
+      	"type": "key"
+    },
+    {
+    	"id":"94",
+      	"name": "fc_remittance_method",
+      	"z_name":"汇款方式",
+      	"type": "key"
+    },
+    {
+    	"id":"95",
+      	"name": "fc_fx_account",
+      	"z_name":"现汇付款账号",
+      	"type": "key"
+    },
+    {
+    	"id":"95",
+      	"name": "fc_purchase_account",
+      	"z_name":"购汇付款账号",
+      	"type": "key"
+    },
+    {
+    	"id":"96",
+      	"name": "fc_submit_bank",
+      	"z_name":"提交银行",
+      	"type": "key"
+    },
+    {
+    	"id":"97",
+      	"name": "fc_submit_method",
+      	"z_name":"提交方式",
+      	"type": "key"
+    },
+    {
+    	"id":"98",
+      	"name": "fc_remittance_type",
+      	"z_name":"付汇款类型",
+      	"type": "key"
+    },
+    {
+    	"id":"99",
+      	"name": "fc_remittance_nature",
+      	"z_name":"付汇性质",
+      	"type": "key"
+    },
+    {
+    	"id":"100",
+      	"name": "fc_remittance_category",
+      	"z_name":"汇付款类别",
+      	"type": "key"
+    },
+    {
+    	"id":"101",
+      	"name": "currency_type",
+      	"z_name":"财务中心国外汇款-付汇币种",
+      	"type": "key"
+    },
+    {
+    	"id":"92",
+      	"name": "financial_classify_category",
+      	"z_name":"财务分类分类描述",
+      	"type": "key"
+    },
+    {
+    	"id":"103",
+      	"name": "pay_style",
+      	"z_name":"财务分类分类映射类别",
+      	"type": "key"
+    },
+    {
+    	"id":"104",
+      	"name": "process_type",
+      	"z_name":"退税发票处理类型",
+      	"type": "key"
+    },
+    {
+    	"id":"105",
+      	"name": "finacial_confirm",
+      	"z_name":"退税发票核验状态",
+      	"type": "key"
+    },
+    {
+    	"id":"106",
+      	"name": "oa_payment_type",
+      	"z_name":"财务中心-付款类型",
+      	"type": "key"
+    },
+    {
+    	"id":"107",
+      	"name": "oa_tax_type",
+      	"z_name":"财务中心-税金分类",
+      	"type": "key"
+    },
+    {
+    	"id":"108",
+      	"name": "subclasses",
+      	"z_name":"报刊资料-自定义类",
+      	"type": "key"
+    },
+    {
+    	"id":"109",
+      	"name": "qk_attribute",
+      	"z_name":"报刊资料-属性",
+      	"type": "key"
+    },
+    {
+    	"id":"110",
+      	"name": "qk_tye",
+      	"z_name":"报刊资料-报刊分类",
+      	"type": "key"
+    },
+    {
+    	"id":"111",
+      	"name": "qk_zj_flag",
+      	"z_name":"报刊资料-自进标识",
+      	"type": "key"
+    },
+    {
+    	"id":"112",
+      	"name": "min_zd_period",
+      	"z_name":"报刊资料-起订周期",
+      	"type": "key"
+    },
+    {
+    	"id":"113",
+      	"name": "qkbd_style",
+      	"z_name":"供应商资料-发订周期",
+      	"type": "key"
+    },
+    {
+    	"id":"113",
+      	"name": "qk_bd_regular",
+      	"z_name":"供应商资料-发订周期",
+      	"type": "key"
+    },
+    {
+    	"id":"114",
+      	"name": "grade_id",
+      	"z_name":"报刊资料-报刊级别",
+      	"type": "key"
+    },
+    {
+    	"id":"115",
+      	"name": "Arrival_batches",
+      	"z_name":"报刊资料-到货批次",
+      	"type": "key"
+    },
+    {
+    	"id":"116",
+      	"name": "qa_id",
+      	"z_name":"报刊资料-国家",
+      	"type": "key"
+    },
+    {
+    	"id":"116",
+      	"name": "gr_state_id",
+      	"z_name":"报刊资料-国家（自购国家）",
+      	"type": "key"
+    },
+     {
+    	"id":"116",
+      	"name": "c_country",
+      	"z_name":"报刊资料-国家",
+      	"type": "key"
+    },
+    {
+    	"id":"116",
+      	"name": "country",
+      	"z_name":"报刊资料-国家",
+      	"type": "key"
+    },
+    {
+    	"id":"117",
+      	"name": "r_id",
+      	"z_name":"报刊资料-发行范围",
+      	"type": "key"
+    },
+    {
+    	"id":"118",
+      	"name": "languages",
+      	"z_name":"报刊资料-语种",
+      	"type": "key"
+    },
+    {
+    	"id":"119",
+      	"name": "type",
+      	"z_name":"报刊资料-周期类型",
+      	"type": "key"
+    },
+    {
+    	"id":"119",
+      	"name": "send_type",
+      	"z_name":"报刊资料-周期类型(客户地址周期)",
+      	"type": "key"
+    },
+    {
+    	"id":"120",
+      	"name": "is_flag",
+      	"z_name":"报刊资料-是否经营",
+      	"type": "key"
+    },
+    {
+    	"id":"121",
+      	"name": "is_mail",
+      	"z_name":"报刊资料-是否邮发",
+      	"type": "key"
+    },
+    {
+    	"id":"122",
+      	"name": "isbn_class",
+      	"z_name":"报刊资料-上报分类1",
+      	"type": "key"
+    },
+    {
+    	"id":"123",
+      	"name": "isbn_class2",
+      	"z_name":"报刊资料-上报分类2",
+      	"type": "key"
+    },
+    {
+    	"id":"124",
+      	"name": "hg_id",
+      	"z_name":"报刊资料-海关",
+      	"type": "key"
+    },
+    {
+    	"id":"125",
+      	"name": "c_jb",
+      	"z_name":"客商资料-级别",
+      	"type": "key"
+    },
+    {
+    	"id":"125",
+      	"name": "f_jb",
+      	"z_name":"客商资料-级别",
+      	"type": "key"
+    },
+    {
+    	"id":"126",
+      	"name": "",
+      	"z_name":"供应商资料-供应商类别",
+      	"type": "key"
+    },
+    {
+    	"id":"127",
+      	"name": "",
+      	"z_name":"客商资料-当前状况",
+      	"type": "key"
+    },
+    {
+    	"id":"128",
+      	"name": "cc_id",
+      	"z_name":"客户资料-客户类别",
+      	"type": "key"
+    },
+    {
+    	"id":"129",
+      	"name": "c_source",
+      	"z_name":"客户资料-客户来源",
+      	"type": "key"
+    },
+    {
+    	"id":"130",
+      	"name": "c_hy_id",
+      	"z_name":"客户资料-行业分类",
+      	"type": "key"
+    },
+    {
+    	"id":"130",
+      	"name": "hy_id",
+      	"z_name":"供应商资料-行业分类",
+      	"type": "key"
+    },
+    {
+    	"id":"131",
+      	"name": "zs_type",
+      	"z_name":"客户资料-政审等级",
+      	"type": "key"
+    },
+    {
+    	"id":"132",
+      	"name": "flag_move_class",
+      	"z_name":"客户资料-业务属性",
+      	"type": "key"
+    },
+    {
+    	"id":"133",
+      	"name": "consignment_style",
+      	"z_name":"客户资料-发货方式",
+      	"type": "key"
+    },
+    {
+    	"id":"134",
+      	"name": "c_phase",
+      	"z_name":"客户资料-阶段",
+      	"type": "key"
+    },
+    {
+    	"id":"135",
+      	"name": "clients_credit",
+      	"z_name":"客户资料-信用管制",
+      	"type": "key"
+    },
+    {
+    	"id":"136",
+      	"name": "c_property",
+      	"z_name":"客户资料-订户性质",
+      	"type": "key"
+    },
+    {
+    	"id":"137",
+      	"name": "currency_id",
+      	"z_name":"报刊币种",
+      	"type": "key"
+    },
+    {
+    	"id":"138",
+      	"name": "cm_id",
+      	"z_name":"销售方式/经销方式",
+      	"type": "key"
+    },
+    {
+    	"id":"138",
+      	"name": "sale_style_id",
+      	"z_name":"销售方式/经销方式",
+      	"type": "key"
+    },
+    {
+    	"id":"139",
+      	"name": "f_level",
+      	"z_name":"供应商资料-当前状况",
+      	"type": "key"
+    },
+    {
+    	"id":"139",
+      	"name": "c_level",
+      	"z_name":"客户资料-当前状况",
+      	"type": "key"
+    },
+    {
+    	"id":"140",
+      	"name": "cf_class",
+      	"z_name":"客户地址-地址类别",
+      	"type": "key"
+    },
+    {
+    	"id":"141",
+      	"name": "class",
+      	"z_name":"客户事件-事件类别",
+      	"type": "key"
+    },
+    {
+    	"id":"142",
+      	"name": "c_content_level",
+      	"z_name":"客户事件-事件级别",
+      	"type": "key"
+    },
+    {
+    	"id":"143",
+      	"name": "time_type",
+      	"z_name":"客户事件-时间",
+      	"type": "key"
+    },
+    {
+    	"id":"144",
+      	"name": "qk_bd_style",
+      	"z_name":"报订类型",
+      	"type": "key"
+    },
+    {
+    	"id":"145",
+      	"name": "kind_id",
+      	"z_name":"订单标识",
+      	"type": "key"
+    },
+    {
+    	"id":"146",
+      	"name": "receipts_class",
+      	"z_name":"订单类别",
+      	"type": "key"
+    },
+    {
+    	"id":"147",
+      	"name": "mark_id",
+      	"z_name":"推广类型",
+      	"type": "key"
+    },
+    {
+    	"id":"148",
+      	"name": "js_attribute",
+      	"z_name":"结算类型",
+      	"type": "key"
+    },
+    {
+    	"id":"149",
+      	"name": "zd_attribute",
+      	"z_name":"订单属性",
+      	"type": "key"
+    },
+    {
+    	"id":"150",
+      	"name": "",
+      	"z_name":"收订属性",
+      	"type": "key"
+    },
+    {
+    	"id":"151",
+      	"name": "price_class",
+      	"z_name":"报刊资料-价格类别",
+      	"type": "key"
+    },
+    {
+    	"id":"152",
+      	"name": "transport_mode",
+      	"z_name":"运输方式",
+      	"type": "key"
+    },
+    {
+    	"id":"153",
+      	"name": "trade_terms",
+      	"z_name":"贸易方式",
+      	"type": "key"
+    },
+    {
+    	"id":"154",
+      	"name": "dh_batch_status",
+      	"z_name":"批次状态",
+      	"type": "key"
+    },
+    {
+    	"id":"155",
+      	"name": "collect_style",
+      	"z_name":"客户配送模式",
+      	"type": "key"
+    },
+    {
+    	"id":"156",
+      	"name": "in_type",
+      	"z_name":"入库类型",
+      	"type": "key"
+    },
+    {
+    	"id":"157",
+      	"name": "out_type",
+      	"z_name":"出库类型",
+      	"type": "key"
+    },
+    {
+    	"id":"158",
+      	"name": "",
+      	"z_name":"配送状态",
+      	"type": "key"
+    }
+]

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnpiecsb.system.dao.WarningDao">
+	<resultMap type="com.cnpiecsb.system.entity.Warning" id="warningResultMap">
+		<result property="description" column="description"/>
+		<result property="queryId" column="query_id"/>
+		<result property="count" column="c_count"/>
+		<result property="tableId" column="table_id"/>
+	</resultMap>
+	
+	<!-- 获得用户的所有预警信息 -->
+	<select id="getWarningByAccount" resultMap="warningResultMap">
+		select * from it_system_control a
+			inner join it_system_control_item b
+		   on a.Table_ID = b.Table_ID
+		where b.account = #{account} and b.c_count>0 
+		order by b.c_count desc
+	</select>
+	
+	<!-- 获得所有的预警信息 -->
+	<select id="getAllWarning" resultMap="warningResultMap">
+		select * from it_system_control
+	</select>
+	
+	<!-- 获得某预警的配置用户 -->
+	<select id="getWarningAccount" resultType="String">
+		select account from it_system_control_item where table_id = #{tableId}
+	</select>
+	
+	<!-- 删除所有某预警的配置用户 -->
+	<delete id="deleteWarningAccount">
+		delete from it_system_control_item where table_id = #{tableId}
+	</delete>
+	
+	<!-- 添加预警的配置用户 -->
+	<insert id="addWarningAccount" parameterType="com.cnpiecsb.csu.entity.DynamicColumn">
+		<![CDATA[
+		    if not exists (select 1 from it_system_control_item where table_id = #{tableId} and account = #{account})
+				insert into it_system_control_item (table_id, account) values 
+					(#{tableId}, #{account})
+		]]>
+	</insert>
+	
+	<!-- 删除所有某预警的某个配置用户 -->
+	<delete id="deleteWarningTableAndAccount">
+		delete from it_system_control_item where table_id = #{tableId} and account = #{account}
+	</delete>
+</mapper>

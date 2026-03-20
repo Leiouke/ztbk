@@ -1,0 +1,287 @@
+package com.cnpiecsb.fc.collection.controller;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/fc/collection")
+public class CollectionIncomingController extends BaseServiceController {
+	private int incomingRegisterQueryId = 8300001;
+	private GridHeadConfig incomingRegisterGridHeadConfig;
+	
+	private int incomingRegisterOneQueryId = 8300001;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public CollectionIncomingController(){
+		incomingRegisterGridHeadConfig = new GridHeadConfig(incomingRegisterQueryId,true,false,true,false);
+		incomingRegisterGridHeadConfig.setOperatorWidth(80);
+	}
+	
+	@RequestMapping(value="/incomingRegister",method=RequestMethod.GET)
+    public ModelAndView incomingRegister(HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/collectionIncoming/incomingRegister");
+        String tableHeader = this.getTableHeader(httpSession, incomingRegisterGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", incomingRegisterQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-到款登记列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getIncomingRegisterList")
+	@ResponseBody
+	public Object getIncomingRegisterList(@RequestBody Map postData){
+		return this.getTableDataList(postData, incomingRegisterQueryId);
+	}
+	
+	/**
+	 * 新增到款界面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/incomingRegisterAdd",method=RequestMethod.GET)
+    public ModelAndView incomingRegisterAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/collectionIncoming/incomingRegisterAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增到款操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addIncomingRegister")
+	@ResponseBody
+    public Object addIncomingRegister(@RequestParam Map postData,HttpSession httpSession){		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		
+		int code = do_sp_add_incoming_register(postData);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		// 以下获得出参值
+		return "{\"success\":true}";
+    }
+	
+	//新增到款
+	private int do_sp_add_incoming_register(Map postData){
+		String paramNames[] = {"company","account","receive_date","receive_money","pay_type","pay_certificate","summary","o_id_input","receive_bank","receive_account"};
+		// 出参, 有顺序
+		String returnNames[] = {"ci_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_incoming_new");
+		
+		return  baseService.doCallSp(postData, paramNames, returnNames);
+	}
+	
+	/**
+	 * 进入修改到款界面
+	 * 
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/incomingRegisterEdit",method=RequestMethod.GET)
+    public ModelAndView incomingRegisterEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(incomingRegisterOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("fc/collectionIncoming/incomingRegisterEdit");		
+        return mv;
+    }
+	
+	/**
+	 * 修改到款
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editIncomingRegister")
+	@ResponseBody
+    public Object editIncomingRegister(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"ci_id","company","account","receive_date","receive_money","pay_type","pay_certificate","summary"};
+		// 加入sp的名称
+		postData.put("spName", "fc_collection_incoming_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除到款操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteIncomingRegister")
+	@ResponseBody
+    public Object deleteIncomingRegister(@RequestParam Map postData,HttpServletRequest request,HttpSession httpSession){
+		String[] ci_ids=request.getParameterValues("ci_ids");
+		if(ci_ids!=null && ci_ids.length>0){
+			for(int i=0;i<ci_ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"ci_id"};
+				// 加入sp的名称
+				postData.put("spName", "fc_collection_incoming_delete");
+				
+				postData.put("ci_id", ci_ids[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 上传到款明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/incomingRegisterUpload",method=RequestMethod.GET)
+    public ModelAndView incomingRegisterUpload(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/collectionIncoming/incomingRegisterUpload");
+        return mv;
+    }
+	
+	/**
+	 * 批量上传excel
+	 * 
+	 * @param httpSession
+	 * @param request
+	 * @return
+	 * @throws IOException 
+	 * @throws InvalidFormatException 
+	 * @throws EncryptedDocumentException 
+	 */
+	@RequestMapping(value="/uploadIncomingRegister",method=RequestMethod.POST)
+	@ResponseBody
+    public Object uploadIncomingRegister(MultipartFile excel,HttpSession httpSession, HttpServletRequest request)throws EncryptedDocumentException, InvalidFormatException, IOException {
+		if(!excel.isEmpty()){
+			Workbook workbook = WorkbookFactory.create(excel.getInputStream());
+			Sheet sheet = workbook.getSheetAt(0);  // 指代sheet1, 索引从0开始
+			int rowNum = 0;
+			int success=0;
+//			List<Map> excelData = new ArrayList<Map>();
+			User user=(User)httpSession.getAttribute("user");
+			for (rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++){  // 行数，真实数据索引也从1开始
+				Row row = sheet.getRow(rowNum);	
+				Map<String, Object> cashregister_itemMap = new HashMap();
+				cashregister_itemMap.put("o_id_input", user.getAccount());
+				try{
+					double numericCellValue = row.getCell(6).getNumericCellValue();
+					if (numericCellValue == 0) {
+						System.out.println("无效记录");
+						continue;
+					}
+				} catch(Exception e) {
+					System.out.println("无效记录");
+					continue;
+				}
+				for (int i = 0; i < 10; i++) {
+					Cell cell = row.getCell(i);
+					if (cell != null){
+						switch(i){
+							case 0:{
+								cell.setCellType(Cell.CELL_TYPE_STRING);
+								cashregister_itemMap.put("receive_bank", cell.getStringCellValue().trim());
+								break;
+							}//来款单位
+							case 1:{
+								cell.setCellType(Cell.CELL_TYPE_STRING);
+								cashregister_itemMap.put("receive_account", cell.getStringCellValue().trim());
+								break;
+							}//来款单位
+							case 2:{
+								cell.setCellType(Cell.CELL_TYPE_STRING);
+								cashregister_itemMap.put("account", cell.getStringCellValue().trim());
+								break;}//来款账号
+							case 3:{
+								Date receive_date = null;
+								if (StringUtils.isNotEmpty(cell.toString())){
+									try {
+										receive_date = cell.getDateCellValue();
+									} catch(Exception e) {
+										System.out.println("日期格式不对");
+									}
+								}
+								cashregister_itemMap.put("receive_date", receive_date);
+								break;
+							} //来款日期
+							case 6:{
+								cashregister_itemMap.put("receive_money", cell.getNumericCellValue());
+								break;
+							} //金额
+							case 8:{
+								cell.setCellType(Cell.CELL_TYPE_STRING);
+								cashregister_itemMap.put("summary", cell.getStringCellValue().trim());
+								break;
+							}//摘要
+							case 9:{
+								cell.setCellType(Cell.CELL_TYPE_STRING);
+								cashregister_itemMap.put("company", cell.getStringCellValue().trim());
+								break;
+							}//来款单位
+						}						
+					}
+				}
+				cashregister_itemMap.put("pay_type", "1");  // 付款凭证类型都是1-转账
+				
+//				success++;
+				if(do_sp_add_incoming_register(cashregister_itemMap)==0) success++;
+			}
+			return "{\"success\":true}";
+		}else{
+			return "{\"success\":false}";
+		}
+	}
+}

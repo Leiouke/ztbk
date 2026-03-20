@@ -1,0 +1,135 @@
+package com.cnpiecsb.fc.petty.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 备用金审批页面
+ * @author by zc 2021/12/17
+ *
+ */
+@Controller
+@RequestMapping("/fc/petty")
+public class PettyCashProcessApprovalController extends BaseServiceController{
+	
+	// 财务备用金查询
+	private int pettyCashProcessApprovalManageQueryId = 8600003;	
+	private GridHeadConfig pettyCashProcessApprovalManageQueryHeadConfig;
+	
+	// 备用金单记录查询
+	private int pettyCashOneQueryId = 8600002;
+	
+	//流程查询
+	private int flowSearchManageQueryId = 8500001;
+	private GridHeadConfig flowSearchManageQueryHeadConfig;
+		
+	public PettyCashProcessApprovalController() {
+		pettyCashProcessApprovalManageQueryHeadConfig = new GridHeadConfig(pettyCashProcessApprovalManageQueryId,true,false,true,false);
+		pettyCashProcessApprovalManageQueryHeadConfig.setOperatorWidth(120);
+		flowSearchManageQueryHeadConfig = new GridHeadConfig(flowSearchManageQueryId,true,false,false,false);
+	}
+	
+	/**
+	 * 进入备用金审批页面界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/pettyCashProcessApprovalManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView pettyCashProcessApprovalManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/pettyCashProcessApproval/pettyCashProcessApprovalManage");
+        String tableHeader = this.getTableHeader(httpSession,pettyCashProcessApprovalManageQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", pettyCashProcessApprovalManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得备用金审批页面界面数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getPettyCashProcessApprovalList")
+	@ResponseBody
+	public Object getPettyCashProcessApprovalList(@RequestBody Map postData, HttpSession httpSession) {
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("approval_account", user.getAccount());
+		return this.getTableDataList(postData, pettyCashProcessApprovalManageQueryId);
+	}
+	
+	/**
+	 * 审批页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toPettyCashProcessApproval",method=RequestMethod.GET)
+	public ModelAndView toPettyCashProcessApproval(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+		ModelAndView mv = new ModelAndView();      
+		// 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(pettyCashOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		String tableHeader = this.getTableHeader(httpSession,flowSearchManageQueryHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", flowSearchManageQueryId);
+		mv.setViewName("fc/pettyCashProcessApproval/pettyCashApprovelDeal");
+		
+		return mv;
+	}
+	
+	/**
+	 * 审批
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/toPettyCashProcessDeal")
+	@ResponseBody
+	public Object toPettyCashProcessDeal(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"account","bill_code","flow_id","audit_status","audit_memo"};
+		// 加入sp的名称
+		postData.put("spName", "fc_process_approval_operate");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("account", user.getAccount());
+		
+		postData.put("bill_code", (String)postData.get("pc_id"));
+		
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 获得流程界面数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getFcPettyFlowDetialList")
+	@ResponseBody
+	public Object getFcPettyFlowDetialList(@RequestBody Map postData, HttpSession httpSession) {
+		postData.put("bill_code", (String)postData.get("pc_id"));
+		return this.getTableDataList(postData, flowSearchManageQueryId);
+	}
+}

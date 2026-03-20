@@ -1,0 +1,319 @@
+package com.cnpiecsb.np.expandmanage.controller;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 杂志补刊处理控制器
+ * 
+ * @author user
+ *
+ */
+@Controller
+@RequestMapping("/np/instanceSupply")
+public class InstanceSupplyController extends ZtbkServiceController{
+	
+	//期刊商品实例查询
+	private int periodicalItemSearchManageQueryId = 5110057;	
+	private GridHeadConfig periodicalItemSearchManageQueryHeadConfig;
+	
+	// 杂志补刊处理查询
+	private int instanceSupplyManageQueryId = 5110058;	
+	private GridHeadConfig instanceSupplyManageQueryHeadConfig;
+	
+	
+	
+	public InstanceSupplyController(){
+		periodicalItemSearchManageQueryHeadConfig = new GridHeadConfig(periodicalItemSearchManageQueryId,true,false,true,false);
+		
+		instanceSupplyManageQueryHeadConfig = new GridHeadConfig(instanceSupplyManageQueryId,true,false,true,false);
+		instanceSupplyManageQueryHeadConfig.setOperatorWidth(200);
+	}
+	
+	/**
+	 * 杂志补刊处理查询界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/instanceSupplyManage", method=RequestMethod.GET)
+    public ModelAndView instanceSupplyManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/instanceSupply/instanceSupplyManage");
+        String tableHeader = this.getTableHeader(httpSession,instanceSupplyManageQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", instanceSupplyManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得杂志补刊处理数据
+	 * 
+	 * param postData
+	 * return
+	 * @throws ParseException 
+	 */
+	@RequestMapping(value="/getInstanceSupplyList")
+	@ResponseBody
+	public Object getInstanceSupplyList(@RequestBody Map postData) throws ParseException{
+		Object a = postData.get("apply_time_start");
+		Object b =postData.get("apply_time_end");
+		if(a.equals(b)&&!b.equals("")){
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+			Date date=sdf.parse((String)b);
+			long time = date.getTime()+1000*3600*24;
+			
+			postData.put("apply_time_end", sdf.format(time));
+		}
+		return this.getTableDataList(postData,instanceSupplyManageQueryId);
+	}
+	
+	
+	
+	/**
+	 * 新增杂志补刊处理查询界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/toAddInstanceSupplyManage", method=RequestMethod.GET)
+    public ModelAndView toAddInstanceSupplyManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/instanceSupply/AddInstanceSupplyManage");
+        String tableHeader = this.getTableHeader(httpSession,periodicalItemSearchManageQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", periodicalItemSearchManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得杂期刊商品实例数据
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getPeriodicalItemList")
+	@ResponseBody
+	public Object getPeriodicalItemList(@RequestBody Map postData){
+		if(postData == null||postData.isEmpty()){
+			return null;
+		}
+		return this.getTableDataList(postData,periodicalItemSearchManageQueryId);
+	}
+	
+	/**
+	 * 进入补刊内容填写页面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/toPeriodicalItemFile")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView toPeriodicalItemFile(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+		ModelAndView mv = new ModelAndView();
+		String mail_code = (String)postData.get("mail_code");
+		String instance_tm = (String)postData.get("instance_tm");
+		String qk_id = (String)postData.get("qk_id");
+		String qk_name = (String)postData.get("qk_name");
+		String period_name = (String)postData.get("period_name");
+		mv.addObject("mail_code", mail_code);
+		mv.addObject("instance_tm", instance_tm);
+		mv.addObject("qk_id", qk_id);
+		mv.addObject("qk_name", qk_name);
+		mv.addObject("period_name", period_name);
+        mv.setViewName("np/instanceSupply/addPeriodicalItemyManage");
+        return mv;
+    }
+	
+	/**
+	 * 新增补刊申请操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/saveInstanceSupply")
+	@ResponseBody
+    public Object saveInstanceSupply(@RequestParam Map postData,HttpSession httpSession) {	
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"qk_id", "qk_name","mail_code","period_name","instance_tm","h_amount","supply_reason","apply_man","apply_man_name"};
+		// 出参, 有顺序
+		String returnNames[] = {"apply_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_qk_instance_supply_new");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("apply_man", user.getAccount());
+		postData.put("apply_man_name", user.getUserName());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除补刊申请
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteInstanceSupply")
+	@ResponseBody
+    public Object deleteInstanceSupply(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"apply_id", "apply_man"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_qk_instance_supply_del");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("apply_man", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 处理补刊申请页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toDealInstanceSupplyManage",method=RequestMethod.GET)
+    public ModelAndView toDealInstanceSupplyManage(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        	
+        Map<String, Object> oneQuery = baseService.getOneQuery(instanceSupplyManageQueryId, postData);
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		mv.addObject("apply_id", (String)postData.get("apply_id"));
+        mv.setViewName("np/instanceSupply/dealInstanceSupplyManage");
+        return mv;
+    }
+	
+	/**
+	 * 处理补刊申请操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/dealInstanceSupply")
+	@ResponseBody
+    public Object dealInstanceSupply(@RequestParam Map postData,HttpSession httpSession) {	
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"apply_id","p_result","p_man_name","p_man","p_time","deal_time","Percent_progress","save_type"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_qk_instance_supply_update");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("p_man", user.getAccount());
+		postData.put("p_man_name", user.getUserName());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	
+	/**
+	 * 物流补刊确认页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toConfirmInstanceSupplyManage",method=RequestMethod.GET)
+    public ModelAndView toConfirmInstanceSupplyManage(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        	
+		mv.addObject("apply_id", (String)postData.get("apply_id"));
+        mv.setViewName("np/instanceSupply/confirmInstanceSupplyManage");
+        return mv;
+    }
+	
+	/**
+	 * 确认补刊申请操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/confirmInstanceSupply")
+	@ResponseBody
+    public Object confirmInstanceSupply(@RequestParam Map postData,HttpSession httpSession) {	
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"apply_id","confirm_result","confirm_man_name","confirm_man","confirm_memo"};
+		// 加入sp的名称
+		postData.put("spName", "u_np_qk_instance_supply_confirm");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("confirm_man", user.getAccount());
+		postData.put("confirm_man_name", user.getUserName());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 物流补刊详情页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toInstanceSupplyDetailManage",method=RequestMethod.GET)
+    public ModelAndView toInstanceSupplyDetailManage(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        	
+		Map<String, Object> oneQuery = baseService.getOneQuery(instanceSupplyManageQueryId, postData);
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("np/instanceSupply/instanceSupplyDetailManage");
+        return mv;
+    }
+	
+	/**
+	 * 批量处理补刊申请页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toDealInstanceSupplyBatchManage",method=RequestMethod.GET)
+    public ModelAndView toDealInstanceSupplyBatchManage(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        	
+		mv.addObject("apply_ids", (String)postData.get("apply_ids"));
+        mv.setViewName("np/instanceSupply/dealInstanceSupplyBatchManage");
+        return mv;
+    }
+
+}

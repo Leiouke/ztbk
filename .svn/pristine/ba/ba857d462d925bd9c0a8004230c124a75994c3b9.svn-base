@@ -1,0 +1,226 @@
+package com.cnpiecsb.np.finance.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 发票认领相关控制器
+ * 
+ * @author user
+ *
+ */
+@Controller
+@RequestMapping("/np")
+public class CashClaimInvoiceController extends BaseServiceController {
+	private int cashClaimOneQueryId = 5300002;
+	
+	private int cashClaimInvoiceManageQueryId = 5300005;	
+	private GridHeadConfig cashClaimInvoiceManageGridHeadConfig;
+	
+	private int payableSaleInvoiceQueryId = 5400003;	
+	private GridHeadConfig payableSaleInvoiceGridHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public CashClaimInvoiceController(){
+		cashClaimInvoiceManageGridHeadConfig = new GridHeadConfig(cashClaimInvoiceManageQueryId,true,false,true,false);
+		
+		payableSaleInvoiceGridHeadConfig=new GridHeadConfig(payableSaleInvoiceQueryId,true,true,false,false);
+	}
+	
+	/**
+	 * 到款认领发票界面
+	 * 
+	 */
+	@RequestMapping(value="/cashClaimInvoiceManage",method=RequestMethod.GET)
+    public ModelAndView cashClaimInvoiceManage(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/cashClaimInvoice/cashClaimInvoice");
+        Map<String, Object> oneQuery = baseService.getOneQuery(cashClaimOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        String tableHeader = this.getTableHeader(httpSession,cashClaimInvoiceManageGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", cashClaimInvoiceManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-到款认领发票列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getcashClaimInvoiceManageList")
+	@ResponseBody
+	public Object getcashClaimDetailList(@RequestBody Map postData){
+		return this.getTableDataList(postData,cashClaimInvoiceManageQueryId);
+	}
+	
+	/**
+	 * 	可支出发票列表页面
+	 * 
+	 */
+	@RequestMapping(value="/payableSaleInvoiceToCashClaim",method=RequestMethod.GET)
+    public ModelAndView payableSaleInvoiceToCashClaim(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/cashClaimInvoice/payableSaleInvoiceToCashClaim");
+        String tableHeader = this.getTableHeader(httpSession,payableSaleInvoiceGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", payableSaleInvoiceQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-到可支出发票明细列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getPayableSaleInvoiceToCashClaimList")
+	@ResponseBody
+	public Object getPayableSaleInvoiceToCashClaimList(@RequestBody Map postData){
+		return this.getTableDataList(postData,payableSaleInvoiceQueryId);
+	}
+	
+	/**
+	 * 到款单引入发票
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/importCashSaleInvoice")
+	@ResponseBody
+	public Object importCashSaleInvoice(@RequestBody List<Map<String,Object>> postData,HttpSession httpSession){
+		User user = (User)httpSession.getAttribute("user");
+		if(postData != null && postData.size()>0){
+			for(Map<String,Object> item_map : postData){
+				item_map.put("o_id_operator", user.getAccount());
+				item_map.put("memo", "直接发票认领");
+				// 先收入认领
+				int code = do_sp_add_cash_claim(item_map);
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+				
+				// 再收入认领审核
+				item_map.put("o_id_audit", user.getAccount());
+				code = do_sp_add_cash_claim_verify(item_map);
+				
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+				
+				// 然后发票支出操作
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"c_id","kp_id","money_amount","agent_money","o_id_operator", "rp_id"};
+				
+				String returnNames[] = new String[]{"pay_id"};
+				// 加入sp的名称
+				item_map.put("spName", "u_finance_client_invoice_kp_pay");	
+
+				code = baseService.doCallSp(item_map, paramNames, returnNames);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+				
+				item_map.put("income_id", item_map.get("id"));
+				// 最后做新增来款单发票明细
+				paramNames = new String[]{"rp_id","kp_id","income_id","pay_id"};			
+				// 加入sp的名称
+				item_map.put("spName", "u_finance_receive_payment_invoice_new");	
+
+				code = baseService.doCallSp(item_map, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}		
+		}				
+		return "{\"success\":true}";
+	}
+	
+	// 新增到款认领
+	private int do_sp_add_cash_claim(Map postData){
+		String paramNames[] = new String[]{"rp_id","c_id","money_amount","memo","o_id_operator"};
+		// 出参, 有顺序
+		String returnNames[] = new String[]{"id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_receive_payment_claim");
+		
+		return  baseService.doCallSp(postData, paramNames, returnNames);
+	}
+	
+	//到款认领审核
+	private int do_sp_add_cash_claim_verify(Map postData){
+		String paramNames[] = new String[]{"id","o_id_audit"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_budget_item_audit");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	/**
+	 * 发票认领撤销操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteCashSaleInvoice")
+	@ResponseBody
+    public Object deleteCashSaleInvoice(@RequestParam Map postData){		
+		// 先撤销发票支出
+		String paramNames[] = new String[]{"id"};
+		postData.put("id", postData.get("pay_id"));
+		// 加入sp的名称
+		postData.put("spName", "u_finance_client_invoice_kp_pay_withdraw");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 在撤销认领收入
+		paramNames = new String[]{"id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_budget_item_delete");
+		postData.put("id", postData.get("income_id"));
+				
+		code = baseService.doCallSp(postData, paramNames, null);
+				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 最后做删除来款单发票明细
+		paramNames = new String[]{"rp_id", "kp_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_receive_payment_invoice_delete");
+				
+		code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+}

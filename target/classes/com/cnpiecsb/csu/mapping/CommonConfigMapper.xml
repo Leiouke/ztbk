@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnpiecsb.csu.dao.CommonConfigDao">
+	<resultMap type="com.cnpiecsb.csu.entity.DynamicColumn" id="dynamicColumnResultMap">
+		<result property="field" column="col_name"/>
+		<result property="width" column="width"/>
+		<result property="title" column="label"/>
+		<result property="formatter" column="format"/>
+		<result property="visible" column="visible"/>
+		<result property="align" column="alignment"/>
+		<result property="index" column="col_index"/>
+		<!-- result property="sortable" column="col_type"/ --> <!-- 可排序字段 -->
+		<result property="footerFormatter" column="footerformat"/> <!-- 写汇总信息函数 -->
+		<result property="tableAlias" column="in_table_alias"/> <!-- 写表名的别名 -->
+	</resultMap>
+
+	<!-- 通用查询, 返回查询sql语句 -->
+	<select id="getSqlTextById"  resultType="string">
+		SELECT sql from qry_head where id = #{id}
+	</select>
+
+	<!-- 通用查询, 返回列属性数据 -->
+	<select id="getColumnAttribute" resultMap="dynamicColumnResultMap">
+		SELECT * from qry_dictionary where id = #{id} and opcode = #{account}
+		order by col_index
+	</select>
+	
+	<!-- 获得一行列信息(取某个查询某个用户某个字段) -->
+	<select id="getOneColumnAttribute" resultMap="dynamicColumnResultMap">
+		SELECT * from qry_dictionary where id = #{id} and opcode = #{account} and col_name = #{field}
+	</select>
+	
+	<!-- 通用查询, 返回列属性数据的总数 -->
+	<select id="getColumnAttributeCount"  resultType="_int">
+		SELECT count(*) from qry_dictionary where id = #{id} and opcode = #{account}
+	</select>
+	
+	<!-- 删除动态列 -->
+	<delete id="deleteColumnAttribute">
+		delete from qry_dictionary where id = #{id} and opcode = #{account}
+	</delete>
+	
+	<!-- 添加动态列 -->
+	<insert id="addColumnAttribute" parameterType="com.cnpiecsb.csu.entity.DynamicColumn">
+		<![CDATA[
+			insert into qry_dictionary (id, col_name, width, label, format, visible, alignment, col_index,
+			  editable, sortable, footerformat, opcode, in_table_alias) values 
+				(#{id},#{dynamicColumn.field},#{dynamicColumn.width},#{dynamicColumn.title}, 
+				 #{dynamicColumn.formatter}, #{dynamicColumn.visible}, #{dynamicColumn.align},
+				 #{dynamicColumn.index}, #{dynamicColumn.editable}, #{dynamicColumn.sortable}, #{dynamicColumn.footerFormatter}, #{account},
+				 #{dynamicColumn.tableAlias})
+		]]>
+	</insert>
+	
+	<!-- 根据错误code获得错误信息 -->
+    <select id="getErrorByCode"  resultType="string">
+		SELECT message from errormsg where code = #{code}
+	</select>
+</mapper>

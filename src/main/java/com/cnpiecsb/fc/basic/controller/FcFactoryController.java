@@ -1,0 +1,267 @@
+package com.cnpiecsb.fc.basic.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/fc/basic")
+public class FcFactoryController extends BaseServiceController {
+	private int factorySearchQueryId = 8000010;
+
+	private int factoryQueryId = 8000007;
+	private GridHeadConfig factoryGridHeadConfig;
+	
+	private int factoryOneQueryId = 8000008;
+	
+	private int bankQueryId = 8000009;	
+	private GridHeadConfig bankGridHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public FcFactoryController(){
+		factoryGridHeadConfig = new GridHeadConfig(factoryQueryId,true,false,true,false);
+		factoryGridHeadConfig.setOperatorWidth(80);
+		
+		bankGridHeadConfig = new GridHeadConfig(bankQueryId,true,false,true,false);
+	}
+	
+	/**
+	 * 获得动态列表数据-货源
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getFactoryListSearch")
+	@ResponseBody
+	public Object getFactoryListSearch(String keyword, HttpSession httpSession){
+		Map<String,Object> postData=new HashMap<>();
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		
+		postData.put("keyword", keyword);
+		return this.getTableDataList(postData, factorySearchQueryId);
+	}
+	
+	/**
+	 * 获得查询单一货源
+	 * 
+	 * param postData
+	 * return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/getOneFactory")
+	@ResponseBody
+	public Object getOneFactory(@RequestParam Map postData) throws JsonProcessingException{
+		Map<String, Object> oneQuery = baseService.getOneQuery(factoryOneQueryId, postData);
+		return JsonUtil.mapToString(oneQuery);
+	}
+	
+	/**
+	 * 进入货源管理界面
+	 * 
+	 * @param httpSession
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value="/factoryManage",method=RequestMethod.GET)
+    public ModelAndView factoryManage(HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/basic/factoryManage");
+        String tableHeader = this.getTableHeader(httpSession,factoryGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);		
+		mv.addObject("queryId", factoryQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-货源
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getFactoryList")
+	@ResponseBody
+	public Object getFactoryList(@RequestBody Map postData, HttpSession httpSession) {
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		return this.getTableDataList(postData,factoryQueryId);
+	}
+	
+	/**
+	 * 新增页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/factoryAdd",method=RequestMethod.GET)
+    public ModelAndView factoryAdd(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/basic/factoryAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addFactory")
+	@ResponseBody
+    public Object addFactory(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"f_country","f_department","f_department_simple",
+				"f_account_id","f_charge_man",
+				"o_id_input","o_id_lastmodify","f_website","f_mem",
+				"f_account","org_code", "unit_code", "f_cw_type"};
+		// 出参, 有顺序
+		String returnNames[] = {"f_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_basic_factory_new");
+		User user=(User)httpSession.getAttribute("user");		
+		postData.put("o_id_input", user.getAccount());
+		postData.put("o_id_lastmodify", user.getAccount());
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/factoryEdit",method=RequestMethod.GET)
+    public ModelAndView factoryEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(factoryOneQueryId, postData);
+		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("fc/basic/factoryEdit");
+            
+        //银行账户
+        String tableHeader_bank = this.getTableHeader(httpSession,bankGridHeadConfig);
+  		mv.addObject("tableHeader_bank", tableHeader_bank);		
+   		mv.addObject("queryId_bank", bankQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 修改操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editFactory")
+	@ResponseBody
+    public Object editFactory(@RequestParam Map postData,HttpSession httpSession){
+		// 入参
+		String paramNames[] = {"f_id","f_country","f_department","f_department_simple",
+				"f_account_id","f_charge_man",
+				"o_id_lastmodify","f_website","f_mem","f_account", "unit_code", "f_cw_type"};
+		// 加入sp的名称
+		postData.put("spName", "fc_basic_factory_update");		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_lastmodify", user.getAccount());
+		int code = baseService.doCallSp(postData, paramNames, null);			
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteFactory")
+	@ResponseBody
+    public Object deleteFactory(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){
+		String[] f_ids=request.getParameterValues("f_ids");
+		User user=(User)httpSession.getAttribute("user");	
+		postData.put("delete_person", user.getAccount());
+		if(f_ids!=null&&f_ids.length>0){
+			for(int i=0;i<f_ids.length;i++){
+				// 入参
+				String paramNames[] = {"f_id","delete_person"};
+				// 加入sp的名称
+				postData.put("spName", "fc_basic_factory_delete");				
+				
+				postData.put("f_id", f_ids[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 下载页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/factoryDownload",method=RequestMethod.GET)
+    public ModelAndView clientDownload(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/basic/factoryDownload");//fc_finance_client_pullin_one
+        return mv;
+    }
+	
+	/**
+	 * 益华单条下载货源
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/downFactory")
+	@ResponseBody
+    public Object downFactory(@RequestParam Map postData,HttpSession httpSession){
+		User user=(User)httpSession.getAttribute("user");		
+		postData.put("o_id", user.getAccount());
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"o_id","f_id"};	
+		// 加入sp的名称
+		postData.put("spName", "fc_finance_factory_pullin_one");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+}

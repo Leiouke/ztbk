@@ -1,0 +1,388 @@
+package com.cnpiecsb.fc.receivable.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/fc/receivable")
+public class ReceivableAdvanceController extends BaseServiceController {
+	// 预收单表头查询
+	private int advanceManageQueryId = 8110001;	
+	private GridHeadConfig advanceManageQueryHeadConfig;
+	
+	// 预收单明细临时信息查询(修改也用这个, 临时表方案)
+	private int advanceAddDetailQueryId = 8110002;	
+	private GridHeadConfig advanceAddDetailHeadConfig;
+	
+	// 预收单明细引入
+	private int statementItemPullQueryId = 8110003;	
+	private GridHeadConfig statementItemPullHeadConfig;
+	
+	// 预收单单记录查询
+	private int advanceOneQueryId = 8110004;
+	
+	public ReceivableAdvanceController() {
+		advanceManageQueryHeadConfig = new GridHeadConfig(advanceManageQueryId,true,false,true,false);
+		advanceManageQueryHeadConfig.setOperatorWidth(100);
+		
+		advanceAddDetailHeadConfig = new GridHeadConfig(advanceAddDetailQueryId,true,false,true,false);
+		
+		statementItemPullHeadConfig = new GridHeadConfig(statementItemPullQueryId,true,true,false,false);
+	}
+	
+	/**
+	 * 进入预收单管理界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/advanceManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView advanceManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableAdvance/advanceManage");
+        String tableHeader = this.getTableHeader(httpSession,advanceManageQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", advanceManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得预收单数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getAdvanceList")
+	@ResponseBody
+	public Object getAdvanceList(@RequestBody Map postData, HttpSession httpSession) {
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		return this.getTableDataList(postData, advanceManageQueryId);
+	}
+	
+	/**
+	 * 新增和修改返回操作
+	 * 
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/returnAdvance")
+	@ResponseBody
+    public Object returnAdvance(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_advance_return");
+		
+		String advance_guid=(String)httpSession.getAttribute("advance_guid");
+		postData.put("guid", advance_guid);	
+		
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		httpSession.setAttribute("advance_guid", "");
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增预收单页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/advanceAdd",method=RequestMethod.GET)
+    public ModelAndView advanceAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableAdvance/advanceAdd");
+        
+        String advance_guid = GuidUtil.create32Guid();
+        httpSession.setAttribute("advance_guid", advance_guid);
+        
+        String tableHeader = this.getTableHeader(httpSession,advanceAddDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", advanceAddDetailQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-新增预收单明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getAdvanceAddItemList")
+	@ResponseBody
+	public Object getAdvanceAddItemList(@RequestBody Map postData,HttpSession httpSession){
+		String advance_guid = (String)httpSession.getAttribute("advance_guid");
+		postData.put("guid", advance_guid);
+		return this.getTableDataList(postData,advanceAddDetailQueryId);
+	}
+	
+	/**
+	 * 引入结算单明细页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/statementItemPull",method=RequestMethod.GET)
+    public ModelAndView statementItemPull(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableAdvance/statementItemPull");
+        String tableHeader = this.getTableHeader(httpSession, statementItemPullHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementItemPullQueryId);
+        return mv;
+    }
+	
+	/**
+   	 * 获得动态列表数据-结算单明细
+   	 * 
+   	 * param postData
+   	 * return
+   	 */
+   	@RequestMapping(value="/getStatementItemPullList")
+   	@ResponseBody
+   	public Object getStatementItemPullList(@RequestBody Map postData,HttpSession httpSession) {
+   		// 获得权限代码参数
+   		AccessControlUtil.accessParams(postData, httpSession);
+   		return this.getTableDataList(postData, statementItemPullQueryId);
+   	}
+   	
+   	/**
+	 * 引入预收单明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/pullStatementItem")
+	@ResponseBody
+    public Object pullSaleInvoiceItem(@RequestBody List<Map<String,Object>> postData,HttpSession httpSession,HttpServletRequest request){
+		String advance_guid = (String)httpSession.getAttribute("advance_guid");
+		if(postData!=null&&postData.size()>0){
+			for(Map<String,Object> kp_map:postData){				
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"guid", "rs_id", "against_real_money"};
+				// 加入sp的名称
+				kp_map.put("spName", "fc_receivable_advance_statement_item_pullin");				
+				kp_map.put("guid", advance_guid);			
+				int code = baseService.doCallSp(kp_map, paramNames, null);					
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改冲销明细金额操作
+	 * 
+	 * @param dynamicColumns
+	 * @return
+	 */
+	@RequestMapping(value="/updateStatementItem")
+	@ResponseBody
+	public Object updateStatementItem(@RequestParam Map postData, HttpSession httpSession) {
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"guid", "rs_id", "against_real_money"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_advance_statement_item_update");
+		
+		String advance_guid = (String)httpSession.getAttribute("advance_guid");
+		postData.put("guid", advance_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+	}
+
+	/**
+	 * 删除明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/deleteStatementItem")
+	@ResponseBody
+    public Object deleteStatementCwItem(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        String advance_guid = (String)httpSession.getAttribute("advance_guid");
+		postData.put("guid", advance_guid);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","inc_no"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_advance_statement_item_delete");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增预收单操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addAdvance")
+	@ResponseBody
+    public Object addAdvance(@RequestParam Map postData,HttpSession httpSession) {	
+		String advance_guid = (String)httpSession.getAttribute("advance_guid");
+		postData.put("guid", advance_guid);
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","c_id","currency","c_real_money","real_money","input_code","memo","org_code", "unit_code"};
+		// 出参, 有顺序
+		String returnNames[] = {"ra_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_advance_new");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("input_code", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		postData.put("is_to_edit", 0);
+		code = do_sp_advance_statement_item_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	// 重算这次预收单对应的结算单明细的已冲销金额 
+	private int do_sp_advance_statement_item_calculate(Map postData){
+		String paramNames[] = {"ra_id", "is_to_edit"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_advance_statement_item_calculate");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	/**
+	 * 删除预收单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteAdvance")
+	@ResponseBody
+    public Object deleteAdvance(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"ra_id", "o_id_destroy"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_advance_delete");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_destroy", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		postData.put("is_to_edit", 0);
+		code = do_sp_advance_statement_item_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/advanceEdit",method=RequestMethod.GET)
+    public ModelAndView advanceEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(advanceOneQueryId, postData);		
+		//ObjectMapper mapper = new ObjectMapper();
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("fc/receivableAdvance/advanceEdit");
+        
+        String tableHeader = this.getTableHeader(httpSession, advanceAddDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", advanceAddDetailQueryId);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"ra_id", "guid"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_advance_toUpdate");
+		
+		String advance_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("advance_guid", advance_guid);
+		postData.put("guid", advance_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+        return mv;
+    }
+	
+	/**
+	 * 修改预收单操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editAdvance")
+	@ResponseBody
+    public Object editAdvance(@RequestParam Map postData,HttpSession httpSession) {	
+		String advance_guid = (String)httpSession.getAttribute("advance_guid");
+		postData.put("guid", advance_guid);
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","ra_id","c_id","currency","c_real_money","real_money","memo", "unit_code"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_advance_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");	
+		postData.put("is_to_edit", 0);
+		code = do_sp_advance_statement_item_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+}

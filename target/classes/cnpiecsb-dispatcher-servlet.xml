@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans     
+        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.0.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+        "> 
+    <!-- 启动自动扫描该包下所有的Bean(例如@Controller), 只扫描controller下面的 包, 这里用**通配符表示可以遍查多级下的controller -->
+    <context:component-scan base-package="com.cnpiecsb.**.controller" />
+    
+    <!-- 定义视图解析器 -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix">
+            <value>/WEB-INF/pages/</value>
+        </property>
+        <property name="suffix">
+            <value>.jsp</value>
+        </property>
+    </bean>
+    
+    <!-- session timeout interceptor -->
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/*/*" />
+			<bean class="com.cnpiecsb.common.interceptor.SessionTimeoutInterceptor" >
+				<property name="allowUrls">  <!-- 以value值开头或者就是value值的情况下允许通过 -->
+			        <list>   
+			          <value>/login</value>
+			        </list>  
+		     	</property>  
+		    </bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+    
+    <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">   
+	   <!--  定义默认的异常处理页面，当该异常类型的注册时使用    -->
+	    <property name="defaultErrorView" value="error"></property>   
+	   <!--  定义异常处理页面用来获取异常信息的变量名，默认名为exception   --> 
+	    <property name="exceptionAttribute" value="ex"></property>   
+	    <!-- 定义需要特殊处理的异常，用类名或完全路径名作为key，异常也页名作为值    -->
+	    <property name="exceptionMappings">   
+	        <props>   
+	            <prop key="BussinessException">error/systemError</prop>  
+	            <prop key="SqlException">error/systemError</prop>  
+	            <prop key="SessionTimeoutException">error/redirectToLogin</prop>     
+	        </props>   
+	    </property>   
+	</bean>
+	
+	<!-- SpringMVC上传文件时，需要配置MultipartResolver处理器 --> 
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+	    <property name="defaultEncoding" value="utf-8" />
+	    <property name="maxUploadSize" value="10485760000" />
+	    <property name="maxInMemorySize" value="40960" />
+	</bean>
+    
+    <mvc:default-servlet-handler/>
+    <mvc:annotation-driven/>  <!-- 允许使用注释 -->
+</beans>

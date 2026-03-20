@@ -1,0 +1,587 @@
+package com.cnpiecsb.scrapy.controller;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.text.ParseException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.context.support.GenericXmlApplicationContext;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.onInterface.service.GetMemberTokenServivce;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/scrapy")
+public class ExcelTransferController extends BaseServiceController{
+
+	
+	private int excelTmplateHeadQueryId = 1130001;
+	private GridHeadConfig excelTmplateHeadGridHeadConfig;
+	
+	private int excelTmplateDetailQueryId = 1130002;
+	private GridHeadConfig excelTmplateDetailGridHeadConfig;
+	
+	private int excelTmplateTempQueryId = 1130003;
+	
+	private int excelTmplateHeadToolQueryId = 1130004;
+	
+	private int excelTmplateUserlQueryId = 1130005;
+	private GridHeadConfig excelTmplateUserGridHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public ExcelTransferController(){
+		excelTmplateHeadGridHeadConfig = new GridHeadConfig(excelTmplateHeadQueryId,true,false,true,false);
+	
+		excelTmplateDetailGridHeadConfig = new GridHeadConfig(excelTmplateDetailQueryId,true,false,true,false);
+		
+		excelTmplateUserGridHeadConfig = new GridHeadConfig(excelTmplateUserlQueryId,true,false,true,false);
+	}
+	
+	/**
+	 * 模版导出
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/excelTransferManage", method=RequestMethod.GET)
+    public ModelAndView excelTransferManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("scrapy/excelTransfer/excelTransferManage");
+        String tableHeader = this.getTableHeader(httpSession,excelTmplateHeadGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", excelTmplateHeadQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-模版导出查询
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getExcelTransferManageList")
+	@ResponseBody
+	public Object getExcelTransferManageList(@RequestBody Map postData){
+		return this.getTableDataList(postData, excelTmplateHeadQueryId);
+	}
+	
+	
+	/**
+	 * 模版明细界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/excelTransferDetail", method=RequestMethod.GET)
+    public ModelAndView excelTransferDetail(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("scrapy/excelTransfer/excelTransferDetailManage");
+        String tableHeader = this.getTableHeader(httpSession,excelTmplateDetailGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", excelTmplateDetailQueryId);
+        return mv;
+    }
+	
+	
+	/**
+	 * 获得动态列表数据-模版导出查询
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getExcelTransferDetailList")
+	@ResponseBody
+	public Object getExcelTransferDetailList(@RequestBody Map postData){
+		return this.getTableDataList(postData, excelTmplateDetailQueryId);
+	}
+	
+	/**
+	 * 文件上传界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/excelTransferUpload", method=RequestMethod.GET)
+    public ModelAndView excelTransferUpload(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("scrapy/excelTransfer/excelTransferUploadManage");
+        return mv;
+    }
+	
+	/**
+	 * 上传excell
+	 * 
+	 * @param httpSession
+	 * @param request
+	 * @return
+	 * @throws IOException 
+	 * @throws InvalidFormatException 
+	 * @throws EncryptedDocumentException 
+	 */
+	@RequestMapping(value="/uploadTransferExcel",method=RequestMethod.POST)
+	@ResponseBody
+    public Object uploadTransferExcel(MultipartFile excel,HttpSession httpSession, HttpServletRequest request) throws EncryptedDocumentException, InvalidFormatException, IOException {
+		if(!excel.isEmpty()) {
+			//导入时先清空临时表
+	    	clearExcelTemplateTempItem();
+	    	
+	    	//获得模版编号
+	    	String template_no = request.getParameter("template_no");  
+	    	
+	    	System.out.println("名称是："+excel.getOriginalFilename());
+	    	
+	         
+	    	//查询表头信息
+	         Map <String,Object> postData = new HashMap<String,Object>();
+	         postData.put("template_no", template_no);
+	         postData.put("queryId", excelTmplateHeadToolQueryId);
+	         
+	         List<Map<String,Object>> head_list = (List<Map<String,Object>>)this.getDataListByQueryId(postData);
+	         
+	         
+	         String file_name = String.valueOf(head_list.get(0).get("template_name")); //获得文件名称
+	         
+	         int start_line = Integer.valueOf(String.valueOf(head_list.get(0).get("start_line")))-1;//获得开始行数
+	         
+	         int sheet_no = Integer.valueOf(String.valueOf(head_list.get(0).get("sheet_no")))-1;//获得sheet数
+	         
+	         //创建表格读取sheet
+	         Workbook workbook = WorkbookFactory.create(excel.getInputStream());
+			 Sheet sheet = workbook.getSheetAt(sheet_no);  // 指代sheet1, 索引从0开始
+			 int success=0;  // 成功的记录数 
+	         
+	         postData.put("queryId", excelTmplateDetailQueryId);
+	         
+	         List<Map<String,Object>> detail_list = (List<Map<String,Object>>)this.getDataListByQueryId(postData);
+	         
+	         //先放入表头信息
+	         Map<String, Object> itemHeadMap = new HashMap();
+	         itemHeadMap.put("sort", 0);
+	         for(Map<String,Object> detail_map:detail_list){
+					int export_sort = Integer.valueOf(String.valueOf(detail_map.get("export_sort")));
+					String line_name = String.valueOf(detail_map.get("export_line_name"));
+
+					itemHeadMap.put("strbak"+export_sort, line_name);
+			}
+	         
+//	         itemHeadMap.put("strbak1", "图书名称");
+//	         itemHeadMap.put("strbak2", "ISBN");
+//	         itemHeadMap.put("strbak3", "出版机构");
+//	         itemHeadMap.put("strbak4", "作者");
+//	         itemHeadMap.put("strbak5", "语种");
+//	         itemHeadMap.put("strbak6", "出版年份");
+//	         itemHeadMap.put("strbak7", "分类");
+//	         itemHeadMap.put("strbak8", "码洋");
+//	         itemHeadMap.put("strbak9", "实洋");
+//	         itemHeadMap.put("strbak10", "数量");
+//	         itemHeadMap.put("strbak11", "境外进口方");
+//	         itemHeadMap.put("strbak12", "出口国家地区");
+	         
+	         
+	         addExcelTemplateTempItem(itemHeadMap);
+	         
+	         //读取表格放入明细信息
+			int rowNum = 0;
+
+			System.out.println("LastRowNum="+sheet.getLastRowNum());
+			
+			// 读取表格数据插入
+			for (rowNum = start_line; rowNum <= sheet.getLastRowNum(); rowNum++){  // 行数，真实数据索引也从1开始
+				System.out.println("rowNum="+rowNum);
+				int sortNumber = 1;
+				Row row = sheet.getRow(rowNum);	
+				Map<String, Object> itemMap = new HashMap();
+				itemMap.put("sort", sortNumber+rowNum-start_line);
+				for(Map<String,Object> detail_map:detail_list){
+					int input_line_no = Integer.valueOf(String.valueOf(detail_map.get("input_line_no")));//读取的列数
+					if(input_line_no == 0){ //为0是空行，不导入
+						continue;
+					}
+					int export_sort = Integer.valueOf(String.valueOf(detail_map.get("export_sort")));//输出的列数
+					Cell cell = row.getCell(input_line_no-1);
+					cell.setCellType(Cell.CELL_TYPE_STRING);
+					itemMap.put("strbak"+export_sort, cell.getStringCellValue().trim());
+				}
+				int code = addExcelTemplateTempItem(itemMap);
+				//System.out.println("map="+itemMap.toString());
+				if(code == 0) {
+					success++;
+				} else {
+					return this.getAjaxResult(code);
+				}
+			}
+			
+			return "{\"success\":true}";
+		}else{
+			return "{\"success\":false}";
+		}
+    	
+	}
+    
+	/**
+	 * 导出转换后的文件
+	 * 
+	 * @param postData
+	 * @param response
+	 * @throws Exception 
+	 */
+	@RequestMapping(value="/expoertTransferExcel")
+	@ResponseBody
+    public void expoertTransferExcel(HttpServletResponse response){
+    	 Map <String,Object> postData = new HashMap<String,Object>();
+         postData.put("queryId", excelTmplateTempQueryId);
+         
+         List<Map<String,Object>> item_list = (List<Map<String,Object>>)this.getDataListByQueryId(postData);
+         
+         // 创建一个新的Excel工作簿  
+         Workbook workbook = new XSSFWorkbook();  
+   
+         // 创建一个工作表  
+         Sheet sheet = workbook.createSheet("Sheet1");  
+         
+         for(Map<String,Object> map:item_list){
+        	 Row row = sheet.createRow(Integer.valueOf(String.valueOf(map.get("sort")))); 
+        	 for(String key : map.keySet()){
+        		 if(key.contains("strbak")){
+        			 int cell_num = Integer.valueOf(key.substring(key.indexOf("strbak")+6, key.length()));
+        	         Cell cell = row.createCell(cell_num-1);  
+        	         cell.setCellValue(String.valueOf(map.get(key)));  
+        		 }
+        	 }
+         }
+
+         // 将工作簿写入输出流并发送给客户端下载  
+		try {
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();  
+	         workbook.write(outputStream);  
+	         byte[] bytes = outputStream.toByteArray(); 
+	         response.setContentType("application/x-msdownload");
+	         response.setContentLength(bytes.length);  
+	         response.setHeader("Content-Disposition", "attachment;filename="+"template" + ".xlsx");
+	         response.getOutputStream().write(bytes);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
+    }
+    
+    /**
+	 * 临时表新增单条明细-导入
+	 * 
+	 * param postData
+	 * return
+	 */
+    private int addExcelTemplateTempItem(Map postData){
+    	// 入参, 注意按照顺序
+		String paramNames[] = {"sort", "strbak1", "strbak2", "strbak3", "strbak4", "strbak5", 
+							   "strbak6", "strbak7", "strbak8", "strbak9", "strbak10", 
+							   "strbak11", "strbak12", "strbak13", "strbak14", "strbak15", 
+							   "strbak16", "strbak17", "strbak18", "strbak19", "strbak20", 
+							   "strbak21", "strbak22", "strbak23", "strbak24", "strbak25", 
+							   "strbak26", "strbak27", "strbak28", "strbak29", "strbak30", 
+								};
+		// 加入sp的名称
+		postData.put("spName", "u_it_excel_template_temp_new");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		return code;
+    }
+    
+    /**
+   	 * 清空临时表明细
+   	 * 
+   	 * param postData
+   	 * return
+   	 */
+     private int clearExcelTemplateTempItem(){
+    	 Map postData = new HashMap(); 
+    	
+   		// 加入sp的名称
+   		postData.put("spName", "u_it_excel_template_temp_clear");
+   				
+   		int code = baseService.doCallSp(postData, null, null);
+   		
+   		return code;
+     }
+     
+     /**
+ 	 * 进入模版新增按钮
+ 	 * 
+ 	 * param postData
+ 	 * return
+ 	 */
+ 	@RequestMapping(value="/excelTransferModelAdd", method=RequestMethod.GET)
+     public ModelAndView excelTransferModelAdd(HttpSession httpSession) throws JsonProcessingException {
+         ModelAndView mv = new ModelAndView();
+         mv.setViewName("scrapy/excelTransfer/excelTransferModelAddManage");
+         return mv;
+     }
+ 	
+ 	/**
+	 * 新增模版表头
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addExcelTransferModel")
+	@ResponseBody
+    public Object addExcelTransferModel(@RequestParam Map postData,HttpSession httpSession) {	
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"template_name","start_line","sheet_no","input_code"};
+		// 加入sp的名称
+		postData.put("spName", "u_it_excel_template_new");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("input_code", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除模版操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteExcelTransferModel")
+	@ResponseBody
+    public Object deleteExcelTransferModel(@RequestParam Map postData,HttpSession httpSession){
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("delete_code", user.getAccount());
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"template_no","delete_code"};
+		// 加入sp的名称
+		postData.put("spName", "u_it_excel_template_del");
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 模版导明细修改界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/excelTransferEdit", method=RequestMethod.GET)
+    public ModelAndView excelTransferEdit(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("scrapy/excelTransfer/excelTransferDetailEditManage");
+        String tableHeader = this.getTableHeader(httpSession,excelTmplateDetailGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", excelTmplateDetailQueryId);
+        return mv;
+    }
+	
+	/**
+ 	 * 进入新增明细页面
+ 	 * 
+ 	 * param postData
+ 	 * return
+ 	 */
+ 	@RequestMapping(value="/excelTransferDetailAdd", method=RequestMethod.GET)
+     public ModelAndView excelTransferDetailAdd(HttpSession httpSession) throws JsonProcessingException {
+         ModelAndView mv = new ModelAndView();
+         mv.setViewName("scrapy/excelTransfer/excelTransferDetailAddManage");
+         return mv;
+     }
+ 	
+ 	/**
+	 * 新增模版明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addExcelTransferDetail")
+	@ResponseBody
+    public Object addExcelTransferDetail(@RequestParam Map postData,HttpSession httpSession) {	
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"template_no","input_line_no","export_line_name","export_sort"};
+		// 加入sp的名称
+		postData.put("spName", "u_it_excel_template_detail_new");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除模版明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteExcelTransferDetail")
+	@ResponseBody
+    public Object deleteExcelTransferDetail(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"template_no","export_sort"};
+		// 加入sp的名称
+		postData.put("spName", "u_it_excel_template_detail_del");
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 模版共享界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/excelTransferModelShare", method=RequestMethod.GET)
+    public ModelAndView excelTransferModelShare(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("scrapy/excelTransfer/excelTransferModelShareManage");
+        String tableHeader = this.getTableHeader(httpSession,excelTmplateUserGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", excelTmplateUserlQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-模版共享查询
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getExcelTransferUser")
+	@ResponseBody
+	public Object getExcelTransferUser(@RequestBody Map postData){
+		return this.getTableDataList(postData, excelTmplateUserlQueryId);
+	}
+	
+	/**
+ 	 * 进入共享人新增选择页面
+ 	 * 
+ 	 * param postData
+ 	 * return
+ 	 */
+ 	@RequestMapping(value="/excelTransferModelShareUserAdd", method=RequestMethod.GET)
+     public ModelAndView excelTransferModelShareUserAdd(HttpSession httpSession) throws JsonProcessingException {
+         ModelAndView mv = new ModelAndView();
+         mv.setViewName("scrapy/excelTransfer/excelTransferModelShareUserAddManage");
+         return mv;
+     }
+ 	
+ 	/**
+	 * 新增共享人
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addExcelTransferModelShareUser")
+	@ResponseBody
+    public Object addExcelTransferModelShareUser(@RequestParam Map postData,HttpSession httpSession) {	
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"template_no","user_code"};
+		// 加入sp的名称
+		postData.put("spName", "u_it_excel_template_user_new");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除模版明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteExcelTransferModelShareUser")
+	@ResponseBody
+    public Object deleteExcelTransferModelShareUser(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"template_no","user_code"};
+		// 加入sp的名称
+		postData.put("spName", "u_it_excel_template_user_del");
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+    
+  //测试方法
+  	public static void main(String[] args) throws JsonProcessingException, InterruptedException, ParseException,IOException {
+  		// 以下代码可以脱离web容器
+  		GenericXmlApplicationContext context = new GenericXmlApplicationContext();
+  		context.setValidating(false);  
+  		context.load("classpath*:spring-*.xml");  
+  		context.refresh(); 
+  						
+  		ExcelTransferController testService = (ExcelTransferController) context.getBean("excelTransferController");		
+  						
+  		try {
+  					
+  			//testService.uploadTransferExcel();
+  			
+  			//testService.expoertTransferExcel();
+  		
+  		} catch (Exception e) {
+  			// TODO Auto-generated catch block
+  			e.printStackTrace();
+  		}
+  						
+  		System.out.println("hello");
+  	}
+}

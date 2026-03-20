@@ -1,0 +1,163 @@
+package com.cnpiecsb.fc.payment.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 差价调整记账页面
+ * @author by zc 2022/1/19
+ *
+ */
+@Controller
+@RequestMapping("/fc/payment")
+public class PaymentDiscountAdjustment extends BaseServiceController{
+	
+	// 差价调整单表头查询
+	private int paymentDiscountAdjustmentManageQueryId = 8460001;
+	private GridHeadConfig paymentDiscountAdjustmentManageQueryHeadConfig;
+		
+	// 折扣调整单折扣明细查询
+	private int paymentDiscountAdjustmentItemsQueryId = 8460002;	
+	private GridHeadConfig paymentDiscountAdjustmentItemsQueryHeadConfig;
+		
+	public PaymentDiscountAdjustment() {
+		paymentDiscountAdjustmentManageQueryHeadConfig = new GridHeadConfig(paymentDiscountAdjustmentManageQueryId, true, true, true, false);
+		paymentDiscountAdjustmentManageQueryHeadConfig.setOperatorWidth(80);
+			
+		paymentDiscountAdjustmentItemsQueryHeadConfig = new GridHeadConfig(paymentDiscountAdjustmentItemsQueryId,true,false,false,false);
+	}
+		
+	/**
+	* 进入差价调整单管理界面
+	* 
+	* @return
+	* @throws JsonProcessingException 
+	*/
+	@RequestMapping(value="/paymentDiscountAdjustmentManage")  // 这里不写method, 说明既可以post也可以get
+	public ModelAndView paymentDiscountAdjustmentManage(HttpSession httpSession) throws JsonProcessingException{
+	   ModelAndView mv = new ModelAndView();
+	   mv.setViewName("fc/paymentDiscountAdjustment/paymentDiscountAdjustmentManage");
+	   String tableHeader = this.getTableHeader(httpSession,paymentDiscountAdjustmentManageQueryHeadConfig);
+	   mv.addObject("tableHeader", tableHeader);
+	   mv.addObject("queryId", paymentDiscountAdjustmentManageQueryId);
+	   return mv;
+	}
+		
+	/**
+	* 获得差价调整单数据
+	* 
+	* @return
+	*/
+	@RequestMapping(value="/getPaymentDiscountAdjustmentList")
+	@ResponseBody
+	public Object getPaymentDiscountAdjustmentList(@RequestBody Map postData, HttpSession httpSession) {
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		return this.getTableDataList(postData, paymentDiscountAdjustmentManageQueryId);
+	}
+	
+	/**
+	 * 进入差价调整单折扣明细界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/paymentDiscountAdjustmentItems")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView paymentDiscountAdjustmentItems(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/paymentDiscountAdjustment/paymentDiscountAdjustmentItems");
+        String tableHeader = this.getTableHeader(httpSession, paymentDiscountAdjustmentItemsQueryHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", paymentDiscountAdjustmentItemsQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得差价调整单折扣明细数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getPaymentDiscountAdjustmentItemsList")
+	@ResponseBody
+	public Object getPaymentDiscountAdjustmentItemsList(@RequestBody Map postData){
+		return this.getTableDataList(postData, paymentDiscountAdjustmentItemsQueryId);
+	}
+	
+	/**
+	 * 记账操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/accountPaymentDiscountAdjustment")
+	@ResponseBody
+    public Object accountPaymentDiscountAdjustment(@RequestParam Map postData,HttpServletRequest request,HttpSession httpSession){
+		String[] bill_ids = request.getParameterValues("bill_ids");
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("account_person", user.getAccount());
+		
+		if(bill_ids !=null && bill_ids.length>0){
+			for(int i=0;i < bill_ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"bill_id","account_person","account_month"};
+				// 加入sp的名称
+				postData.put("spName", "fc_payment_discount_adjustment_account");
+				
+				postData.put("bill_id", bill_ids[i]);
+						
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 撤销记账操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deletePaymentDiscountAdjustmentAccount")
+	@ResponseBody
+    public Object deletePaymentDiscountAdjustmentAccount(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){		
+		String[] bill_ids = request.getParameterValues("bill_ids");
+		if(bill_ids !=null && bill_ids.length>0){
+			for(int i=0; i < bill_ids.length; i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"bill_id"};
+				// 加入sp的名称
+				postData.put("spName", "fc_payment_discount_adjustment_account_cancel");					
+				
+				postData.put("bill_id", bill_ids[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		
+		return "{\"success\":true}";
+    }
+
+}

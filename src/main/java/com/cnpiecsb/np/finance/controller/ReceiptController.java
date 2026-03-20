@@ -1,0 +1,269 @@
+package com.cnpiecsb.np.finance.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/np")
+public class ReceiptController extends ZtbkServiceController {
+	private int receiptManageQueryId = 5400001;	
+	private GridHeadConfig receiptManageGridHeadConfig;
+	
+	private int oneClientReceiptManageQueryId = 5400002;
+	private GridHeadConfig oneClientReceiptManageGridHeadConfig;
+	
+	private int saleInvoicePayQueryId = 5400004;
+	private GridHeadConfig saleInvoicePayGridHeadConfig;
+	
+	private int payableSaleInvoiceQueryId = 5400003;	
+	private GridHeadConfig payableSaleInvoiceGridHeadConfig;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public ReceiptController(){
+		receiptManageGridHeadConfig=new GridHeadConfig(receiptManageQueryId,true,false,true,false);
+		
+		oneClientReceiptManageGridHeadConfig = new GridHeadConfig(oneClientReceiptManageQueryId,true,false,true,false);
+		
+		saleInvoicePayGridHeadConfig=new GridHeadConfig(saleInvoicePayQueryId,true,true,true,false);
+		
+		payableSaleInvoiceGridHeadConfig=new GridHeadConfig(payableSaleInvoiceQueryId,true,true,false,false);
+	}
+	
+	/**
+	 * 预收管理
+	 * 
+	 */
+	@RequestMapping(value="/receiptManage",method=RequestMethod.GET)
+    public ModelAndView receiptManage(HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/receipt/receiptManage");
+        String tableHeader = this.getTableHeader(httpSession,receiptManageGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", receiptManageQueryId);
+        return mv;
+    }	
+	
+	/**
+	 * 获得动态列表数据-预收管理列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getReceiptManageList")
+	@ResponseBody
+	public Object getReceiptManageList(@RequestBody Map postData){
+		return this.getTableDataList(postData,receiptManageQueryId);
+	}
+	
+	/**
+	 * 单客户预收管理
+	 * 
+	 */
+	@RequestMapping(value="/oneClientReceiptManage",method=RequestMethod.GET)
+    public ModelAndView oneClientReceiptManage(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        Map<String, Object> oneQuery = baseService.getOneQuery(receiptManageQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("np/receipt/oneClientReceiptManage");
+        String tableHeader = this.getTableHeader(httpSession,oneClientReceiptManageGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", oneClientReceiptManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-单客户预收管理列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getOneClientReceiptManageList")
+	@ResponseBody
+	public Object getOneClientReceiptManageList(@RequestBody Map postData){
+		return this.getTableDataList(postData,oneClientReceiptManageQueryId);
+	}
+	
+	/**
+	 * 	发票支出页面
+	 * 
+	 */
+	@RequestMapping(value="/saleInvoicePayAdd",method=RequestMethod.GET)
+    public ModelAndView saleInvoicePayAdd(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/receipt/saleInvoicePayAdd");
+        String tableHeader = this.getTableHeader(httpSession,saleInvoicePayGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", saleInvoicePayQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 	可支出发票列表页面
+	 * 
+	 */
+	@RequestMapping(value="/payableSaleInvoice",method=RequestMethod.GET)
+    public ModelAndView payableSaleInvoice(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/receipt/payableSaleInvoice");
+        String tableHeader = this.getTableHeader(httpSession,payableSaleInvoiceGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", payableSaleInvoiceQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-到可支出发票明细列表
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getPayableSaleInvoiceList")
+	@ResponseBody
+	public Object getPayableSaleInvoiceList(@RequestBody Map postData){
+		return this.getTableDataList(postData,payableSaleInvoiceQueryId);
+	}
+	
+	/**
+	 * 发票支出操作 
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addSaleInvoicePay")
+	@ResponseBody
+    public Object addSaleInvoicePay(@RequestBody List<Map<String,Object>> postData,HttpServletRequest request,HttpSession httpSession){		
+		User user=(User)httpSession.getAttribute("user");	
+		for(Map<String,Object> item_map:postData){
+			item_map.put("o_id_operator", user.getAccount());
+			// 入参, 注意按照顺序
+			String paramNames[] = {"c_id","kp_id","money_amount","agent_money","o_id_operator", "rp_id"};
+			
+			String returnNames[] = {"pay_id"};
+			// 加入sp的名称
+			item_map.put("spName", "u_finance_client_invoice_kp_pay");	
+
+			int code = baseService.doCallSp(item_map, paramNames, returnNames);
+					
+			if (code != 0) {
+				return this.getAjaxResult(code);
+			}
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 撤销发票支出
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteSaleInvoicePay")
+	@ResponseBody
+	public Object deleteSaleInvoicePay(HttpServletRequest request,@RequestParam Map postData,HttpSession httpSession){
+		String[] ids=request.getParameterValues("ids");
+		if(ids!=null&&ids.length>0){
+			for(int i=0;i<ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"id"};
+				// 加入sp的名称
+				postData.put("spName", "u_finance_client_invoice_kp_pay_withdraw");
+				
+				postData.put("id", ids[i]);		
+						
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 其他支出页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/otherPayAdd",method=RequestMethod.GET)
+    public ModelAndView otherPayAdd(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/receipt/otherPayAdd");
+        return mv;
+    }
+	
+	/**
+	 * 其他支出操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addOtherPay")
+	@ResponseBody
+    public Object addOtherPay(@RequestParam Map postData,HttpSession httpSession){		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_operator", user.getAccount());
+		
+		String paramNames[] = {"c_id","source","money_amount","memo","o_id_operator"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_client_other_pay");
+		
+		postData.put("source",postData.get("pay_source"));
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 撤销其他支出
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteOtherPay")
+	@ResponseBody
+	public Object deleteOtherPay(HttpServletRequest request,@RequestParam Map postData,HttpSession httpSession){
+		String[] ids=request.getParameterValues("ids");
+		if(ids!=null&&ids.length>0){
+			for(int i=0;i<ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"id"};
+				// 加入sp的名称
+				postData.put("spName", "u_finance_client_other_pay_withdraw");
+				
+				postData.put("id", ids[i]);		
+						
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}
+		return "{\"success\":true}";
+	}
+}

@@ -1,0 +1,667 @@
+package com.cnpiecsb.bd.controller;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.bd.util.DhBatchUtil;
+import com.cnpiecsb.common.listener.InitialBeanListener;
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Controller
+@RequestMapping("/bk/bd")
+public class qkDhController extends ZtbkServiceController {
+	private int qkDhManageQueryId = 10000018;	
+	private GridHeadConfig qkDhManageGridHeadConfig;
+	
+	private int qkDhOneQueryId = 10000018;	
+
+	private int qkDhItemQueryId = 10000019;	
+	private GridHeadConfig qkDhItemGridHeadConfig;
+	
+	private int magDhItemPullInQueryId = 10000020;	
+	private GridHeadConfig magDhItemPullInGridHeadConfig;
+	
+	private int qkDhItemFFQueryId = 10000021;	
+	private GridHeadConfig qkDhItemFFGridHeadConfig;
+	
+	private int qkDhItemTempQueryId = 10000049;	
+	private GridHeadConfig qkDhItemTempGridHeadConfig;
+	
+	// 商品信息查询
+	private int productManageQueryId = 10000001;	
+	
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public qkDhController(){
+		qkDhManageGridHeadConfig = new GridHeadConfig(qkDhManageQueryId,true,false,true,false);
+		qkDhManageGridHeadConfig.setOperatorWidth(80);
+		
+		qkDhItemGridHeadConfig = new GridHeadConfig(qkDhItemQueryId,true,false,true,false);
+		
+		magDhItemPullInGridHeadConfig = new GridHeadConfig(magDhItemPullInQueryId,true,true,false,false);
+		
+		qkDhItemFFGridHeadConfig = new GridHeadConfig(qkDhItemFFQueryId,true,false,false,false);
+		
+		qkDhItemTempGridHeadConfig = new GridHeadConfig(qkDhItemTempQueryId,true,true,true,false);
+		qkDhItemTempGridHeadConfig.setOperatorWidth(80);
+	}
+	/**
+	 * 进入到货管理界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/qkDhManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView qkDhManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/qkDh/qkDhManage");
+        String tableHeader = this.getTableHeader(httpSession,qkDhManageGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", qkDhManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-到货管理 by fjs
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getQkDhManageList")
+	@ResponseBody
+	public Object getDhBatchManageList(@RequestBody Map postData){
+		return this.getTableDataList(postData,qkDhManageQueryId);
+	}
+	
+	/**
+	 * 新增报刊到货页面 by fjs
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/paperDhAdd",method=RequestMethod.GET)
+    public ModelAndView paperDhAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/qkDh/paperDhAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增报刊到货操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addPaperDh")
+	@ResponseBody
+    public Object addPaperDh(@RequestParam Map postData,HttpSession httpSession) throws EncryptedDocumentException, InvalidFormatException, IOException {	
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"subscribe_date", "o_id_input"};
+		// 加入sp的名称
+		postData.put("spName", "Up_Auto_Insert_qkdh");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 报刊到货明细界面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/paperDhItem", method=RequestMethod.GET)
+    public ModelAndView paperDhItem(HttpServletRequest request,HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/qkDh/paperDhItem");
+        // 从请求参数获取 qk_dh_id
+        String qk_dh_id = request.getParameter("qk_dh_id");
+        httpSession.setAttribute("qk_dh_id", qk_dh_id);
+        String dh_flag = request.getParameter("dh_flag");
+        httpSession.setAttribute("dh_flag", dh_flag);
+        String tableHeader = this.getTableHeader(httpSession,qkDhItemGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", qkDhItemQueryId);
+		mv.addObject("qk_dh_id", qk_dh_id);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-报刊到货明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getPaperDhItemList")
+	@ResponseBody
+	public Object getPaperDhItemList(@RequestBody Map postData){
+		return this.getTableDataList(postData, qkDhItemQueryId);
+	}
+	
+	/**
+	 * 新增杂志页面 by fjs
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/magDhAdd",method=RequestMethod.GET)
+    public ModelAndView magDhAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/qkDh/magDhAdd");
+        
+        String qk_dh_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("qk_dh_guid", qk_dh_guid);
+        
+        String tableHeader = this.getTableHeader(httpSession,qkDhItemTempGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", qkDhItemTempQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-获得临时表数据
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getMagDhItemTempList")
+	@ResponseBody
+	public Object getMagDhItemTempList(@RequestBody Map postData,HttpSession httpSession){
+		String qk_dh_guid=(String)httpSession.getAttribute("qk_dh_guid");
+		postData.put("guid", qk_dh_guid);
+		return this.getTableDataList(postData,qkDhItemTempQueryId);
+	}
+	
+	/**
+	 * 新增进货批次页面 by fjs
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/magDhItemPull",method=RequestMethod.GET)
+    public ModelAndView magDhItemPull(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        String tableHeader = this.getTableHeader(httpSession,magDhItemPullInGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", magDhItemPullInQueryId);
+        mv.setViewName("bd/qkDh/magDhItemPullIn");
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-获得临时表数据
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getMagDhItemPullList")
+	@ResponseBody
+	public Object getMagDhItemPullList(@RequestBody Map postData,HttpSession httpSession){
+		return this.getTableDataList(postData,magDhItemPullInQueryId);
+	}
+	
+	/**
+	 * 插入临时表数据
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/doMagDhItemPullIn")
+	@ResponseBody
+    public Object doMagDhItemPullIn(@RequestBody List<Map<String,Object>> postData,HttpSession httpSession){
+		
+		String qk_dh_guid=(String)httpSession.getAttribute("qk_dh_guid");
+		
+		for(Map<String,Object> map:postData){
+			Map<String,Object> sp_map = new HashMap<String,Object>();
+			sp_map.put("guid", qk_dh_guid);
+			sp_map.put("inv_id", map.get("inv_id"));
+			sp_map.put("ItemExclusiveCode", map.get("ItemExclusiveCode"));
+			
+			sp_map.put("spName","n_qk_instance_dh_item_temp_new");
+			
+			// 入参, 注意按照顺序
+			String paramNames[] = {"inv_id","ItemExclusiveCode","guid"};
+			
+			int code = baseService.doCallSp(sp_map, paramNames, null);
+			
+			if (code != 0) {
+				return this.getAjaxResult(code);
+			}
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改临时表信息
+	 * @return
+	 */
+	@RequestMapping(value="/eidtMagDhItemTemp")
+	@ResponseBody
+	public Object eidtMagDhItemTemp(@RequestParam Map postData) {
+		
+		// 加入sp的名称
+		postData.put("spName", "n_qk_instance_dh_item_temp_update");
+						
+		String paramNames[] = {"guid","inc_no","h_amount_dh","instance_tm","period_name"};
+				
+						
+		int code=baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+	}
+	
+	/**
+	* 删除临时表明细
+	* 
+	* param postData
+	* return
+	*/
+	@RequestMapping(value="/deleteMagDhItemTemp")
+	@ResponseBody
+	public Object deleteMagDhItemTemp(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){
+		
+		//放入GUID
+		String qk_dh_guid=(String)httpSession.getAttribute("qk_dh_guid");
+		postData.put("guid", qk_dh_guid);
+				
+		String[] inc_nos = request.getParameterValues("inc_no_ids");
+		if(inc_nos != null && inc_nos.length > 0){
+			for(int i=0;i<inc_nos.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = new String[]{"guid", "inc_no"};
+				// 加入sp的名称
+				postData.put("spName", "n_qk_instance_dh_item_temp_delete");					
+				
+				postData.put("inc_no", inc_nos[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}	
+		
+		return "{\"success\":true}";
+	 }
+	
+	/**
+	 * 新增杂志到货
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addMagDh")
+	@ResponseBody
+    public Object addMagDh(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"guid",       
+		          "o_id_input",
+		          "o_id_operator",     
+		          "receipts_class",
+		          "qk_attribute",
+		          "subscribe_date",
+		          "ps_date"};
+		// 出参, 有顺序
+		String returnNames[] = new String[]{"qk_dh_id"};
+		// 加入sp的名称
+		postData.put("spName", "n_qk_instance_dh_new");
+		
+		String qk_dh_guid=(String)httpSession.getAttribute("qk_dh_guid");
+		postData.put("guid", qk_dh_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+
+	/**
+	 * 删除到货管理单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteQkDh")
+	@ResponseBody
+    public Object deleteQkDh(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"qk_dh_id", "o_id_destroy"};
+		// 加入sp的名称
+		postData.put("spName", "n_qk_instance_dh_delete");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_destroy", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 杂志到货修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toMagDhItemEdit",method=RequestMethod.GET)
+    public ModelAndView toMagDhItemEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(qkDhOneQueryId, postData);
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("bd/qkDh/magDhEdit");
+        
+        String qk_dh_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("qk_dh_guid", qk_dh_guid);
+        
+        String tableHeader = this.getTableHeader(httpSession,qkDhItemTempGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", qkDhItemTempQueryId);
+        
+        // 入参, 注意按照顺序
+ 		String paramNames[] = {"qk_dh_id", "guid"};
+ 		// 加入sp的名称
+ 		postData.put("spName", "n_qk_instance_dh_item_temp_todata");
+ 		
+        httpSession.setAttribute("qk_dh_guid", qk_dh_guid);
+ 		postData.put("guid", qk_dh_guid);
+ 		
+ 		int code = baseService.doCallSp(postData, paramNames, null);
+		
+        return mv;
+    }
+	
+	/**
+	 * 杂志到货修改
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editMagDh")
+	@ResponseBody
+    public Object editMagDh(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"guid",  
+				  "qk_dh_id",
+		          "o_id_input",
+		          "o_id_operator",     
+		          "receipts_class",
+		          "qk_attribute",
+		          "subscribe_date",
+		          "ps_date"};
+		// 加入sp的名称
+		postData.put("spName", "n_qk_instance_dh_update");
+		
+		String qk_dh_guid=(String)httpSession.getAttribute("qk_dh_guid");
+		postData.put("guid", qk_dh_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 杂志到货修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/toMagffEdit",method=RequestMethod.GET)
+    public ModelAndView toMagffEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        
+        mv.setViewName("bd/qkDh/magffEdit");
+        
+        String tableHeader = this.getTableHeader(httpSession,qkDhItemFFGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", qkDhItemFFQueryId);
+		mv.addObject("ItemExclusiveCode", (String)postData.get("ItemExclusiveCode"));
+		mv.addObject("ps_date", (String)postData.get("ps_date"));
+		mv.addObject("subscribe_date", (String)postData.get("subscribe_date"));
+		mv.addObject("h_amount_dh", (String)postData.get("h_amount_dh"));
+		
+		// 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(productManageQueryId, postData);
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+		
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-获得分发数据
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getMagffList")
+	@ResponseBody
+	public Object getMagffList(@RequestBody Map postData,HttpSession httpSession){
+		return this.getTableDataList(postData,qkDhItemFFQueryId);
+	}
+	
+	/**
+	 * 修改分发信息
+	 * @return
+	 */
+	@RequestMapping(value="/editMagff")
+	@ResponseBody
+	public Object editMagff(@RequestParam Map postData) {
+		
+		// 加入sp的名称
+		postData.put("spName", "n_qk_instance_dh_item_ff_update");
+						
+		String paramNames[] = {"ItemExclusiveCode","zd_item_id","h_amount_now"};
+				
+						
+		int code=baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+	}
+	
+	/**
+	 * 杂志分发确认
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/magffCommit")
+	@ResponseBody
+    public Object magffCommit(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"qk_dh_id",  
+		          "o_id_input"};
+		
+		// 加入sp的名称
+		postData.put("spName", "bk_qk_instance_dh_ff_confirm");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 上架打印确认操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/magOnshelfCommit")
+	@ResponseBody
+    public Object magOnshelfCommit(@RequestParam Map postData,HttpSession httpSession) throws EncryptedDocumentException, InvalidFormatException, IOException {	
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"qk_dh_id", "o_id_input"};
+		// 出参, 注意按照顺序
+		String returnNames[] = new String[]{"upshelf_id"};
+		// 加入sp的名称
+		postData.put("spName", "Up_Auto_Insert_UpShelf");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getUserName());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		int print_add_code = qkDhttPrintCountAdd(postData,"1");//'0':贴头打印；'1'：上架单打印
+		if (print_add_code != 0) {
+			return this.getAjaxResult(print_add_code);
+		}
+		
+		return "{\"success\":true}";
+    }
+
+	/**
+	 * 贴头打印确认操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/qkDhttCommit")
+	@ResponseBody
+    public Object qkDhttCommit(@RequestParam Map postData,HttpSession httpSession) throws EncryptedDocumentException, InvalidFormatException, IOException {	
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"qk_dh_id","PRINT_BZ","Address_date"};
+		// 出参, 注意按照顺序
+		String returnNames[] = new String[]{"newid"};
+		// 加入sp的名称
+		postData.put("spName", "Up_Auto_INSERT_QKPRINT");
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		int print_add_code = qkDhttPrintCountAdd(postData,"0");//'0':贴头打印；'1'：上架单打印
+		if (print_add_code != 0) {
+			return this.getAjaxResult(print_add_code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 
+	 * 增加打印次数
+	 * 
+	 */
+	public int qkDhttPrintCountAdd(Map postData,String print_type){
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"qk_dh_id","print_type"};
+
+		postData.put("print_type", print_type);
+		
+		// 加入sp的名称
+		postData.put("spName", "n_qk_instance_dh_print_add");
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		return code;
+	}
+	
+	/**
+	 * 提交到货管理单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/verifyQkDh")
+	@ResponseBody
+    public Object verifyQkDh(@RequestParam Map postData,HttpSession httpSession){
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"qk_dh_id", "is_verify","o_id_verify"};
+		// 加入sp的名称
+		postData.put("spName", "n_bk_qk_instance_dh_verify");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_verify", user.getAccount());
+				
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	
+}

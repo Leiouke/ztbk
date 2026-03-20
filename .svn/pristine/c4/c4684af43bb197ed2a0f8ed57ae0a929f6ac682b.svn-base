@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnpiecsb.system.dao.DictionaryDao">
+	<resultMap type="com.cnpiecsb.system.entity.Dictionary" id="dictionaryResultMap">
+
+	</resultMap>
+	
+	<resultMap type="com.cnpiecsb.system.entity.DicDirectory" id="dicDirectoryResultMap">
+
+	</resultMap>
+	
+	<!-- 添加字典项 -->
+	<insert id="addDictionary" parameterType="com.cnpiecsb.system.entity.Dictionary">
+		<![CDATA[
+			insert into it_system_dictionary (
+				code, 
+				name, 
+				sortNo, 
+				status,
+				remark,
+				directoryId,
+				d_code) values 
+				(
+				#{code}, 
+				#{name}, 
+				#{sortNo}, 
+				#{status},
+				#{remark},
+				#{directoryId},
+				#{d_code})
+		]]>
+	</insert>
+	
+	<!-- 修改字典项 -->
+	<update id="editDictionary" parameterType="com.cnpiecsb.system.entity.Dictionary">
+		update it_system_dictionary 
+	    <set>
+	    	code = #{code},
+	      	name = #{name},
+	      	sortNo = #{sortNo},
+	      	status = #{status},
+	      	remark = #{remark}
+	    </set>
+	    where id = #{id}
+	</update>
+	
+	<!-- 删除字典项 -->
+	<delete id="deleteDictionary">
+		delete from it_system_dictionary where id = #{id}
+	</delete>
+	
+	<!-- 更新启用/注销状态 -->
+	<update id="doUpdateStatus" parameterType="com.cnpiecsb.system.entity.Dictionary">
+		update it_system_dictionary 
+	    <set>
+	      	status = #{status}
+	    </set>
+	    where id = #{id}
+	</update>
+	
+	<!-- 查询单个字典项 -->
+	<select id="getDictionaryById" parameterType="_int"  resultMap="dictionaryResultMap">
+		<![CDATA[
+			select * from it_system_dictionary where id=#{id}
+		]]>
+	</select>
+	
+	<!-- 根据目录ID获得所有字典项 -->
+	<select id="getDictionaryByDirectoryId" resultMap="dictionaryResultMap">
+		select * from it_system_dictionary where
+			directoryId = #{_parameter}
+		order by sortNo
+	</select>
+	
+	<!-- 根据code获得字典目录 -->
+	<select id="getDirectoryByCode" resultMap="dicDirectoryResultMap">
+		<![CDATA[
+			select * from it_system_dicdirectory where code=#{code}
+		]]>
+	</select>
+	
+	<!-- 根据id获得字典目录code -->
+	<select id="getDirectoryCodeById" resultType="String">
+		<![CDATA[
+			select code from it_system_dicdirectory where id=#{id}
+		]]>
+	</select>
+	
+	<!-- 获得所有字典目录 -->
+	<select id="getAllDirectory" resultMap="dicDirectoryResultMap">
+		select * from it_system_dicdirectory
+	</select>
+	
+	<!-- 根据目录ID获得所有启用的字典项 -->
+	<select id="getUsingDictionaryByDirectoryId" resultMap="dictionaryResultMap">
+		select * from it_system_dictionary where
+			directoryId = #{_parameter} and status = 'true'
+		order by sortNo
+	</select>
+</mapper>

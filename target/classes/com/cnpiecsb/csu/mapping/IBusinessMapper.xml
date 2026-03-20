@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnpiecsb.csu.idao.IBusinessDao">
+	<!-- 通用查询, 返回结果map集合, 分页查询, 适用sqlserver -->
+	<select id="getQueryResult" resultType="map" statementType="PREPARED"> <!-- statement状态(非预编译)意思是直接传入可执行的脚本, prepared为预编译(该值默认) -->
+		SELECT * FROM 
+		(
+			SELECT top (${offset} + ${limit}) ROW_NUMBER()OVER(${orderSql}) 'rnum', ${sql}
+		) t
+		WHERE t.rnum > #{offset}
+	</select>
+	
+	<!-- 通用查询, 返回结果map集合, 分页查询, 适用oracle -->
+	<select id="getOracleQueryResult" resultType="map" statementType="PREPARED"> <!-- statement状态(非预编译)意思是直接传入可执行的脚本, prepared为预编译(该值默认), 这里的rnum字段采用强制小写的模式 -->
+		SELECT * FROM 
+		(
+			select t.*, rownum "rnum" from (select ${sql} ${orderSql}) t where rownum &lt;= (${offset} + ${limit})
+		)
+		WHERE "rnum" > #{offset}
+	</select>
+	
+	<!-- 通用查询, 返回结果总数 -->
+	<select id="getQueryCount" resultType="_int">
+		SELECT count(*) ${_parameter}
+	</select>
+	
+	<!-- 单条数据查询 -->
+	<select id="getOneResult" resultType="map">
+		${sql}
+	</select>
+	
+	<select id="getGroupCount" resultType="_int">
+		select @@rowcount
+	</select>
+	
+	<!-- 调用存储过程, 返回值放到传入map的resultCode中, 默认返回String, 适用于sqlserver -->
+	<select id="callSp" statementType="CALLABLE">  <!-- 注意返回值放在了 传入map的resultCode中 -->
+        {#{resultCode,mode=OUT,jdbcType=INTEGER} = call #{spName}
+           <foreach item="param" index="index" collection="paramNames" open="(" separator="," close=")">
+                 ${param}  <!-- 注意 这里用的是$符号, 表示直接放入 非预编译的内容 -->
+           </foreach>
+           <!-- #{resultCode,mode=OUT,jdbcType=INTEGER} -->
+        }
+    </select>
+    
+    <!-- 调用存储过程, oracle没有全过程返回参数的说法, 只能放在返回参数中,spName用非预编译内容  适用于oracle -->
+	<select id="callOracleSp" statementType="CALLABLE"> 
+        {call ${spName}
+           <foreach item="param" index="index" collection="paramNames" open="(" separator="," close=")">
+                 ${param}  <!-- 注意 这里用的是$符号, 表示直接放入 非预编译的内容 -->
+           </foreach>
+        } 
+    </select>
+</mapper>

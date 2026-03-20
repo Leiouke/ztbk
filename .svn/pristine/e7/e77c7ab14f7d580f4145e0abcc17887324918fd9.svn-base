@@ -1,0 +1,134 @@
+package com.cnpiecsb.np.politicalCheck.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.csu.controller.YhServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 政审缓发界面
+ * 
+ * @author user
+ *
+ */
+@Controller
+@RequestMapping("/np/politicalCheck")
+public class PoliticalCheckDelayController extends YhServiceController{	
+	private int politicalCheckDelayQueryId = 5110061;	
+	private GridHeadConfig politicalCheckDelayHeadConfig;
+	
+	private int deliveryOrderDelayItemQueryId = 5110062;	
+	private GridHeadConfig deliveryOrderDelayItemHeadConfig;
+	
+	public PoliticalCheckDelayController(){
+		politicalCheckDelayHeadConfig = new GridHeadConfig(politicalCheckDelayQueryId,true,false,true,false);
+		
+		deliveryOrderDelayItemHeadConfig = new GridHeadConfig(deliveryOrderDelayItemQueryId,true,false,false,false);
+	}
+
+	/**
+	 * 进入政审缓发界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/politicalCheckDelayManage")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView politicalCheckDelayManage(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        String tableHeader = this.getTableHeader(httpSession, politicalCheckDelayHeadConfig);
+        mv.setViewName("np/politicalCheck/politicalCheckDelayManage");
+        mv.addObject("tableHeader", tableHeader);
+        mv.addObject("queryId", politicalCheckDelayQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得政审缓发数据
+	 * @return
+	 */
+	@RequestMapping(value="/getPoliticalCheckDelayList")
+	@ResponseBody
+	public Object getPoliticalCheckDelayList(@RequestBody Map postData) {
+		return this.getTableDataList(postData, politicalCheckDelayQueryId);
+	}
+	
+	/**
+	 * 缓发确认/取消确认操作
+	 * 
+	 * @param postData
+	 * @param httpSession
+	 * @return
+	 */
+	@RequestMapping(value="/politicalCheckDalayConfirm")
+	@ResponseBody
+    public Object politicalCheckDalayConfirm(@RequestParam Map postData,HttpSession httpSession){
+		User user = (User)httpSession.getAttribute("user");
+		// 入参, 注意按照顺序
+		String paramNames[] = new String[]{"ItemExclusiveCode", "zd_item_id", "is_delayf", "delay_o_name"};
+
+		// 加入sp的名称
+		postData.put("spName", "u_np_qk_instance_dh_hf_update");
+		
+		postData.put("delay_o_name", user.getUserName());
+				
+		int code = yhService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 进入缓发清单界面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/deliveryOrderDelayItem")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView deliveryOrderDelayItem(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        String tableHeader = this.getTableHeader(httpSession, deliveryOrderDelayItemHeadConfig);
+        mv.setViewName("np/politicalCheck/deliveryOrderDelayItem");
+        mv.addObject("tableHeader", tableHeader);
+        mv.addObject("queryId", deliveryOrderDelayItemQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得缓发清单数据
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value="/getDeliveryOrderDelayItemList")
+	@ResponseBody
+	public Object getDeliveryOrderDelayItemList(@RequestBody Map postData) {
+		return this.getTableDataList(postData, deliveryOrderDelayItemQueryId);
+	}
+	
+	/**
+	 * 进入选择页面
+	 * 
+	 * @return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/deliveryOrderDelayItemSynchronize")  // 这里不写method, 说明既可以post也可以get
+    public ModelAndView deliveryOrderDelayItemSynchronize(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        String tableHeader = this.getTableHeader(httpSession, deliveryOrderDelayItemHeadConfig);
+        mv.setViewName("np/politicalCheck/deliveryOrderDelayItemSynchronize");
+        return mv;
+    }
+}

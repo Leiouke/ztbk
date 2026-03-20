@@ -1,0 +1,8 @@
+# super user's accounts, split by ' '
+#superUser.accounts admin
+#lastSynchronizeTime 2015-12-12 10:00
+
+# super user's account
+superUser.account wkh
+# images root path
+images.rootPath c:/images/

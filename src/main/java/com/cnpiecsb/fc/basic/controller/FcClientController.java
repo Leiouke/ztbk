@@ -1,0 +1,304 @@
+package com.cnpiecsb.fc.basic.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.fc.util.AccessControlUtil;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Controller
+@RequestMapping("/fc/basic")
+public class FcClientController extends BaseServiceController {
+	private int clientSearchQueryId = 8000004;
+	
+//	private int clientCLevelSearchQueryId = 5000009;
+	
+	private int clientOneQueryId = 8000002;
+	
+	private int clientQueryId = 8000001;	
+	private GridHeadConfig clientGridHeadConfig;
+	
+	private GridHeadConfig bankGridHeadConfig;	
+	private int bankQueryId = 8000003;
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public FcClientController(){
+		clientGridHeadConfig = new GridHeadConfig(clientQueryId,true,false,true,false);
+		clientGridHeadConfig.setOperatorWidth(80);
+		
+		bankGridHeadConfig = new GridHeadConfig(bankQueryId,true,false,true,false);
+		bankGridHeadConfig.setOperatorWidth(120);
+	}
+	
+	/**
+	 * 获得动态列表数据-客户-搜索自动补全
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientListSearch")
+	@ResponseBody
+	public Object getClientListSearch(String keyword, HttpSession httpSession){
+		Map<String,Object> postData=new HashMap<>();
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		
+		postData.put("keyword", keyword);
+		return this.getTableDataList(postData, clientSearchQueryId);
+	}
+//	
+//	/**
+//	 * 获得动态列表数据-客户推广类型-搜索自动补全
+//	 * 
+//	 * param postData
+//	 * return
+//	 */
+//	@RequestMapping(value="/getClientCLevelListSearch")
+//	@ResponseBody
+//	public Object getClientCLevelListSearch(String keyword,String attribute){
+//		Map<String,Object> postData=new HashMap<>();
+//		postData.put("keyword", keyword);
+//		return this.getTableDataList(postData, clientCLevelSearchQueryId);
+//	}
+	
+	/**
+	 * 获得查询单一客户
+	 * 
+	 * param postData
+	 * return
+	 * @throws JsonProcessingException 
+	 */
+	@RequestMapping(value="/getOneClient")
+	@ResponseBody
+	public Object getOneClient(@RequestParam Map postData) throws JsonProcessingException{
+		Map<String, Object> oneQuery = baseService.getOneQuery(clientOneQueryId, postData);
+		return  JsonUtil.mapToString(oneQuery);
+	}
+	
+	/**
+	 * 客户管理界面
+	 * 
+	 * @param httpSession
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	@RequestMapping(value="/clientManage",method=RequestMethod.GET)
+    public ModelAndView clientManage(HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/basic/clientManage");
+        String tableHeader = this.getTableHeader(httpSession, clientGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", clientQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-客户
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientList")
+	@ResponseBody
+	public Object getClientList(@RequestBody Map postData, HttpSession httpSession){
+		// 获得权限代码参数
+		AccessControlUtil.accessParams(postData, httpSession);
+		return this.getTableDataList(postData, clientQueryId);
+	}
+	
+	/**
+	 * 新增页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/clientAdd",method=RequestMethod.GET)
+    public ModelAndView clientAdd(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/basic/clientAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addClient")
+	@ResponseBody
+    public Object addClient(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"finance","c_department","o_id","c_charge_man",
+				"a_id","p_id","city_id","c_hy_id","c_department_simple","c_money","c_law_man",
+				"c_discount","custom_id",
+				"c_ms_id","c_department_Foreign","org_code", "c_cw_type", "settlement_c_id", "unit_code"};
+		// 出参, 有顺序
+		String returnNames[] = {"c_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_basic_clients_new");
+		User user=(User)httpSession.getAttribute("user");		
+		postData.put("o_id", user.getAccount());
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}		
+		// 以下获得出参值
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/clientEdit",method=RequestMethod.GET)
+    public ModelAndView clientEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(clientOneQueryId, postData);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("fc/basic/clientEdit");
+        
+		//银行账户表格抬头
+        String tableHeader_bank = this.getTableHeader(httpSession,bankGridHeadConfig);
+		mv.addObject("tableHeader_bank", tableHeader_bank);		
+		mv.addObject("queryId_bank", this.bankQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 修改操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editClient")
+	@ResponseBody
+    public Object editclient(@RequestParam Map postData){
+		// 入参
+		String paramNames[] = {"c_id","finance","c_department","c_charge_man","a_id","p_id","city_id","c_hy_id",
+				"c_department_simple","c_money","c_law_man","c_discount","custom_id",
+				"c_ms_id","c_department_Foreign", "c_cw_type", "settlement_c_id", "unit_code"};
+		// 加入sp的名称
+		postData.put("spName", "fc_basic_clients_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);			
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteClient")
+	@ResponseBody
+    public Object deleteClient(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){
+		String[] c_ids=request.getParameterValues("c_ids");
+		User user=(User)httpSession.getAttribute("user");		
+		postData.put("delete_person", user.getAccount());
+		if(c_ids!=null&&c_ids.length>0){
+			for(int i=0;i<c_ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"c_id","delete_person"};
+				// 加入sp的名称
+				postData.put("spName", "fc_basic_clients_delete");				
+				
+				postData.put("c_id", c_ids[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}		
+		return "{\"success\":true}";
+    }
+//	
+//	/**
+//	 * 同步客商数据
+//	 * 
+//	 * param postData
+//	 * return
+//	 */
+//	@RequestMapping(value="/syncClientAndFactory")
+//	@ResponseBody
+//    public Object syncClientAndFactory(@RequestParam Map postData){
+//		// 加入sp的名称
+//		postData.put("spName", "u_finance_plant_sys");
+//		
+//		int code = baseService.doCallSp(postData, null, null);			
+//		if (code != 0) {
+//			return this.getAjaxResult(code);
+//		}
+//		return "{\"success\":true}";
+//    }
+	
+	/**
+	 * 下载页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/clientDownload",method=RequestMethod.GET)
+    public ModelAndView clientDownload(HttpSession httpSession) throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/basic/clientDownload");//fc_finance_client_pullin_one
+        return mv;
+    }
+	
+	/**
+	 * 益华单条下载客户
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/downClient")
+	@ResponseBody
+    public Object downClient(@RequestParam Map postData,HttpSession httpSession){
+		User user=(User)httpSession.getAttribute("user");		
+		postData.put("o_id", user.getAccount());
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"o_id","c_id"};	
+		// 加入sp的名称
+		postData.put("spName", "fc_finance_client_pullin_one");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		return "{\"success\":true}";
+    }
+	
+	public static void main(String[] args) {
+		System.out.println("2212".substring(0,2));
+	}
+}

@@ -1,0 +1,225 @@
+package com.cnpiecsb.fc.print.controller;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.cnpiecsb.common.viewobject.AjaxResult;
+import com.cnpiecsb.csu.controller.BaseServiceController;
+import com.cnpiecsb.fc.print.utils.PrintUtil;
+import com.cnpiecsb.system.entity.User;
+
+/**
+ * 财务中心付款申请导出controller
+ * 
+ * @author user
+ *
+ */
+@Controller
+@RequestMapping("/fc/print")
+public class FcPaymentApplicationController extends BaseServiceController{
+	// 打印配置单条查询
+	private int printCofigOneQueryId = 1030001;
+	
+	// 付款申请单-人民币
+	private String paymentApplicationRmbFileTemplate;//模板文件名
+	private String paymentApplicationRmbFileTemp;//临时表名
+	private String paymentApplicationRmbFileName;//导出文件名
+	private int paymentApplicationRmbListQueryId;
+	private int paymentApplicationRmbQueryId;
+	
+	// 外汇付款通知单
+	private String paymentApplicationNoticeFileTemplate; //模板文件名
+	private String paymentApplicationNoticeFileTemp; //临时表名
+	private String paymentApplicationNoticeFileName; //导出文件名
+	private int paymentApplicationNoticeQueryId;
+	
+	/**
+	 * 配置模板文件名称
+	 * 
+	 */
+	public FcPaymentApplicationController(){
+		// 付款申请单-人民币
+		paymentApplicationRmbFileTemplate = "fc_payment_application_rmb";
+		paymentApplicationRmbFileTemp = "fc_payment_application_rmb_temp";
+		paymentApplicationRmbFileName = "fc_payment_application_rmb";
+		paymentApplicationRmbListQueryId = 8431001;
+		paymentApplicationRmbQueryId = 8431002;
+		
+		// 付款申请单-外币
+		paymentApplicationNoticeFileTemplate = "fc_payment_application_notice";
+		paymentApplicationNoticeFileTemp = "fc_payment_application_notice_temp";
+		paymentApplicationNoticeFileName = "fc_payment_application_notice";
+		paymentApplicationNoticeQueryId = 8431003;
+	}
+	
+	/**
+	 * 付款申请单 导出/打印 人民币报销单
+	 * 
+	 * @param postData
+	 * @param response
+	 * @throws EncryptedDocumentException
+	 * @throws InvalidFormatException
+	 * @throws IOException
+	 */
+	@RequestMapping(value="/paymentApplicationRmb")
+	@ResponseBody
+	public Object paymentApplicationRmb(@RequestParam Map postData, HttpServletResponse response, HttpSession httpSession) throws EncryptedDocumentException, InvalidFormatException, IOException{
+		String is_print = postData.get("is_print").toString();
+		String printerName = "";
+		// 假如是打印要判断下权限
+		if (is_print.equals("1")) {
+			User user = (User)httpSession.getAttribute("user");
+			postData.put("account", user.getAccount());
+			postData.put("printType", "A5");
+			
+			Map<String, Object> oneQuery = baseService.getOneQuery(printCofigOneQueryId, postData);	
+			
+			if (oneQuery != null) {
+				printerName = oneQuery.get("printerName").toString();
+			} else {
+				AjaxResult result =  new AjaxResult();
+				result.setSuccess(false);
+				result.setErrorMsg("没有授权的打印服务！");
+				return result;
+			}
+		}
+		
+		//获取表格头部信息
+		Map<String, Object> one = baseService.getOneQuery(paymentApplicationRmbQueryId, postData);
+		
+		Calendar    rightNow    =    Calendar.getInstance();   
+        /*用Calendar的get(int field)方法返回给定日历字段的值。
+        HOUR 用于 12 小时制时钟 (0 - 11)，HOUR_OF_DAY 用于 24 小时制时钟。*/
+        Integer year = rightNow.get(Calendar.YEAR); 
+        Integer month = rightNow.get(Calendar.MONTH)+1; //第一个月从0开始，所以得到月份＋1
+        Integer day = rightNow.get(rightNow.DAY_OF_MONTH);
+        
+        one.put("year", year);
+        one.put("month", month);
+        one.put("day", day);
+
+		List<Map> items = new ArrayList<Map>();
+		postData.put("queryId", paymentApplicationRmbListQueryId);
+		items = this.getDataListByQueryId(postData);
+				
+		if(one !=null && items.size() > 0){
+			/*int j = 0;
+			for (Map item : items) {
+				if (j == 0) {
+					item.put("cost_cw", one.get("memo"));  // 明细的第一个的cost_cw 使用 备注字段内容
+				} else {
+					item.put("cost_cw", " ");   // 其他明细cost_cw字段置空
+				}
+				j++;
+			}*/
+			
+			for(int i = items.size();i<6;i++){
+				//获取表格头部信息
+				Map<String, Object> test =  new HashMap<String, Object>();
+				test.put("subject_code", " ");
+				test.put("subject_name", " ");
+				test.put("cost_cw", " ");
+				test.put("c_real_money_format", " ");
+				items.add(test);
+			}
+			one.put("items", items);  // 注意明细要使用items这个标签
+		}
+		
+		if (is_print.equals("0")) {
+			// 处理excel模板
+			byte[] bytes = PrintUtil.toHandle(paymentApplicationRmbFileTemplate + ".xls", one, paymentApplicationRmbFileTemp + ".xls");
+			
+	        response.setContentType("application/x-msdownload");
+	        response.setContentLength(bytes.length);
+	        response.setHeader("Content-Disposition", "attachment;filename="+paymentApplicationRmbFileName + ".xls");
+	        response.getOutputStream().write(bytes);
+		} else if (is_print.equals("1")) {
+			PrintUtil.toPrint(paymentApplicationRmbFileTemplate + ".xls", one, printerName + ".xls");//调用打印服务
+			
+			AjaxResult result =  new AjaxResult();
+			result.setSuccess(true);
+			return result;
+		}
+        
+        return 0;
+	}
+	
+	/**
+	 * 付款申请单 导出/打印 国外汇款通知单
+	 * 
+	 * @param postData
+	 * @param response
+	 * @throws EncryptedDocumentException
+	 * @throws InvalidFormatException
+	 * @throws IOException
+	 */
+	@RequestMapping(value="/paymentApplicationNotice")
+	@ResponseBody
+	public Object paymentApplicationNotice(@RequestParam Map postData, HttpServletResponse response, HttpSession httpSession) throws EncryptedDocumentException, InvalidFormatException, IOException{
+		String is_print = postData.get("is_print").toString();
+		String printerName = "";
+		// 假如是打印要判断下权限
+		if (is_print.equals("1")) {
+			User user = (User)httpSession.getAttribute("user");
+			postData.put("account", user.getAccount());
+			postData.put("printType", "A4");
+			
+			Map<String, Object> oneQuery = baseService.getOneQuery(printCofigOneQueryId, postData);	
+			
+			if (oneQuery != null) {
+				printerName = oneQuery.get("printerName").toString();
+			} else {
+				AjaxResult result =  new AjaxResult();
+				result.setSuccess(false);
+				result.setErrorMsg("没有授权的打印服务！");
+				return result;
+			}
+		}
+		
+		//获取表格头部信息
+		Map<String, Object> one = baseService.getOneQuery(paymentApplicationNoticeQueryId, postData);
+		
+		Calendar    rightNow    =    Calendar.getInstance();   
+        /*用Calendar的get(int field)方法返回给定日历字段的值。
+        HOUR 用于 12 小时制时钟 (0 - 11)，HOUR_OF_DAY 用于 24 小时制时钟。*/
+        Integer year = rightNow.get(Calendar.YEAR); 
+        Integer month = rightNow.get(Calendar.MONTH)+1; //第一个月从0开始，所以得到月份＋1
+        Integer day = rightNow.get(rightNow.DAY_OF_MONTH);
+        
+        one.put("year", year);
+        one.put("month", month);
+        one.put("day", day);
+		
+		if (is_print.equals("0")) {
+			// 处理excel模板
+			byte[] bytes = PrintUtil.toHandle(paymentApplicationNoticeFileTemplate + ".xlsx", one, paymentApplicationNoticeFileTemp + ".xlsx");
+			
+	        response.setContentType("application/x-msdownload");
+	        response.setContentLength(bytes.length);
+	        response.setHeader("Content-Disposition", "attachment;filename=" + paymentApplicationNoticeFileName + ".xlsx");
+	        response.getOutputStream().write(bytes);
+		} else if (is_print.equals("1")) {
+			PrintUtil.toPrint(paymentApplicationNoticeFileTemplate + ".xlsx", one, printerName + ".xlsx");//调用打印服务
+			
+			AjaxResult result =  new AjaxResult();
+			result.setSuccess(true);
+			return result;
+		}
+        
+        return 0;
+	}
+}

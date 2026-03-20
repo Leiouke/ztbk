@@ -1,0 +1,80 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->  
+	    <jsp:include page="../../include/h_superHead.jsp"></jsp:include>
+	    <link href="${context}/css/boocup_style.css" rel="stylesheet">	
+	</head>
+	<body>
+		<div>
+        	<div class="ibox-content">
+				<form id="form" class="form-horizontal" enctype=”multipart/form-data”>
+				    <br/>
+<!-- 				    <div class="row"> -->
+<!-- 						<div class="form-group middle-space-long-label col-xs-12"> -->
+<!-- 			            	<label>配送日期：</label> -->
+<!-- 			           		<input type="text" id="ps_date" name="ps_date" class="search-items layer-date" disabled> -->
+<!-- 			        	</div> -->
+<!-- 			        </div> -->
+			        <div class="row">
+						<div class="form-group middle-space-long-label col-xs-12 not-null">
+							<label>订阅日期：</label>
+			           		<input type="text" id="subscribe_date" name="subscribe_date" class="search-items layer-date">
+						</div>
+					</div>
+<!-- 					<div class="row"> -->
+<!-- 						<div class="form-group middle-space-long-label col-xs-12"> -->
+<!-- 							<label>站点：</label> -->
+<!-- 							<input type="text" name="qk_dh_id"  id="qk_dh_id" disabled>  -->
+<!-- 						</div> -->
+<!-- 					</div> -->
+<!-- 					<div class="row"> -->
+<!-- 	                    <div class="form-group middle-space-long-label col-xs-12"> -->
+<!-- 							<label>到货单号：</label> -->
+<!-- 							<input type="text" name="tracking_number"  id="tracking_number" disabled>  -->
+<!-- 					    </div> -->
+<!-- 					</div> -->
+					<div class="form-group" >
+						<div class="col-sm-12" style="text-align:center">
+							<button id="save"  class="btn btn-primary" type="button">生成到货</button>
+							<button id="cancel"  class="btn btn-white" type="button" name="cancel">取消</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</body>	    
+	<script src="${context}/js/plugins/layer/layer.min.js"></script>
+	<script src="${context}/js/plugins/suggest/bootstrap-suggest-new.min.js"></script>
+	<!-- layerDate plugin javascript -->
+    <script src="${context}/js/plugins/layer/laydate-new/laydate.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function () {
+			//加载字典数据
+			get_dictionary("${context}",null);
+			
+			//加载时间控件
+			$(".layer-date").each(function(){
+				inistal_one_data('#'+$(this).attr('id'));
+			});
+			
+			//取消按钮
+			$("#cancel").on('click', function () {
+				   var index = parent.layer.getFrameIndex(window.name); //获取窗口索引
+		           parent.layer.close(index);
+			});
+			
+			//initialize_bsSuggest_fc_user("${context}", "o_id_name", "o_id");      // 放用户信息
+			
+			$('#save').on('click', function () {
+				if(!has_null($("#form")))
+					ajax_function("addPaperDh","post",$('#form').serialize(),'新增成功');		
+			 });
+		});
+	</script>
+</html>

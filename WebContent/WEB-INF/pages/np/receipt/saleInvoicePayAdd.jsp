@@ -1,0 +1,241 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->  
+	    <jsp:include page="../../include/h_superHead.jsp"></jsp:include>
+	    <!-- Bootstrap table -->
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+	    <link rel="stylesheet" type="text/css" href="${context}/css/plugins/webuploader/webuploader.css">
+	    <link href="${context}/css/boocup_style.css" rel="stylesheet">
+	    <style type="text/css">
+	    .ibox-content-table input[type='text']{
+	    	width:70px;
+	        text-align: right;
+	    }
+	    </style>
+	</head>
+	<body>
+		<div class="sonpage-body">
+			<div class="col-md-12">
+			   <div class="ibox float-e-margins">
+		            <div class="ibox-content search-content">
+			            <form id="form" class="form-inline">
+			            <input type="hidden" name="c_id">
+			            <input type="hidden" name="c_name">
+			            <div class="col-xs-12">							  
+							  <div class="form-group inline-small">
+							    <label >可支出余额：</label>
+							    <input type="text" name="advance_balance" class="form-control search-items" disabled>
+							  </div>
+							  <div class="form-group inline-small">
+							    <label >累加金额：</label>
+							    <input type="text" class="form-control search-items"  name="sum_money">
+							  </div>
+						 </div>
+						</form>
+		            </div>
+       		</div>
+       		<div class="ibox float-e-margins">
+	            <div class="ibox-title">
+	                <h5>支票明细</h5>
+	                <div class="ibox-tools">
+	                    <a class="collapse-link">
+	                        <i class="fa fa-chevron-up"></i>
+	                    </a>
+	                </div>
+	            </div>
+	            <div class="ibox-content ibox-content-table">
+	                <div class="row row-lg">                    
+	                    <div class="col-sm-12">
+	                        <div class="btn-group hidden-xs" id="tableTool" role="group">
+	                            <button type="button" class="btn btn-outline btn-default" id="add">
+	                                <i class="glyphicon glyphicon-plus" aria-hidden="true"></i>
+	                            </button>
+	                            <button type="button" class="btn btn-outline btn-default" id="config">
+	                                <i class="glyphicon glyphicon-cog" aria-hidden="true"></i>
+	                            </button>
+	                            <button type="button" class="btn btn-outline btn-default" id="delete_items">
+	                               	<i class="glyphicon glyphicon-trash" aria-hidden="true"></i>
+	                           	</button>	                                    
+	                            <select class="form-control" >
+	                           		<option value="all">导出全部</option>
+						            <option value="basic">导出当页</option>	
+						        </select>
+	                        </div>
+	                        <table id="table" data-mobile-responsive="true">
+	                            
+	                        </table>
+	                    </div>
+	                </div>
+	            </div>
+        </div>       			
+		</div>
+	</div>
+	<div class="sonpage-footer">
+	    <button id="save" class="btn btn-primary" type="button">保存</button>
+	    <button id="cancel" class="btn btn-white" type="button">取消</button>
+	</div>
+	</body>
+	<!-- Bootstrap table -->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <!-- Bootstrap table export-->
+    <script src="${context}/js/plugins/bootstrap-table/export/bootstrap-table-export.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/tableExport.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/js-xlsx/xlsx.core.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.plugin.autotable.js"></script>
+    
+	<script src="${context}/js/plugins/layer/layer.min.js"></script>
+	<!-- plugins -->
+ 	<script src="${context}/js/plugins/suggest/bootstrap-suggest-new.min.js"></script>
+	<!-- layerDate plugin javascript -->
+    <script src="${context}/js/plugins/layer/laydate/laydate.js"></script>
+	<script type="text/javascript">
+		var $table = $('#table');
+		function toDel(kp_no){
+			if(confirm('是否删除？')){
+				var kp_nos = new Array(1);
+				kp_nos[0]=kp_no;
+				$table.bootstrapTable('remove', {field: 'kp_no', values: kp_nos});
+			}		
+		}
+		
+		function renderOperator(value,row,index){
+			return "<a onclick=\"toDel('"+row.kp_no+"')\">删除</a>";
+		}
+		 
+		function renderMoeny(value, row, index) {
+			if (!value){
+				return "<input type='text' class='"+row.kp_id+" money_amount'  value=0>";
+			}
+			return "<input type='text' class='"+row.kp_id+" money_amount' value='"+value.toFixed(2)+"'> ";
+		}
+		 
+		function renderAgentMoeny(value, row, index) {
+			if (!value){
+				return "<input type='text' class='"+row.kp_id+" agent_money'  value=0>";
+			}
+			return "<input type='text' class='"+row.kp_id+" agent_money' value='"+value.toFixed(2)+"'> ";
+		}
+		 
+		function update_table_data(index,row){
+			var kp_id=$.trim(row.kp_id);
+			row.money_amount=$("."+kp_id+".money_amount").val();
+			row.agent_money=$("."+kp_id+".agent_money").val();
+			$table.bootstrapTable('getOptions').data.splice(index, 1, row);
+		}
+	
+		$(document).ready(function () {
+			$("input[name='c_id']").val(parent.$("input[name='c_id']").val());
+			$("input[name='c_name']").val(parent.$("input[name='c_name']").val());
+			$("input[name='advance_balance']").val(parent.$("input[name='advance_balance']").val());
+			$('#save').on('click', function () {
+				if(true){
+					/* var index = layer.load(1, {
+						  shade: [0.1,'#fff'] //0.1透明度的白色背景
+					}); */
+					var has_pass = true;
+					$.each($table.bootstrapTable('getData'), function(index, row) {
+						if(row.can_receive_money < $("."+$.trim(row.kp_id)+".money_amount").val()){
+							has_pass = false;
+						}else{
+							update_table_data(index,row);
+						}
+					});
+					if(!has_pass) {
+						//close_layer();
+						layer.msg('有明细超过可支出金额！');
+						return;
+					}
+					var table_data=$table.bootstrapTable('getData');
+					$.ajax({ 
+				        url: "addSaleInvoicePay",
+				        method: "post",
+				        dataType: "json",  // 这句的意思是返回的类型需要是json格式的
+				        traditional:true,
+				        contentType : "application/json;charset=utf-8",  // 要提交json格式的数据,必须加入这句
+				        //传送请求数据, 注意属性值要写全
+				        //data:'[{"field":"account","width":100, "title":"账号" ,"formatter":"", "visible":true,"index":0,"align":"1"}]',
+				        data: JSON.stringify(table_data),
+				        success: function (data) { 
+				        	if (data.success){
+				        		layer.msg('保存成功！');
+				        		setTimeout(function (){
+									close_layer();
+				            	   }, 1000); 			        			
+				        	} else {
+				        		layer.msg(data.errorMsg);				        		
+				        	}
+				        },
+				        error:function(data){
+				        	//close_layer();
+				        	layer.msg('保存失败');
+				        }
+				    });
+				}				
+			 });
+			
+			$("#delete_items").on('click',function(){
+				if(true){
+					var kp_nos = $.map($table.bootstrapTable('getSelections'), function (row) {
+						//alert(row.kp_no);
+		                return row.kp_no;
+		            });
+					if (kp_nos.length!=0) {
+						if(confirm('是否删除？')){
+							$.each(kp_nos,function(index,kp_no){
+								$table.bootstrapTable('remove', {field: 'kp_no', values: kp_nos});
+							});
+						}
+					} else {
+						layer.msg("未选择明细！");
+					}
+				}
+			});
+			
+			//加载字典数据
+			get_dictionary("${context}",null);
+			//bootstrap初始化
+			//initialize_table($table,"getSdItemList",${tableHeader},queryParams,"#tableTool",400);
+			$table.bootstrapTable({
+			      url: "",
+			      method:'post',
+			      showRefresh: true,
+			      showColumns: true,
+			      showExport:true,
+			      sortable:true, 
+			      iconSize: 'outline',
+			      toolbar: "#tableTool",
+			      exportDataType:'all',
+			      height:400,
+			      columns: ${tableHeader},
+			      icons: {
+			        refresh: 'glyphicon-repeat',
+			        toggle: 'glyphicon-list-alt',
+			        columns: 'glyphicon-list'
+			      }
+			});
+			//增加条目layer
+			var $add=$("#add");
+			$add.click(function(){
+				open_layer(2,"引入发票","payableSaleInvoice",['750px', '580px'],true)
+			});
+			var $upload=$("#upload");
+
+			//表格配置 layer
+			var $config=$("#config");
+			
+			table_column_config_layer($config,2,'表格属性配置','${context}/csu/columnConfig?queryId=${queryId}');
+			
+			 $('#tableTool').find('select').change(function () {				 
+				 $('#table').bootstrapTable('refreshOptions',{exportDataType: $(this).val()});
+		     });
+		});
+	</script>
+</html>

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cnpiecsb.system.dao.MenuDao">
+	<resultMap type="com.cnpiecsb.system.entity.Menu" id="menuResultMap">
+
+	</resultMap>
+	
+	<resultMap type="com.cnpiecsb.common.viewobject.TreeNode" id="menuNodeResultMap">
+		<result property="text" column="text"/>
+	</resultMap>
+	
+	<!-- 添加菜单 -->
+	<insert id="addMenu" parameterType="com.cnpiecsb.system.entity.Menu">
+		<![CDATA[
+			insert into it_system_menu (name, url, sortNo, icon, pId) values 
+				(#{name}, #{url}, #{sortNo}, #{icon}, #{pId})
+		]]>
+	</insert>
+	
+	<!-- 修改菜单信息 -->
+	<update id="editMenu" parameterType="com.cnpiecsb.system.entity.Menu">
+		update it_system_menu 
+	    <set>
+	      	name = #{name},
+	      	url = #{url},
+	      	sortNo = #{sortNo},
+	      	icon = #{icon},
+	      	pid = #{pId},
+	      	subsystemId = #{subsystemId}
+	    </set>
+	    where id = #{id}
+	</update>
+	
+	<!-- 查询菜单信息 -->
+	<select id="getMenuById" parameterType="_int"  resultMap="menuResultMap">
+		<![CDATA[
+			select * from it_system_menu where id=#{id}
+		]]>
+	</select>
+	
+	<!-- 删除菜单 -->
+	<delete id="deleteMenu">
+		delete from it_system_menu where id = #{id}
+	</delete>
+	
+	<!-- 根据父节点获得所有子节点, 获得的为树节点 -->
+	<select id="getMenuNodesByParent" resultMap="menuNodeResultMap">
+		select a.*, case when isnull(b.name,'')='' then a.name else a.name + '(' + b.name + ')' end text 
+		  from it_system_menu a
+          left join it_system_subsystem b on a.subsystemId = b.ID
+          where a.is_enabled = 1 and
+		<choose>
+			<when test="_parameter != null">  <!-- _paremeter 这种写法 才可以 比较是否null -->
+				pid = #{_parameter}
+			</when>
+			<otherwise>
+				pid is null
+			</otherwise>
+		</choose>
+		order by sortNo
+	</select>
+	
+	<!-- 找到所属子系统的第一层菜单, 获得的为树节点 -->
+	<select id="getMenuNodesBySubsystem" resultMap="menuNodeResultMap">
+		select *, name text from it_system_menu a where pid is null and subsystemId = #{subsystemId}
+         order by sortNo
+	</select>
+	
+	<!-- 根据父节点获得所有子节点菜单 -->
+	<select id="getMenusByParent" resultMap="menuResultMap">
+		select * from it_system_menu where is_enabled = '1' and
+		<choose>
+			<when test="_parameter != null">  <!-- _paremeter 这种写法 才可以 比较是否null -->
+				pid = #{_parameter}
+			</when>
+			<otherwise>
+				pid is null
+			</otherwise>
+		</choose>
+		order by sortNo
+	</select>
+	
+	<!-- 根据角色列表获得菜单列表, 支持多角色菜单合并  -->
+	<select id="getMenusByRoles" resultMap="menuResultMap">
+		select distinct a.* from it_system_menu a
+			inner join it_system_rolemenu b
+			on a.id = b.menuId 
+		where b.roleId in 
+		<foreach item="param" index="index" collection="list" open="(" separator="," close=")"> <!--这里的collection用的是list, 不用list的参数变量-->
+			#{param}
+		</foreach>
+		order by sortNo
+	</select>
+	
+	<!-- 根据角色列表获得菜单列表, 支持多角色菜单合并和个人单独页面  -->
+	<select id="getMenusByRolesSingle" resultMap="menuResultMap">
+		select distinct a.* from it_system_menu a
+			inner join it_system_rolemenu b
+			on a.id = b.menuId 
+		where is_enabled = '1' and b.roleId in 
+		<foreach item="roleId" index="index" collection="roleIds" open="(" separator="," close=")">
+        		#{roleId}
+    	</foreach>
+    	union 
+    	select distinct a.* from it_system_menu a
+			inner join it_system_user_single_menu b
+			on a.id = b.menuId
+		where b.account = #{account} and is_enabled = '1'
+		order by sortNo
+	</select>
+	
+	<!-- 根据用户获得快捷菜单列表  -->
+	<select id="getMenusByAccount" resultMap="menuResultMap">
+		select * from it_system_menu a
+			inner join it_system_usermenu b
+			on a.id = b.menuId 
+		where b.account = #{account}
+		order by b.id
+	</select>
+	
+	<!-- 根据子系统获得菜单列表  -->
+	<select id="getMenusBySubsystem" resultMap="menuResultMap">
+		select * from it_system_menu a
+			inner join it_system_subsystemmenu b
+			on a.id = b.menuId 
+		where b.subsystemId = #{subsystemId}
+		order by sortNo
+	</select>
+</mapper>

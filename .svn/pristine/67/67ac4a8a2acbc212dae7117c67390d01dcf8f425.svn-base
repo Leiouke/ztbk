@@ -1,0 +1,50 @@
+package com.cnpiecsb.organization.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.cnpiecsb.csu.controller.BaseServiceController;
+
+@Controller
+@RequestMapping("/organization")
+public class DeptSearchController extends BaseServiceController{
+
+	private int deptAutoSearchQueryId = 1000011;
+	
+	private int staffQueryId = 1000012;	
+	
+	/**
+	 * 获得动态列表数据-部门-搜索自动补全
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getOrgListSearch")
+	@ResponseBody
+	public Object getOrgListSearch(String org_type,String keyword){
+		Map<String,Object> postData=new HashMap<>();
+		postData.put("keyword", keyword);
+		postData.put("status", 0);
+		postData.put("org_type", org_type);
+		return this.getTableDataList(postData, deptAutoSearchQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-业务员-搜索自动补全
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getItUserListSearch")
+	@ResponseBody
+	public Object getItUserListSearch(String keyword){
+		Map<String,Object> postData=new HashMap<>();
+		postData.put("keyword", keyword);
+		postData.put("status", 0);
+		return this.getTableDataList(postData,staffQueryId);
+	}
+}

@@ -1,0 +1,284 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%
+	String context = request.getContextPath();
+	request.setAttribute("context",context);
+%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+	    <!-- Bootstrap table -->
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-editable.css" rel="stylesheet">
+	    <link href="${context}/css/boocup_style.css" rel="stylesheet">
+	    <jsp:include page="../../include/h_superHead.jsp"></jsp:include>
+	</head>
+	<style>
+		.fixed-table-container tbody .selected td {
+			background-color: #33ccff
+		}
+		.table td {
+  			padding: 8px;
+  			line-height: 20px;
+  			text-align: left;
+  			vertical-align: top;
+  			border-top: 5px solid #ffffff;
+  			color:black;
+  			background:#FFFFE0;
+  			font-family: verdana, 'Times New Roman','Arial Black', Tahoma;
+  			/*font-weight:bold;*/
+		}
+		.table-hover tbody tr:hover > td,
+		.table-hover tbody tr:hover > th {
+  			background-color: #FF6699;
+		}
+	</style>
+	<body>
+	<div class="wrapper wrapper-content animated fadeInRight">
+         <div class="ibox float-e-margins">
+            <div class="ibox-title">
+                <h5>查询</h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content search-content">
+	            <form id="form_search" class="form-inline">
+	            <div class="col-xs-11">
+					  <div class="form-group inline-small">
+					    <label >录入日期：</label>
+					    <input type="text" class="form-control  layer-date search-items" name="input_date_start" id="input_date_start">
+					    -
+					    <input type="text" class="form-control  layer-date search-items" name="input_date_end" id="input_date_end">
+					  </div>
+					  <div class="form-group inline-small">
+					    <label >是否到货确认：</label>
+					    <select name="dh_flag" class="form-control dictionary search-items isboolean" >
+					    	<option value=""></option>
+					    </select>
+					  </div>
+					  <div class="form-group inline-small">
+					    <label >所属站点：</label>
+					    <select name="station_name" class="form-control search-items">
+					    	<option></option>
+					    	<option value="市场代销科">市场代销科</option>
+					    	<option value="报刊部">报刊部</option>
+					    </select>
+					  </div>
+					  <div class="form-group inline-small">
+					    <label >报刊属性：</label>
+					    <select name="qk_type_name" class="form-control search-items">
+					    	<option></option>
+					    	<option value="杂志">杂志</option>
+					    	<option value="报纸">报纸</option>
+					    </select>
+					  </div>
+					  <div class="form-group inline-small">
+					    <label >订阅日期：</label>
+					    <input type="text" class="form-control  layer-date search-items" name="subscribe_date_start" id="subscribe_date_start">
+					    -
+					    <input type="text" class="form-control  layer-date search-items" name="subscribe_date_end" id="subscribe_date_end">
+					  </div>
+					  <div class="form-group inline-small">
+					    <label >操作员：</label>
+					    <input type="text" name="job_name" class="form-control search-items">
+					    <div class="input-group-btn">
+                               <button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+                                   <span class="caret"></span>
+                               </button>
+                               <ul class="dropdown-menu dropdown-menu-right" role="menu"></ul>
+                        </div>
+                        <input type="hidden" name="job_no" class="form-control search-items">
+					  </div>
+					  <div class="form-group inline-small">
+					  	<label >到货单号：</label>
+					    <input type="text" name="qk_dh_id" class="form-control search-items" >
+					  </div>
+					  <div class="form-group inline-small">
+					  	<label >一审率：</label>
+					    <input type="text" name="zs1_percent" id= "zs1_percent" class="form-control search-items" >
+					    %
+					  </div>
+					  <div class="form-group inline-small">
+					  	<label >贴头已打：</label>
+					  	<select name= "fh_flag" id = "fh_flag">
+					  		<option></option>
+					  		<option value = true>是</option>
+					  		<option value = false>否</option>
+					  	</select>
+					  </div>
+				 </div>
+				 <div class="col-xs-1 search-group-button">
+					  	<button type="button" class="btn btn-primary btn-xs" id="search">查询</button>
+					  	<button type="button" class="btn btn-default btn-xs" id="reset" >清空</button>
+				 </div>
+				</form>
+            </div>
+        </div>
+        <div class="ibox float-e-margins">
+            <div class="ibox-title">
+                <h5>到货单列表</h5>
+                <div class="ibox-tools">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="ibox-content">
+                <div class="row row-lg">                    
+                    <div class="col-sm-12">
+                        <div class="btn-group hidden-xs" id="tableTool" role="group">
+                            <button type="button" class="btn btn-outline btn-default" id="toImport">
+                                <i class="glyphicon glyphicon-import" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline btn-default" id="config">
+                                <i class="glyphicon glyphicon-cog" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline btn-default" id="nopass_deatil">
+                                	审读不过明细
+                            </button>
+                            <select class="form-control" >
+                           		<option value="all">导出全部</option>
+					            <option value="basic">导出当页</option>	
+					        </select>
+                        </div>
+                        <table id="table" data-mobile-responsive="true">
+                            
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+	</body>
+	    
+	<!-- 自定义js -->
+    <script src="${context}/js/content.js?v=1.0.0"></script>
+
+    <!-- Bootstrap table -->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <!-- Bootstrap table export-->
+    <script src="${context}/js/plugins/bootstrap-table/export/bootstrap-table-export.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/tableExport.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/js-xlsx/xlsx.core.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.plugin.autotable.js"></script>
+    <!-- Bootstrap table editable-->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-editable.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table-editable.js"></script>
+    
+    <!-- Layer-->
+    <script src="${context}/js/plugins/layer/layer.min.js"></script>
+	<!-- plugins -->
+ 	<script src="${context}/js/plugins/suggest/bootstrap-suggest-new.min.js"></script>
+	<!-- layerDate plugin javascript -->
+    <script src="${context}/js/plugins/layer/laydate-new/laydate.js"></script>
+    
+	<script type="text/javascript">		
+		//加载时间控件
+	 	$(".layer-date").each(function(){	
+			inistal_one_data('#'+$(this).attr('id'));
+		});
+		
+		var $table = $('#table');
+		
+		function queryParams(param) {
+			var json_obj=formToJson($("#form_search"));
+			json_obj['limit'] =param.limit;
+   	      	json_obj['offset'] =param.offset;
+   	     	json_obj['sortName'] =this.sortName;
+   	  		json_obj['sortOrder'] =this.sortOrder;
+   	  		if($("#zs1_percent").val()!=""){//有百分比的除以100
+   	  			json_obj['zs1_percent'] =$("#zs1_percent").val()/100;
+   	  		}
+   	        return json_obj;
+		}
+
+		$(document).ready(function () {
+			//加载字典数据
+			get_dictionary("${context}",null);
+			
+			//bootstrap初始化, 可编辑的table
+			initialize_table($table,"getDeliveryOrderList",${tableHeader},queryParams,"#tableTool",500);
+			//引入条目layer
+			var $toImport=$("#toImport");
+			// 类型2代表打开的是新页面, 类型1代表打开的是本页面元素
+			button_click_layer_refresh($toImport,2,"引入到货单",'deliveryOrderPull',$table,true,['750px', '500px']);
+			
+			//审读不过明细layer
+			var $nopass_deatil=$("#nopass_deatil");
+			// 类型2代表打开的是新页面, 类型1代表打开的是本页面元素
+			button_click_layer_refresh($nopass_deatil,2,"审读不过明细",'deliveryOrderNopassDeatil',$table,true,['750px', '500px']);
+			
+			//表格配置 layer
+			var $config=$("#config");
+			
+			table_column_config_layer($config,2,'表格属性配置','${context}/csu/columnConfig?queryId=${queryId}');		
+			
+			$('#tableTool').find('select').change(function () {				 
+				 $('#table').bootstrapTable('refreshOptions',{exportDataType: $(this).val()});
+		    });
+			
+			$("#search").on('click',function(){
+				 var json_data_list=formToJson($("#form_search"));
+				 
+				 json_data_list['queryId']='${queryId}';
+				 json_data_list['zs1_percent']=$("#zs1_percent").val()/100;
+				 search_sum_list("${context}/csu/getTableCollectData",json_data_list,"getDeliveryOrderList",$('#table'));
+			});
+			
+			initialize_bsSuggest_user_by_dept("${context}", "job_name", "job_no", "2000");      // 放用户信息(报刊的)
+	     });
+		 
+		 function toItem(qk_dh_id) {
+			open_layer_refresh(2,'到货审读','deliveryOrderItems?qk_dh_id=' + qk_dh_id,$table,['750px', '500px'],true);
+		 }
+		 
+		 function toConfirm(qk_dh_id) {
+			open_layer_refresh(2,'到货确认','deliveryOrderItemConfirm?qk_dh_id=' + qk_dh_id,$table,['850px', '500px'],true);
+		 }
+		 
+		 function toDelay(qk_dh_id) {
+			open_layer_refresh(2,'缓发清单','deliveryOrderDelayItem?qk_dh_id=' + qk_dh_id,$table,['850px', '500px'],true);
+		 }
+		 
+		 function renderOperator(value,row,index) {
+			var str="";
+			str += "<a onclick=\"toItem('" + row.qk_dh_id + "')\">到货审读</a> ";
+			if (!row.dh_flag) {
+				str += "<a onclick=\"toConfirm('" + row.qk_dh_id + "')\">到货确认</a> ";
+			}
+			//str += "<a onclick=\"toDelay('" + row.qk_dh_id + "')\">缓发清单</a> ";
+			str += "<a onclick=\"tofh('" + row.qk_dh_id + "','"+row.zs1_percent+"')\">贴头已打</a> ";
+			return str;
+		 }
+		 
+		 function toSync(qk_dh_id) {
+			 //ajax_function_ask_and_refresh("是否重新获取数据？","deliveryOrderSynchronize","post",{'qk_dh_id':qk_dh_id},"重新获取成功",$table);
+			 open_layer_refresh(2,'缓发清单和重新获取','deliveryOrderDelayItemSynchronize?qk_dh_id=' + qk_dh_id,$table,['400px', '150px'],false);
+		 }
+		 
+		 function renderDh(value,row,index) {
+			var str="";
+			str += "<a onclick=\"toSync('" + row.qk_dh_id + "')\">" + row.qk_dh_id + "</a>";
+			return str;
+		 }
+		 
+		 function tofh(qk_dh_id,zs1_percent) {
+			 if(zs1_percent!=1){
+				 alert("一审率不为100%无法操作");
+				 return;
+			 }
+			 ajax_function_ask_and_refresh("是否贴头已打？","deliveryOrderFhConfirm","post",{'qk_dh_id':qk_dh_id},"确认贴头已打",$table);
+		 }
+	</script>
+</html>
