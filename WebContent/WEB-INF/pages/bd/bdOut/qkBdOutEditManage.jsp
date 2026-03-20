@@ -73,14 +73,6 @@
 <!-- 								    </select> -->
 <!-- 								  </div> -->
 								  <div class="form-group inline-small not-null">
-								    <label >是否重报：</label>
-								    <select name="Reset" class="form-control search-items" >
-								    	<option></option>
-								    	<option value = "0">否</option>
-								    	<option value = "1">是</option>
-								    </select>
-								  </div>
-								  <div class="form-group inline-small not-null">
 					    				<label >开始日期：</label>
 					    		  		<input type="text" class="form-control  layer-date search-items" name="start_time" id="start_time">
 					    		  </div>
@@ -88,6 +80,13 @@
 					    		  		<label >结束日期：</label>
 					    		  		<input type="text" class="form-control  layer-date search-items" name="end_time" id="end_time" disabled>
 					    		  </div>
+					    		  <div class="form-group inline-small not-null">
+								    <label >是否重报：</label>
+								    <select name="Reset" class="form-control search-items" >
+								    	<option value = "0">否</option>
+								    	<option value = "1">是</option>
+								    </select>
+								  </div>
 							</div>
 							<div class="row">
 								  <div class="form-group inline-small not-null">
@@ -96,9 +95,15 @@
 								    	<option></option>
 								    </select>
 								  </div>
+								  <!-- 
 								  <div class="form-group inline-small not-null">
 								    <label >报订批次：</label>
 								    <input type="text" name="bd_pici" class="form-control search-items">
+								  </div>
+								   -->
+								  <div class="form-group inline-small not-null">
+								    <label >下次报订操作日期：</label>
+								    <input type="text" name="next_bd_date" class="form-control search-items">
 								  </div>
 							</div>
 						 </div>
@@ -162,12 +167,33 @@
 	<!-- layerDate plugin javascript -->
     <script src="${context}/js/plugins/layer/laydate-new/laydate.js"></script>
 	<script type="text/javascript">
+	
+	function getFormDataIncludingDisabled() {
+	    // 1. 查找当前所有处于禁用状态的元素
+	    var $disabledInputs = $("#form").find(':disabled');
+	    
+	    // 2. 临时解禁
+	    $disabledInputs.prop('disabled', false);
+	    
+	    // 3. 抓取 JSON 数据
+	    var fullData = formToJson($("#form"));
+	    
+	    // 4. 立即恢复禁用
+	    $disabledInputs.prop('disabled', true);
+	    
+	    return fullData;
+	}
+	
 	function queryParams(param) {
-		var json_obj_invoice = formToJson($("#form"));
-		json_obj_invoice['limit'] =param.limit;
-		json_obj_invoice['offset'] =param.offset;
-		json_obj_invoice['sortName'] =this.sortName;
-		json_obj_invoice['sortOrder'] =this.sortOrder;
+		// 使用通用函数获取完整数据
+	    var json_obj_invoice = getFormDataIncludingDisabled();
+	    
+	    // 补充分页和排序参数
+	    json_obj_invoice['limit'] = param.limit;
+	    json_obj_invoice['offset'] = param.offset;
+	    json_obj_invoice['sortName'] = this.sortName;
+	    json_obj_invoice['sortOrder'] = this.sortOrder;
+	    
 	    return json_obj_invoice;
 	}
 	
@@ -212,18 +238,33 @@
 		
 		$('#save').on('click', function () {
 			const qk_bd_regular = $("select[name='qk_bd_regular']").val();
-			const dayDifference = calculateDateDifference();
-			if (qk_bd_regular == "01" && dayDifference < 30){
-				alert("按月报订但是时间段小于30天，无法报订！");
-			} else if (qk_bd_regular == "02" && dayDifference < 15){
-				alert("半月报订但是时间段小于15天，无法报订！");
-			} else if (qk_bd_regular == "03" && dayDifference < 7){
-				alert("按周报订但是时间段小于7天，无法报订！");
-			} else {
-				if(!has_null($("#form"))){
-					ajax_function("addQkBd","post",$('#form').serialize(),'保存成功');
-				}
-			}
+		    const dayDifference = calculateDateDifference();
+
+		    // 逻辑校验
+		    if (qk_bd_regular == "01" && dayDifference < 30){
+		        alert("按月报订但是时间段小于30天，无法报订！");
+		        return; // 拦截
+		    } else if (qk_bd_regular == "02" && dayDifference < 15){
+		        alert("半月报订但是时间段小于15天，无法报订！");
+		        return; // 拦截
+		    } else if (qk_bd_regular == "03" && dayDifference < 7){
+		        alert("按周报订但是时间段小于7天，无法报订！");
+		        return; // 拦截
+		    }
+
+		    // 校验必填项
+		    if(!has_null($("#form"))){
+		        // --- 核心修改部分 ---
+		        var $disabledInputs = $('#form').find(':disabled');
+		        $disabledInputs.prop('disabled', false); // 1. 临时解禁
+
+		        var formData = $('#form').serialize();   // 2. 序列化（此时包含禁用字段）
+
+		        $disabledInputs.prop('disabled', true);  // 3. 恢复禁用
+		        // ---------------------
+
+		        ajax_function("addQkBd", "post", formData, '保存成功');
+		    }
 			
 		});
 		
@@ -235,17 +276,17 @@
 		
 		//查询
 		$("#search").on('click',function(){
-			if(!has_null($("#form"))){
-				$('#end_time').prop('disabled', false);
-				$('#qk_bd_regular').prop('disabled', false);
-				var json_data_list=formToJson($("#form"));
-				 json_data_list['queryId']='${queryId}';
-				 search_sum_list("${context}/csu/getTableCollectData",json_data_list,"getQkFactoryCanBdList",$table);
-				 setTimeout(function() {
-					 $('#end_time').prop('disabled', true);
-					 $('#qk_bd_regular').prop('disabled', true);
-					}, 2000);
-			}
+			if (!has_null($("#form"))) {
+		        // 1. 获取包含 disabled 字段的完整数据
+		        var json_data_list = getFormDataIncludingDisabled();
+		        
+		        // 2. 补充业务参数
+		        json_data_list['queryId'] = '${queryId}';
+		        
+		        // 3. 调用你的汇总搜索函数
+		        // 此时 json_data_list 是一个完整的 JS 对象
+		        search_sum_list("${context}/csu/getTableCollectData", json_data_list, "getQkFactoryCanBdList", $table);
+		    }
 		});
  		
 // 		$table.bootstrapTable('refreshOptions',{onLoadSuccess: function(data){
@@ -302,6 +343,18 @@
 		 
 		 console.log("pre_bd_date="+'${pre_bd_date}');
 		 
+		 // 填入开始日期（表头传来的下次报订开始日期）
+		 $("input[name='start_time']").val('${bd_start_date}');
+		 // 填入报订周期
+		 if('${qk_bd_regular}'!=''){
+			 var qk_bd_regular= '${qk_bd_regular}';
+			 setTimeout(function(){
+				 $('#qk_bd_regular').val(qk_bd_regular);
+			 	}
+			 ,1000);
+		 }
+		 
+/*
 // 		 if('${pre_bd_date}'!=''&&'${pre_bd_date}'!=null){
 			 //console.log("pre_bd_date="+'${pre_bd_date}');
 			 //$("input[name='start_time']").val('${pre_bd_date}');
@@ -362,7 +415,7 @@
 	        
 	        return year+"-"+month+"-"+day;
     	}
-
+*/
 	});
 	</script>
 </html>

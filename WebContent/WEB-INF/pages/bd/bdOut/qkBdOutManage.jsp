@@ -180,9 +180,9 @@
 	     });
 		
 		//编辑页面
-		 function toEdit(f_id,f_department,qk_bd_style,pre_bd_date,next_bd_date,qk_bd_regular){
+		 function toEdit(f_id,f_department,qk_bd_style,pre_bd_date,next_bd_date,qk_bd_regular,bd_start_date){
 			 if(qk_bd_style == 0){
-				 open_layer_refresh(2,'汇总报出(切片)','qkBdOutEdit?f_id='+f_id+'&f_department='+f_department+'&pre_bd_date='+pre_bd_date+'&next_bd_date='+next_bd_date+'&qk_bd_regular='+qk_bd_regular,$table,['620px', '580px'],true);
+				 open_layer_refresh(2,'汇总报出(切片)','qkBdOutEdit?f_id='+f_id+'&f_department='+f_department+'&pre_bd_date='+pre_bd_date+'&next_bd_date='+next_bd_date+'&qk_bd_regular='+qk_bd_regular+'&bd_start_date='+bd_start_date,$table,['620px', '580px'],true);
 			 }else if (qk_bd_style == 1){
 				 open_layer_refresh(2,'汇总报出(增量)','qkOtherBdOutEdit?f_id='+f_id+'&f_department='+f_department,$table,['620px', '580px'],true);
 			 }else if(qk_bd_style == 2){
@@ -199,13 +199,18 @@
 			var pre_bd_date = getSmpFormatDate(pre_time_type, false);
 			var next_time_type = new Date(row.next_bd_date);
 			var next_bd_date = getSmpFormatDate(next_time_type, false);
+			var bd_start_type = new Date(row.bd_start_date);
+			var bd_start_date = getSmpFormatDate(bd_start_type, false);
 			if(row.pre_bd_date==undefined){
 				pre_bd_date = "";
 			}
 			if(row.next_bd_date==undefined){
 				next_bd_date = "";
 			}
-			str += "<a onclick=\"toEdit('" + row.f_id +  "','"+row.f_department+ "','"+ row.qk_bd_style + "','"+ pre_bd_date + "','"+ next_bd_date + "','"+ row.qk_bd_regular +  "')\">报出</a>";
+			if(row.bd_start_date==undefined){
+				bd_start_date = "";
+			}
+			str += "<a onclick=\"toEdit('" + row.f_id +  "','"+row.f_department+ "','"+ row.qk_bd_style + "','"+ pre_bd_date + "','"+ next_bd_date + "','"+ row.qk_bd_regular + "','"+ bd_start_date + "')\">报出</a>";
 			str += "&nbsp;&nbsp;";
 			return str;
 		}

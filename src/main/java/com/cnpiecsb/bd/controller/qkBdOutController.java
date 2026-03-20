@@ -116,6 +116,7 @@ public class qkBdOutController extends ZtbkServiceController{
 			mv.addObject("pre_bd_date", (String)postData.get("pre_bd_date"));
 			mv.addObject("next_bd_date", (String)postData.get("next_bd_date"));
 			mv.addObject("qk_bd_regular", (String)postData.get("qk_bd_regular"));
+			mv.addObject("bd_start_date", (String)postData.get("bd_start_date"));
 			
 			//生成GUID
 			String qkBdOut_guid=GuidUtil.create32Guid();
