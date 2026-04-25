@@ -1,0 +1,611 @@
+package com.cnpiecsb.np.finance.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.common.viewobject.AjaxResult;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.onInterface.service.GetMemberTokenServivce;
+import com.cnpiecsb.onInterface.service.PutNpFhfhService;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/np")
+public class FinanceAgentFhshController extends ZtbkServiceController {
+	private int financeAgentFhshManageQueryId = 5600004;
+	private GridHeadConfig financeAgentFhshManageGridHeadConfig;
+	
+	private int financeAgentFhshAddItemQueryId = 5600002;
+	private GridHeadConfig financeAgentFhshAddItemGridHeadConfig;
+	
+	private int financeAgentFhshItemPullQueryId = 5600005;
+	private GridHeadConfig financeAgentFhshItemPullHeadConfig;
+	private GridHeadConfig financeAgentFhshItemChoosePullHeadConfig;
+	
+	private int financeAgentFhshOneQueryId = 5600004;
+	
+	private int financeAgentFhshEditItemQueryId = 5600002;
+	private GridHeadConfig financeAgentFhshEditItemGridHeadConfig;
+	
+	private int financeAgentClinetSumQueryId = 5600006;
+	private GridHeadConfig financeAgentClinetSumConfirmGridHeadConfig;
+	
+	private int getOaAccountQuery = 1400005;
+	
+	//oa接口
+	@Autowired
+	GetMemberTokenServivce getMemberTokenServivce; //获取token接口
+	@Autowired
+	PutNpFhfhService putNpFhfhService;//推送付款申请接口
+	
+	/**
+	 * 初始化工作, 修改内容后需要重新启动服务生效
+	 * 
+	 */
+	public FinanceAgentFhshController(){
+		financeAgentFhshManageGridHeadConfig = new GridHeadConfig(financeAgentFhshManageQueryId,true,false,true,false);
+		financeAgentFhshManageGridHeadConfig.setOperatorWidth(150);
+		
+		financeAgentFhshAddItemGridHeadConfig=new GridHeadConfig(financeAgentFhshAddItemQueryId,true,true,true,false);
+		
+		financeAgentFhshItemPullHeadConfig=new GridHeadConfig(financeAgentFhshItemPullQueryId,true,true,false,false);
+		financeAgentFhshItemChoosePullHeadConfig=new GridHeadConfig(financeAgentFhshItemPullQueryId,false,false,true,false);
+		
+		financeAgentFhshEditItemGridHeadConfig=new GridHeadConfig(financeAgentFhshEditItemQueryId,true,true,true,false);
+		
+		financeAgentClinetSumConfirmGridHeadConfig=new GridHeadConfig(financeAgentClinetSumQueryId,true,false,false,false);
+	}
+	
+	/**
+	 * 代理申汇主页面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/financeAgentFhshManage",method=RequestMethod.GET)
+    public ModelAndView financeAgentFhshManage(HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/financeAgentFhsh/financeAgentFhshManage");
+        String tableHeader = this.getTableHeader(httpSession,financeAgentFhshManageGridHeadConfig);
+        mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", financeAgentFhshManageQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-代理申汇
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getFinanceAgentFhshManageList")
+	@ResponseBody
+	public Object getFinanceAgentFhshManageList(@RequestBody Map postData){
+		return this.getTableDataList(postData,financeAgentFhshManageQueryId);
+	}
+	
+	/**
+	 * 新增页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/financeAgentFhshAdd",method=RequestMethod.GET)
+    public ModelAndView financeAgentFhshAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        String finance_agent_fhsh_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("finance_agent_fhsh_guid", finance_agent_fhsh_guid);
+        mv.setViewName("np/financeAgentFhsh/financeAgentFhshAdd");
+        String tableHeader = this.getTableHeader(httpSession,financeAgentFhshAddItemGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", financeAgentFhshAddItemQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-新增申汇明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getFinanceAgentFhshAddItemList")
+	@ResponseBody
+	public Object getFinanceAgentFhshAddItemList(@RequestBody Map postData,HttpSession httpSession){
+		String finance_agent_fhsh_guid=(String)httpSession.getAttribute("finance_agent_fhsh_guid");
+		postData.put("guid", finance_agent_fhsh_guid);
+		return this.getTableDataList(postData,financeAgentFhshAddItemQueryId);
+	}
+	
+	/**
+	 * 引入明细页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/financeAgentFhshItemPull",method=RequestMethod.GET)
+    public ModelAndView financeAgentFhshItemPull(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/financeAgentFhsh/financeAgentFhshItemPull");
+        String tableHeader_result = this.getTableHeader(httpSession,financeAgentFhshItemPullHeadConfig);
+		mv.addObject("tableHeader_result", tableHeader_result);
+		String tableHeader_pull_in = this.getTableHeader(httpSession,financeAgentFhshItemChoosePullHeadConfig);
+		mv.addObject("tableHeader_pull_in", tableHeader_pull_in);
+		mv.addObject("queryId", financeAgentFhshItemPullQueryId);
+        return mv;
+    }
+    /**
+   	 * 获得动态列表数据-引入申汇明细
+   	 * 
+   	 * param postData
+   	 * return
+   	 */
+   	@RequestMapping(value="/getFinanceAgentFhshPullList")
+   	@ResponseBody
+   	public Object getFinanceAgentFhshPullList(@RequestBody Map postData,HttpSession httpSession){
+   		return this.getTableDataList(postData,financeAgentFhshItemPullQueryId);
+   	}
+   	
+   	/**
+	 * 引入明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/pullAgentFinanceFhshItem")
+	@ResponseBody
+    public Object pullAgentFinanceFhshItem(@RequestBody List<Map<String,Object>> postData,HttpSession httpSession,HttpServletRequest request){	
+		String finance_agent_fhsh_guid=(String)httpSession.getAttribute("finance_agent_fhsh_guid");
+		if(postData!=null&&postData.size()>0){
+			for(Map<String,Object> inv_map:postData){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"guid","inv_id","fh_money"};
+				// 加入sp的名称
+				inv_map.put("spName", "u_finance_fhsh_item_pullin");
+				
+				inv_map.put("guid", finance_agent_fhsh_guid);
+				
+				int code = baseService.doCallSp(inv_map, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}			
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除明细操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteAgentFinanceFhshItem")
+	@ResponseBody
+    public Object deleteAgentFinanceFhshItem(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request){		
+		String finance_agent_fhsh_guid=(String)httpSession.getAttribute("finance_agent_fhsh_guid");
+		postData.put("guid", finance_agent_fhsh_guid);
+		
+		String[] inv_ids=request.getParameterValues("inv_ids");
+		if(inv_ids!=null&&inv_ids.length>0){
+			for(int i=0;i<inv_ids.length;i++){
+				// 入参, 注意按照顺序
+				String paramNames[] = {"guid","inv_id"};
+				// 加入sp的名称
+				postData.put("spName", "u_finance_fhsh_item_delete");					
+				
+				postData.put("inv_id", inv_ids[i]);
+
+				int code = baseService.doCallSp(postData, paramNames, null);
+						
+				if (code != 0) {
+					return this.getAjaxResult(code);
+				}
+			}
+		}	
+		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增和修改返回操作
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/returnAgentFinanceFhsh")
+	@ResponseBody
+    public Object returnAgentFinanceFhsh(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_return");
+		
+		String finance_agent_fhsh_guid=(String)httpSession.getAttribute("finance_agent_fhsh_guid");
+		postData.put("guid", finance_agent_fhsh_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		httpSession.setAttribute("finance_agent_fhsh_guid", "");
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增申汇操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/addFinanceAgentFhsh")
+	@ResponseBody
+    public Object addFinanceAgentFhsh(@RequestParam Map postData,HttpSession httpSession){		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","f_id","o_id_operator","o_id_input","fh_date","currency","fh_money","invoice_amount",
+				"total_money","region_catagory","bank_id","is_advance","is_bail","memo","fw_mode","fhsh_family","c_id"};
+		// 出参, 有顺序
+		String returnNames[] = {"fh_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_new");
+		
+		String finance_agent_fhsh_guid=(String)httpSession.getAttribute("finance_agent_fhsh_guid");
+		postData.put("guid", finance_agent_fhsh_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		
+		int code = baseService.doCallSp(postData, paramNames, returnNames);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		postData.remove("paramNames");
+		code = do_sp_invoice_sw_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");
+		code=do_sp_finance_item_classfy(postData);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");
+		code=do_sp_finance_purchase_item_classfy(postData);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 以下获得出参值
+		//System.out.println(postData.get("fe_id"));
+		return "{\"success\":true}";
+    }
+	
+	//计算发票已申汇金额
+	private int do_sp_invoice_sw_calculate(Map postData){
+		String paramNames[] = {"fh_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_invoice_sw_calculate");
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	/**
+	 * 修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/financeAgentFhshEdit",method=RequestMethod.GET)
+    public ModelAndView financeAgentFhshEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(financeAgentFhshOneQueryId, postData);		
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("np/financeAgentFhsh/financeAgentFhshEdit");
+        String tableHeader = this.getTableHeader(httpSession,financeAgentFhshEditItemGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", financeAgentFhshEditItemQueryId);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"fh_id","guid"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_toUpdate");
+		
+		String finance_agent_fhsh_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("finance_agent_fhsh_guid", finance_agent_fhsh_guid);
+		postData.put("guid", finance_agent_fhsh_guid);
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+        return mv;
+    }
+	/**
+	 * 获得动态列表数据-编辑申汇单
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getFinanceAgentFhshItemList")
+	@ResponseBody
+	public Object getFinanceAgentFhshItemList(@RequestBody Map postData,HttpSession httpSession){
+		String finance_agent_fhsh_guid=(String)httpSession.getAttribute("finance_agent_fhsh_guid");
+		postData.put("guid", finance_agent_fhsh_guid);
+		return this.getTableDataList(postData,financeAgentFhshEditItemQueryId);
+	}
+	
+	/**
+	 * 修改操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/editAgentFinanceFhsh")
+	@ResponseBody
+    public Object editAgentFinanceFhsh(@RequestParam Map postData,HttpSession httpSession) {		
+		String finance_agent_fhsh_guid=(String)httpSession.getAttribute("finance_agent_fhsh_guid");
+		postData.put("guid", finance_agent_fhsh_guid);
+		
+		int code = do_sp_finance_agent_fhsh_update(postData);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		postData.remove("paramNames");
+		code=do_sp_invoice_sw_calculate(postData);				
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");
+		code=do_sp_finance_item_classfy(postData);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		postData.remove("paramNames");
+		code=do_sp_finance_purchase_item_classfy(postData);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		return "{\"success\":true}";
+    }
+	
+	// 修改申汇操作
+	private int do_sp_finance_agent_fhsh_update(Map postData){
+		String paramNames[] = {"fh_id","guid","f_id","o_id_operator","fh_date","currency","fh_money","invoice_amount","total_money",
+				"region_catagory","bank_id","is_advance","is_bail","memo","fw_mode","fhsh_family","c_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_update");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	// 生成分类汇总
+	private int do_sp_finance_item_classfy(Map postData){
+		String paramNames[] = new String[]{"fh_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_item_classify");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	// 生成财务进货分类汇总
+	private int do_sp_finance_purchase_item_classfy(Map postData){
+		String paramNames[] = new String[]{"fh_id"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_purchase_item_classify");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	/**
+	 * 删除操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/deleteFinanceAgentFhsh")
+	@ResponseBody
+    public Object deleteAgentFinanceFhsh(@RequestParam Map postData,HttpSession httpSession){
+		// 入参, 注意按照顺序
+		String paramNames[] = {"fh_id","o_id_destroy"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_delete");
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_destroy", user.getAccount());
+        
+		int code = baseService.doCallSp(postData, paramNames, null);		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}		
+		postData.remove("paramNames");
+		code=do_sp_invoice_sw_calculate(postData);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}		
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 申汇单客户汇总详情页面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/financeAgentClientSum",method=RequestMethod.GET)
+    public ModelAndView financeAgentClientSum(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("np/financeAgentFhsh/financeAgentClientSum");
+        String tableHeader = this.getTableHeader(httpSession,financeAgentClinetSumConfirmGridHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", financeAgentClinetSumQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-申汇单客户汇总
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getFinanceAgentClient")
+	@ResponseBody
+	public Object getFinanceAgentClient(@RequestBody Map postData){			
+		return this.getTableDataList(postData,financeAgentClinetSumQueryId);
+	}
+	
+	/**
+	 * 提交申汇审核操作
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/commitAgentFinanceFhsh")
+	@ResponseBody
+    public Object commitAgentFinanceFhsh(@RequestParam Map postData,HttpSession httpSession){	
+		String finance_agent_fhsh_guid=(String)httpSession.getAttribute("finance_agent_fhsh_guid");
+		postData.put("guid", finance_agent_fhsh_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		
+		int code = do_sp_finance_agent_fhsh_update(postData);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		postData.remove("paramNames");
+		code = do_sp_finance_agent_fhsh_commit(postData);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		postData.remove("paramNames");
+		code=do_sp_invoice_sw_calculate(postData);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		
+		// 生成 财务进货分类汇总
+		postData.remove("paramNames");
+		code=do_sp_finance_purchase_item_classfy(postData);
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+		// 以下获得出参值
+		//System.out.println(postData.get("fe_id"));
+		/*
+		//执行接口推送
+		postData.put("bill_code", postData.get("fh_id"));
+		
+		int result_code = oaApiDeal(postData,user.getAccount());
+								
+		if(result_code ==1){
+			AjaxResult result = new AjaxResult();
+			result.setSuccess(false);
+			result.setErrorMsg("接口报错");
+			return result;
+		}
+		*/
+		return "{\"success\":true}";
+    }
+	
+	//提交审核申汇
+	private int do_sp_finance_agent_fhsh_commit(Map postData){
+		String paramNames[] = {"fh_id","guid"};
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_commit");
+		
+		return baseService.doCallSp(postData, paramNames, null);
+	}
+	
+	/**
+	 * 推送到OA
+	 * 
+	 * param postData
+	 * return
+	 */
+	/*
+	@RequestMapping(value="/putAgentNpFhshToOa")
+	@ResponseBody
+    public Object putAgentNpFhshToOa(@RequestParam Map postData,HttpSession httpSession){	
+		User user=(User)httpSession.getAttribute("user");
+		
+		//提交后调用oa接口
+		int result_code= oaApiDeal(postData,user.getAccount());
+				
+		if(result_code ==1){
+			AjaxResult result = new AjaxResult(); 
+			result.setSuccess(false);
+			result.setErrorMsg("接口报错");
+			return result;
+		}
+				
+		return "{\"success\":true}";
+    }
+	*/
+	// 执行oa接口
+	private int oaApiDeal(Map postData,String account){
+			
+		String loginName = "";
+			
+		postData.put("account", account);
+			
+		Map<String, Object> oneQuery = baseService.getOneQuery(getOaAccountQuery, postData);
+			
+		loginName = String.valueOf(oneQuery.get("oa_loginName"));
+			
+		String token = getMemberTokenServivce.getMemberToken(loginName,String.valueOf(postData.get("bill_code")));
+			
+		if(token.equals("0")){//为0表示接口有报错
+			return 1;
+		}
+			
+		postData.put("token",token);
+			
+		String return_code= putNpFhfhService.putPaymentApplication(token,String.valueOf(postData.get("bill_code")));
+			
+		if(return_code.equals("0")){//0表示有报错
+			return 1;
+		}else{//成功修改请假单的字段
+			updateSynOa(String.valueOf(postData.get("bill_code")));
+		}
+			
+		return 0;
+	}
+	
+	//修改单据标识
+	public void updateSynOa(String fh_id){
+		Map<String,Object> postData = new HashMap<String,Object>();
+							
+		postData.put("fh_id", fh_id);
+							
+		// 入参, 注意按照顺序
+		String paramNames[] = {"fh_id"};
+
+		// 加入sp的名称
+		postData.put("spName", "u_finance_fhsh_synoa_update");//sp名称 todo
+								
+		int return_code = baseService.doCallSp(postData, paramNames, null);
+							
+	}
+}

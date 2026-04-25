@@ -138,18 +138,31 @@
                 <div class="row row-lg">                    
                     <div class="col-sm-12">
 	                    <div class="btn-group hidden-xs" id="tableTool" role="group">
-	                        <button type="button" class="btn btn-outline btn-default" id="add" style="color: blue;">
-	                            <i class="glyphicon glyphicon-plus" aria-hidden="true"></i>
-	                        </button>
-	                        <button type="button" class="btn btn-outline btn-default" id="red_add" style="color: red;">
-	                            <i class="glyphicon glyphicon-plus" aria-hidden="true"></i>
-	                        </button>
-	                        <button type="button" class="btn btn-outline btn-default" id="add_agent" style="color: blue;">
-                                        	新增代理发票
-                            </button>
-                            <button type="button" class="btn btn-outline btn-default" id="red_add_agent" style="color: red;">
-                                        	新增代理发票
-                            </button>
+	                        <div class="btn-group">
+					            <button type="button" class="btn btn-outline btn-default dropdown-toggle" data-toggle="dropdown" style="color: blue;">
+					                <i class="glyphicon glyphicon-plus" aria-hidden="true"></i> 新增蓝票 <span class="caret"></span>
+					            </button>
+					            <ul class="dropdown-menu" role="menu">
+					                <li><a href="javascript:void(0);" id="add">标准蓝票</a></li>
+					                <li><a href="javascript:void(0);" id="add_no">非标蓝票</a></li>
+					                <li><a href="javascript:void(0);" id="add_agent">代理蓝票</a></li>
+					                <li><a href="javascript:void(0);" id="add_other">其他蓝票</a></li>
+					                <li class="divider"></li>
+					                </ul>
+					        </div>
+					
+					        <div class="btn-group">
+					            <button type="button" class="btn btn-outline btn-default dropdown-toggle" data-toggle="dropdown" style="color: red;">
+					                <i class="glyphicon glyphicon-plus" aria-hidden="true"></i> 新增红票 <span class="caret"></span>
+					            </button>
+					            <ul class="dropdown-menu" role="menu">
+					                <li><a href="javascript:void(0);" id="red_add">标准红票</a></li>
+					                <li><a href="javascript:void(0);" id="red_add_no">非标红票</a></li>
+					                <li><a href="javascript:void(0);" id="red_add_agent">代理红票</a></li>
+					                <li><a href="javascript:void(0);" id="red_add_other">其他红票</a></li>
+					                <li class="divider"></li>
+					                </ul>
+					        </div>
 	                        <button type="button" class="btn btn-outline btn-default" id="config">
 	                            <i class="glyphicon glyphicon-cog" aria-hidden="true"></i>
 	                        </button>
@@ -210,12 +223,12 @@
 			search_sum_list("${context}/csu/getTableCollectData",json_data_list,"getInvoiceManageList",$table);
      	}
 		
-		/*
+
 		function red_end_function(index, layero){
 			var json_data_list=formToJson($("#form_search"));
 			json_data_list['queryId']='${queryId}';
 			search_sum_list("${context}/csu/getTableCollectData",json_data_list,"getInvoiceManageList",$table);
-     	}*/
+     	}
 		
 		$(document).ready(function () {
 			//加载字典数据
@@ -238,15 +251,25 @@
 				 search_sum_list("${context}/csu/getTableCollectData",json_data_list,"getInvoiceManageList",$table);
 			});
 			
-			//增加条目layer
+			//增加蓝票条目layer
 			var $add=$("#add");
-			button_click_windows_end($add,2,"新增蓝票",'invoiceAdd',true,['620px', '500px'],end_function);
-			var $redadd=$("#red_add");
-			button_click_windows_end($redadd,2,"新增红票",'redInvoiceAdd',true,['620px', '500px'],end_function);
+			button_click_windows_end($add,2,"新增标准蓝票",'invoiceAdd',true,['620px', '500px'],end_function);
+			var $addNo=$("#add_no");
+			button_click_windows_end($addNo,2,"新增非标蓝票",'noInvoiceAdd',true,['620px', '500px'],end_function);
 			var $addAgent=$("#add_agent");
 			button_click_windows_end($addAgent,2,"新增代理蓝票",'agentInvoiceAdd',true,['620px', '500px'],end_function);
+			var $addOther=$("#add_other");
+			button_click_windows_end($addOther,2,"新增其他蓝票",'otherInvoiceAdd',true,['620px', '500px'],end_function);
+			//增加红票条目layer
+			var $redadd=$("#red_add");
+			button_click_windows_end($redadd,2,"新增标准红票",'redInvoiceAdd',true,['620px', '500px'],red_end_function);
+			var $redAddNo=$("#red_add_no");
+			button_click_windows_end($redAddNo,2,"新增非标红票",'redNoInvoiceAdd',true,['620px', '500px'],red_end_function);
 			var $redAddAgent=$("#red_add_agent");
-			button_click_windows_end($redAddAgent,2,"新增代理红票",'redAgentInvoiceAdd',true,['620px', '500px'],end_function);
+			button_click_windows_end($redAddAgent,2,"新增代理红票",'redAgentInvoiceAdd',true,['620px', '500px'],red_end_function);
+			var $redAddOther=$("#red_add_other");
+			button_click_windows_end($redAddOther,2,"新增其他红票",'redOtherInvoiceAdd',true,['620px', '500px'],red_end_function);
+			
 			
 			//表格配置 layer
 			var $config=$("#config");			
@@ -264,19 +287,30 @@
 	     });
 		 
 		 function toEdit(id){
-			 open_layer_end(2,'编辑蓝票','invoiceEdit?inv_id='+id,['620px', '580px'],true,end_function);
+			 open_layer_end(2,'编辑标准蓝票','invoiceEdit?inv_id='+id,['620px', '580px'],true,end_function);
 		 }
-		 
+		 function toEditNo(id){
+			 open_layer_end(2,'编辑非标蓝票','noInvoiceEdit?inv_id='+id,['620px', '580px'],true,end_function);
+		 }
 		 function toEditAgent(id){
 			 open_layer_end(2,'编辑代理蓝票','agentInvoiceEdit?inv_id='+id,['620px', '580px'],true,end_function);
+		 }
+		 function toEditOther(id){
+			 open_layer_end(2,'编辑其他蓝票','otherInvoiceEdit?inv_id='+id,['620px', '580px'],true,end_function);
 		 }
 		 
 		 //红票
 		 function toEditRed(id){
-			 open_layer_end(2,'编辑红票','redInvoiceEdit?inv_id='+id,['620px', '580px'],true,end_function);
+			 open_layer_end(2,'编辑标准红票','redInvoiceEdit?inv_id='+id,['620px', '580px'],true,red_end_function);
+		 }
+		 function toEditNoRed(id){
+			 open_layer_end(2,'编辑非标红票','redNoInvoiceEdit?inv_id='+id,['620px', '580px'],true,red_end_function);
 		 }
 		 function toEditAgentRed(id){
-			 open_layer_end(2,'编辑代理红票','redAgentInvoiceEdit?inv_id='+id,['620px', '580px'],true,end_function);
+			 open_layer_end(2,'编辑代理红票','redAgentInvoiceEdit?inv_id='+id,['620px', '580px'],true,red_end_function);
+		 }
+		 function toEditOtherRed(id){
+			 open_layer_end(2,'编辑其他红票','redOtherInvoiceEdit?inv_id='+id,['620px', '580px'],true,red_end_function);
 		 }
 		 
 		 //function toPurchase(id){
@@ -292,114 +326,55 @@
 		 }
 		 
 		 function renderOperator(value,row,index){
-			    var str = "";
+			 var str = "";
 			    var isRed = (row.is_red == 1);
 			    var status = row.status;
 			    var family = row.invoice_family;
-	
+
 			    // 判断是编辑还是查看（状态0为制单中，显示“编辑”，否则“查看”）
 			    var isEdit = (status == "0");
 			    var baseText = isEdit ? "编辑" : "查看";
-	
-			    // 根据红字标志和发票族确定对应的函数名
-			    var baseFunc = isRed
-			        ? (family == "0" ? "toEditRed" : "toEditAgentRed")
-			        : (family == "0" ? "toEdit" : "toEditAgent");
-	
+
+			    // 根据红字标志和发票类别确定对应的函数名
+			    var baseFunc = "";
+			    if (isRed) {
+			        if (family == "0") {
+			            baseFunc = "toEditRed";
+			        } else if (family == "1") {
+			            baseFunc = "toEditAgentRed";
+			        } else if (family == "2") {
+			            baseFunc = "toEditOtherRed"; // 路由到其他红票编辑函数
+			        } else if (family == "3") {
+			            baseFunc = "toEditNoRed"; // 路由到其他红票编辑函数
+			        }
+			    } else {
+			        if (family == "0") {
+			            baseFunc = "toEdit";
+			        } else if (family == "1") {
+			            baseFunc = "toEditAgent";
+			        } else if (family == "2") {
+			            baseFunc = "toEditOther"; // 路由到其他蓝票编辑函数
+			        } else if (family == "3") {
+			            baseFunc = "toEditNoRed"; // 路由到其他蓝票编辑函数
+			        }
+			    }
+
 			    // 拼接基础链接（编辑/查看）
 			    str += "<a onclick=\"" + baseFunc + "('" + row.inv_id + "')\">" + baseText + "</a> ";
-	
+
 			    // 根据状态添加附加链接
 			    if (status == "0") {
-			        // 制单中：添加“提交”链接
+			        // 制单中：添加“提交”链接（所有发票均适用）
 			        str += "&nbsp;&nbsp;<a onclick=\"toVerify('" + row.inv_id + "')\">提交</a>";
 			    } else if (!isRed && status == "6") {
-			        // 非红字且状态为6（提交待核销）：添加“核销”
+			        // 非红字且状态为6（提交待核销）：添加“核销”（其他发票与代理发票保持一致）
 			        str += "&nbsp;&nbsp;<a onclick=\"toOffset('" + row.inv_id + "')\">核销</a>";
 			    } else if (!isRed && family == "0") {
-			        // 非红字、其他状态且发票族为0：添加“核销查看”
+			        // 非红字、其他状态且发票类别为0（仅限常规发票）：添加“核销查看”
 			        str += "&nbsp;&nbsp;<a onclick=\"toOffset('" + row.inv_id + "')\">核销查看</a>";
 			    }
-	
+
 			    return str;
-			 		 
-			/* 简化前的写法2
-			var str="";
-			if (row.is_red == 1) {
-		        if (row.status == 0) {
-		        	if (row.invoice_family == "0") {
-		        		str+="<a onclick=\"toEditRed('"+row.inv_id+"')\">编辑</a> ";
-		        	} else {
-		        		str+="<a onclick=\"toEditAgentRed('"+row.inv_id+"')\">编辑</a> ";
-		        	}
-		        	
-					str+="&nbsp;&nbsp;<a onclick=\"toVerify('"+row.inv_id+"')\">提交</a>";
-		        } else {
-		        	if (row.invoice_family == "0") {
-		        		str+="<a onclick=\"toEditRed('"+row.inv_id+"')\">查看</a> ";
-		        	} else {
-		        		str+="<a onclick=\"toEditAgentRed('"+row.inv_id+"')\">查看</a> ";
-		        	}
-		        	
-		        }
-		        return str;
-		    }
-			
-			// 非红字发票，根据状态分支处理
-		    switch (row.status) {
-		        case '0': // 制单中
-		            if (row.invoice_family == "0") {
-		            	str+="<a onclick=\"toEdit('"+row.inv_id+"')\">编辑</a> ";
-		            } else {
-		            	str+="<a onclick=\"toEditAgent('"+row.inv_id+"')\">编辑</a> ";
-		            }
-		            str+="&nbsp;&nbsp;<a onclick=\"toVerify('"+row.inv_id+"')\">提交</a>";
-		            break;
-
-		        case '6': // 提交待核销
-		        	str+="<a onclick=\"toEdit('"+row.inv_id+"')\">查看</a> ";
-					str+="&nbsp;&nbsp;<a onclick=\"toOffset('"+row.inv_id+"')\">核销</a>";
-		            break;
-
-		        default: // 其他状态
-		        	str+="<a onclick=\"toEdit('"+row.inv_id+"')\">查看</a> ";
-					if(row.invoice_family=="0"){
-						str+="&nbsp;&nbsp;<a onclick=\"toOffset('"+row.inv_id+"')\">核销查看</a>";
-					}
-		            break;
-		    }
-		    return str;
-			*/
-			/*简化前的写法1,没有代理发票
-		    var str="";
-			if(row.is_red==1){
-				if(row.status==0){
-					str+="<a onclick=\"toEditRed('"+row.inv_id+"')\">编辑</a> ";
-					str+="&nbsp;&nbsp;<a onclick=\"toVerify('"+row.inv_id+"')\">提交</a>";
-				}else{
-					str+="<a onclick=\"toEditRed('"+row.inv_id+"')\">查看</a> ";
-				}
-			}else{
-				if(row.status==0){//制单中状态
-					if(row.invoice_family=="0"){
-						str+="<a onclick=\"toEdit('"+row.inv_id+"')\">编辑</a> ";
-					} else {
-						str+="<a onclick=\"toEditAgent('"+row.inv_id+"')\">编辑</a> ";
-					}
-					
-					str+="&nbsp;&nbsp;<a onclick=\"toVerify('"+row.inv_id+"')\">提交</a>";
-				}else if(row.status==6){//提交待核销状态
-					str+="<a onclick=\"toEdit('"+row.inv_id+"')\">查看</a> ";
-					str+="&nbsp;&nbsp;<a onclick=\"toOffset('"+row.inv_id+"')\">核销</a>";
-				}else{
-					str+="<a onclick=\"toEdit('"+row.inv_id+"')\">查看</a> ";
-					if(row.invoice_family=="0"){
-						str+="&nbsp;&nbsp;<a onclick=\"toOffset('"+row.inv_id+"')\">核销查看</a>";
-					}
-				}
-			}
-			return str;
-			*/
 	    }
 	</script>
 </html>

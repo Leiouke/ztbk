@@ -1,0 +1,700 @@
+package com.cnpiecsb.bd.controller;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/bk/bd")
+public class qkBdOutController extends ZtbkServiceController{
+	
+		// 今日报订供应商查询
+		private int todayBdFactoryQueryId = 10000008;	
+		private GridHeadConfig todayBdFactoryQueryHeadConfig;
+			
+		// 供应商可报订数据查询（切片）
+		private int factoryCanBdQueryId = 10000009;	
+		private GridHeadConfig factoryCanBdQueryHeadConfig;
+		
+		// 供应商可报订数据查询（增量）
+		private int factoryCanOtherBdQueryId = 10000022;	
+		private GridHeadConfig factoryCanOtherBdQueryHeadConfig;
+		
+		// 供应商可报订数据查询（单期）
+		private int factoryCanPeriodBdQueryId = 10000024;	
+		private GridHeadConfig factoryCanPeriodBdQueryHeadConfig;
+		
+		// 供应商可报订数据查询（变量）
+		private int factoryCanBlBdQueryId = 10000027;	
+		private GridHeadConfig factoryCanBlBdQueryHeadConfig;
+			
+		// 报订数据关联订单明细查询
+//		private int bdRelatedZdQueryId = 10000010;	
+//		private GridHeadConfig bdRelatedZdQueryHeadConfig;
+	
+		public qkBdOutController() {
+			todayBdFactoryQueryHeadConfig = new GridHeadConfig(todayBdFactoryQueryId,true,false,true,false);
+			todayBdFactoryQueryHeadConfig.setOperatorWidth(100);
+			
+			factoryCanBdQueryHeadConfig = new GridHeadConfig(factoryCanBdQueryId,true,false,false,false);
+			factoryCanBdQueryHeadConfig.setOperatorWidth(100);
+			
+			factoryCanOtherBdQueryHeadConfig = new GridHeadConfig(factoryCanOtherBdQueryId,true,false,false,false);
+			factoryCanOtherBdQueryHeadConfig.setOperatorWidth(100);
+			
+			factoryCanPeriodBdQueryHeadConfig = new GridHeadConfig(factoryCanPeriodBdQueryId,true,true,true,false);
+			factoryCanPeriodBdQueryHeadConfig.setOperatorWidth(100);
+			
+			factoryCanBlBdQueryHeadConfig = new GridHeadConfig(factoryCanBlBdQueryId,true,false,false,false);
+			factoryCanBlBdQueryHeadConfig.setOperatorWidth(100);
+			
+//			bdRelatedZdQueryHeadConfig = new GridHeadConfig(bdRelatedZdQueryId,true,false,true,false);
+//			bdRelatedZdQueryHeadConfig.setOperatorWidth(100);
+		}
+		
+		/**
+		 * 进入汇总报出界面
+		 * 
+		 * @return
+		 * @throws JsonProcessingException 
+		 */
+		@RequestMapping(value="/qkBdOutManage")  // 这里不写method, 说明既可以post也可以get
+	    public ModelAndView qkBdOutManage(HttpSession httpSession) throws JsonProcessingException{
+	        ModelAndView mv = new ModelAndView();
+	        mv.setViewName("bd/bdOut/qkBdOutManage");
+	        String tableHeader = this.getTableHeader(httpSession,todayBdFactoryQueryHeadConfig);
+	        mv.addObject("tableHeader", tableHeader);
+			mv.addObject("queryId", todayBdFactoryQueryId);
+	        return mv;
+	    }
+		
+		/**
+		 * 获得汇总报出数据
+		 * 
+		 * @return
+		 */
+		@RequestMapping(value="/getQkBdOutList")
+		@ResponseBody
+		public Object getQkBdOutList(@RequestBody Map postData, HttpSession httpSession) {
+			return this.getTableDataList(postData, todayBdFactoryQueryId);
+		}
+		
+		//-----------------------------------切片报订---------------------------------------------
+		
+		/**
+		 * 修改汇总报出页面（切片）
+		 * @throws JsonProcessingException 
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/qkBdOutEdit",method=RequestMethod.GET)
+	    public ModelAndView qkBdOutEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+	        ModelAndView mv = new ModelAndView();        
+	        // 单记录查询
+			String tableHeader = this.getTableHeader(httpSession, factoryCanBdQueryHeadConfig);
+			mv.addObject("tableHeader", tableHeader);
+			mv.addObject("queryId", factoryCanBdQueryId);
+			mv.setViewName("bd/bdOut/qkBdOutEditManage");
+			mv.addObject("f_id", (String)postData.get("f_id"));
+			mv.addObject("f_department", (String)postData.get("f_department"));
+			mv.addObject("pre_bd_date", (String)postData.get("pre_bd_date"));
+			mv.addObject("next_bd_date", (String)postData.get("next_bd_date"));
+			mv.addObject("qk_bd_regular", (String)postData.get("qk_bd_regular"));
+			mv.addObject("bd_start_date", (String)postData.get("bd_start_date"));
+			
+			//生成GUID
+			String qkBdOut_guid=GuidUtil.create32Guid();
+			httpSession.setAttribute("qkBdOut_guid", qkBdOut_guid);
+			
+	        return mv;
+	    }
+		
+		/**
+		 * 获得汇总报出临时表数据（可报出数据）
+		 * 
+		 * @return
+		 */
+		@RequestMapping(value="/getQkFactoryCanBdList")
+		@ResponseBody
+		public Object getQkFactoryCanBdList(@RequestBody Map postData, HttpSession httpSession) {
+			
+			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+			postData.put("guid", qkBdOut_guid);
+			
+			//传入临时表
+			// 入参, 注意按照顺序
+			String paramNames[] = new String[]{"guid",
+					"start_time",
+				    "end_time",
+				    "f_id",
+				    "is_kind_id",
+					"Reset",
+					"bd_pici",
+					"byDay"};
+			// 加入sp的名称
+			postData.put("spName", "Up_CreateBd_Preview");
+								
+			int code = baseService.doCallSp(postData, paramNames, null);
+			
+			return this.getTableDataList(postData, factoryCanBdQueryId);
+		}
+		
+		/**
+		 * 新增汇总报出
+		 * 
+		 * @throws JsonProcessingException 
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/addQkBd")
+		@ResponseBody
+	    public Object addQkBd(@RequestParam Map postData,HttpSession httpSession){
+			
+			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+			postData.put("guid", qkBdOut_guid);
+			
+			User user=(User)httpSession.getAttribute("user");
+			postData.put("o_id_input", user.getAccount());
+			
+			// 入参, 注意按照顺序
+			String paramNames[] = {"guid",
+					"f_id",
+					"start_time",
+					"end_time",
+					"o_id_input",
+					"station_id",
+					"station_id_aim",
+				    "is_kind_id",
+					"Reset"
+			};
+			
+			// 出参, 有顺序
+			String returnNames[] = {"bd_id"};
+			
+			postData.put("spName", "Up_CREATEBd_QkScroll");
+			
+			int code = baseService.doCallSp(postData, paramNames, returnNames);		
+			if (code != 0) {
+				return this.getAjaxResult(code);
+			}
+			return "{\"success\":true}";
+	    }
+		
+		//-----------------------------增量报订---------------------------------------------
+		
+		/**
+		 * 修改汇总报出页面（增量）
+		 * @throws JsonProcessingException 
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/qkOtherBdOutEdit",method=RequestMethod.GET)
+	    public ModelAndView qkOtherBdOutEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+	        ModelAndView mv = new ModelAndView();        
+	        // 单记录查询
+			String tableHeader = this.getTableHeader(httpSession, factoryCanOtherBdQueryHeadConfig);
+			mv.addObject("tableHeader", tableHeader);
+			mv.addObject("queryId", factoryCanOtherBdQueryId);
+			mv.setViewName("bd/bdOut/qkOtherBdOutEditManage");
+			mv.addObject("f_id", (String)postData.get("f_id"));
+			mv.addObject("f_department", (String)postData.get("f_department"));
+			
+			// 入参, 注意按照顺序
+			//String paramNames[] = new String[]{"guid", "f_id"};
+			String paramNames[] = new String[]{"guid"};
+			// 加入sp的名称
+			postData.put("spName", "n_bk_qk_bd_other_item_temp_getdata");
+					
+			String qkBdOut_guid=GuidUtil.create32Guid();
+			httpSession.setAttribute("qkBdOut_guid", qkBdOut_guid);
+			postData.put("guid", qkBdOut_guid);
+					
+			int code = baseService.doCallSp(postData, paramNames, null);
+			
+	        return mv;
+	    }
+		
+		/**
+		 * 获得汇总报出临时表数据（增量报订）
+		 * 
+		 * @return
+		 */
+		@RequestMapping(value="/getQkFactoryCanOtherBdList")
+		@ResponseBody
+		public Object getQkFactoryCanOtherBdList(@RequestBody Map postData, HttpSession httpSession) {
+			
+			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+			postData.put("guid", qkBdOut_guid);
+			
+			return this.getTableDataList(postData, factoryCanOtherBdQueryId);
+		}
+		
+		/**
+		 * 新增汇总报出
+		 * 
+		 * @throws JsonProcessingException 
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/addOtherQkBd")
+		@ResponseBody
+	    public Object addOtherQkBd(@RequestParam Map postData,HttpSession httpSession){
+			
+			User user=(User)httpSession.getAttribute("user");
+			postData.put("o_id_input", user.getAccount());
+			
+			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+			postData.put("guid", qkBdOut_guid);
+			
+			// 入参, 注意按照顺序
+			String paramNames[] = {"guid",
+			          "f_id",
+			          "bd_date",
+			          "o_id_input",
+			          "station_id"
+			          };
+			
+			// 出参, 有顺序
+			//String returnNames[] = {"bd_id"};
+			
+			postData.put("spName", "n_bk_qk_bd_zl_new");
+			
+			int code = baseService.doCallSp(postData, paramNames, null);		
+			if (code != 0) {
+				return this.getAjaxResult(code);
+			}
+			return "{\"success\":true}";
+	    }
+		
+		
+		
+		
+		//-----------------------------单期报订---------------------------------------------
+		
+		
+		/**
+		 * 修改汇总报出页面（单期）
+		 * @throws JsonProcessingException 
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/qkBdOutPeriodEdit",method=RequestMethod.GET)
+	    public ModelAndView qkBdOutPeriodEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+	        ModelAndView mv = new ModelAndView();        
+	        // 单记录查询
+			String tableHeader = this.getTableHeader(httpSession, factoryCanPeriodBdQueryHeadConfig);
+			mv.addObject("tableHeader", tableHeader);
+			mv.addObject("queryId", factoryCanPeriodBdQueryId);
+			mv.setViewName("bd/bdOut/qkPeriodBdOutEditManage");
+			mv.addObject("f_id", (String)postData.get("f_id"));
+			mv.addObject("f_department", (String)postData.get("f_department"));
+			
+			// 入参, 注意按照顺序
+			String paramNames[] = new String[]{"guid", "f_id"};
+			
+			// 加入sp的名称
+			postData.put("spName", "n_bk_qk_bd_item_period_temp_getdata");
+					
+			String qkBdOut_guid=GuidUtil.create32Guid();
+			httpSession.setAttribute("qkBdOut_guid", qkBdOut_guid);
+			postData.put("guid", qkBdOut_guid);
+			postData.put("f_id", (String)postData.get("f_id"));
+					
+			int code = baseService.doCallSp(postData, paramNames, null);
+			
+	        return mv;
+	    }
+		
+		/**
+		 * 获得汇总报出临时表数据（单期报订）
+		 * 
+		 * @return
+		 */
+		@RequestMapping(value="/getQkFactoryCanPeriodBdList")
+		@ResponseBody
+		public Object getQkFactoryCanPeriodBdList(@RequestBody Map postData, HttpSession httpSession) {
+			
+			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+			postData.put("guid", qkBdOut_guid);
+			
+			return this.getTableDataList(postData, factoryCanPeriodBdQueryId);
+		}
+		
+		/**
+		 * 新增汇总报出(单期)
+		 * 
+		 * @throws JsonProcessingException 
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/addPeriodQkBd")
+		@ResponseBody
+	    public Object addPeriodQkBd(@RequestParam Map postData,HttpSession httpSession){
+			
+			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+			postData.put("guid", qkBdOut_guid);
+			
+			User user=(User)httpSession.getAttribute("user");
+			postData.put("o_id_input", user.getAccount());
+			
+			// 入参, 注意按照顺序
+			String paramNames[] = {"guid",
+			          "f_id",
+			          "o_id_input",
+			          "o_id_operator",
+			          "memo",
+			          "bd_pici",
+			          };
+			
+			// 出参, 有顺序
+			String returnNames[] = {"bd_id"};
+			
+			postData.put("spName", "n_bk_qk_bd_new");
+			
+			int code = baseService.doCallSp(postData, paramNames, returnNames);		
+			if (code != 0) {
+				return this.getAjaxResult(code);
+			}
+			return "{\"success\":true}";
+	    }
+		
+		/**
+		 * 删除汇总报出临时表数据
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/deleteQkBdItemPeriodList")
+		@ResponseBody
+	    public Object deleteQkBdItemPeriodList(@RequestParam Map postData,HttpSession httpSession,HttpServletRequest request)throws JsonProcessingException{
+			
+			String[] inc_nos = request.getParameterValues("inc_nos");
+			if(inc_nos != null && inc_nos.length > 0){
+				for(int i=0;i<inc_nos.length;i++){
+					String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+					postData.put("guid", qkBdOut_guid);
+					
+					// 入参, 注意按照顺序
+					String paramNames[] = {"guid","inc_no"};
+					// 加入sp的名称
+					postData.put("spName", "n_bk_qk_bd_item_period_temp_delete");
+					
+					postData.put("inc_no", inc_nos[i]);
+					
+					//System.out.println("inc="+inc_nos[i]);
+					
+					int code = baseService.doCallSp(postData, paramNames, null);
+					
+					if (code != 0) {
+						return this.getAjaxResult(code);
+					}
+				}
+			}
+			return "{\"success\":true}";
+	    }
+		
+		/**
+		 * 新增汇总报出临时表页面
+		 * @throws JsonProcessingException 
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/qkBdItemPeriodTempAdd",method=RequestMethod.GET)
+	    public ModelAndView qkBdItemPeriodTempAdd(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{
+	        ModelAndView mv = new ModelAndView();        
+	        mv.setViewName("bd/bdOut/qkBdItemPeriodAdd");
+			
+	        return mv;
+	    }
+		
+		/**
+		 * 新增汇总报出临时表数据
+		 * 
+		 * @throws JsonProcessingException 
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/addQkBdItemPeriod")
+		@ResponseBody
+	    public Object addQkBdItemPeriod(@RequestParam Map postData,HttpSession httpSession){
+			
+			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+			postData.put("guid", qkBdOut_guid);
+			
+			// 入参, 注意按照顺序
+			String paramNames[] = {"guid",
+			          "qk_id",
+			          "period_id",
+			          "h_amount",
+			          "memo",
+			          };
+			
+			postData.put("spName", "n_bk_qk_bd_item_period_temp_new");
+			
+			int code = baseService.doCallSp(postData, paramNames, null);		
+			if (code != 0) {
+				return this.getAjaxResult(code);
+			}
+			return "{\"success\":true}";
+	    }
+		
+		/**
+		 * 新增汇总报出临时表数据
+		 * 
+		 * @throws JsonProcessingException 
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/editQkBdItemPeriod")
+		@ResponseBody
+	    public Object editQkBdItemPeriod(@RequestParam Map postData,HttpSession httpSession){
+			
+			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+			postData.put("guid", qkBdOut_guid);
+			
+			// 入参, 注意按照顺序
+			String paramNames[] = {"guid",
+					  "inc_no",
+			          "qk_id",
+			          "period_id",
+			          "zj_type",
+			          "memo"
+			          };
+			
+			postData.put("spName", "n_bk_qk_bd_item_period_temp_update");
+			
+			int code = baseService.doCallSp(postData, paramNames, null);		
+			if (code != 0) {
+				return this.getAjaxResult(code);
+			}
+			return "{\"success\":true}";
+	    }
+		
+//		/**
+//		 * 报订数据关联订单明细页面
+//		 * @throws JsonProcessingException 
+//		 * 
+//		 * 
+//		 */
+//		@RequestMapping(value="/qkBdZdSubDetail",method=RequestMethod.GET)
+//	    public ModelAndView qkBdZdSubDetail(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+//	        ModelAndView mv = new ModelAndView();        
+//	        // 单记录查询
+//			mv.addObject("qk_id", (String)postData.get("qk_id"));
+//			mv.addObject("period_id", (String)postData.get("period_id"));
+//			String tableHeader = this.getTableHeader(httpSession, bdRelatedZdQueryHeadConfig);
+//			mv.addObject("tableHeader", tableHeader);
+//			mv.addObject("queryId", bdRelatedZdQueryId);
+//			mv.setViewName("bd/bdOut/qkBdZdSubDetail");
+//			
+//	        return mv;
+//	    }
+//		
+//		/**
+//		 * 报订数据关联订单明细数据
+//		 * 
+//		 * @return
+//		 */
+//		@RequestMapping(value="/getQkBdZdSubDetailList")
+//		@ResponseBody
+//		public Object getQkBdZdSubDetailList(@RequestBody Map postData, HttpSession httpSession) {
+//			
+//			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+//			postData.put("guid", qkBdOut_guid);
+//			
+//			return this.getTableDataList(postData, bdRelatedZdQueryId);
+//		}
+//		
+//		/**
+//		 * 新增汇总报出临时表数据
+//		 * 
+//		 * @throws JsonProcessingException 
+//		 * 
+//		 * 
+//		 */
+//		@RequestMapping(value="/editBdZdSubDetail")
+//		@ResponseBody
+//	    public Object editBdZdSubDetail(@RequestParam Map postData,HttpSession httpSession){
+//			
+//			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+//			postData.put("guid", qkBdOut_guid);
+//			
+//			// 入参, 注意按照顺序
+//			String paramNames[] = {"guid",
+//					  "inc_no",
+//			          "bd_amount"
+//			          };
+//			
+//			postData.put("spName", "n_bk_qk_bd_zd_sub_temp_update");
+//			
+//			int code = baseService.doCallSp(postData, paramNames, null);		
+//			if (code != 0) {
+//				return this.getAjaxResult(code);
+//			}
+//			return "{\"success\":true}";
+//	    }
+		
+		//-----------------------------变量报订---------------------------------------------
+		
+		/**
+		 * 修改汇总报出页面（变量）
+		 * @throws JsonProcessingException 
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/qkBdOutBlEdit",method=RequestMethod.GET)
+	    public ModelAndView qkBdOutBlEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+	        ModelAndView mv = new ModelAndView();        
+	        // 单记录查询
+			String tableHeader = this.getTableHeader(httpSession, factoryCanBlBdQueryHeadConfig);
+			mv.addObject("tableHeader", tableHeader);
+			mv.addObject("queryId", factoryCanBlBdQueryId);
+			mv.setViewName("bd/bdOut/qkBlBdOutEditManage");
+			mv.addObject("f_id", (String)postData.get("f_id"));
+			mv.addObject("f_department", (String)postData.get("f_department"));
+			mv.addObject("next_bd_date", (String)postData.get("next_bd_date"));
+								
+			String qkBdOut_guid=GuidUtil.create32Guid();
+			httpSession.setAttribute("qkBdOut_guid", qkBdOut_guid);
+
+			
+	        return mv;
+	    }
+		
+		/**
+		 * 获得汇总报出临时表数据（可报出数据）
+		 * 
+		 * @return
+		 */
+		@RequestMapping(value="/getQkFactoryCanBlBdList")
+		@ResponseBody
+		public Object getQkFactoryCanBlBdList(@RequestBody Map postData, HttpSession httpSession) {
+			
+			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+			postData.put("guid", qkBdOut_guid);
+			
+			//传入临时表
+			// 入参, 注意按照顺序
+			String paramNames[] = new String[]{"guid",
+				    "f_id",
+					"date"};
+			// 加入sp的名称
+			postData.put("spName", "n_bk_qk_bd_item_temp_getdata");
+								
+			int code = baseService.doCallSp(postData, paramNames, null);
+			
+			return this.getTableDataList(postData, factoryCanBlBdQueryId);
+		}
+		
+		/**
+		 * 新增汇总报出（变量）
+		 * 
+		 * @throws JsonProcessingException 
+		 * 
+		 * 
+		 */
+		@RequestMapping(value="/addBlQkBd")
+		@ResponseBody
+	    public Object addBlQkBd(@RequestParam Map postData,HttpSession httpSession){
+			
+			User user=(User)httpSession.getAttribute("user");
+			postData.put("o_id_input", user.getAccount());
+			
+			String qkBdOut_guid = (String)httpSession.getAttribute("qkBdOut_guid");
+			postData.put("guid", qkBdOut_guid);
+			
+			postData.put("start_date", postData.get("date"));
+			
+			// 入参, 注意按照顺序
+			String paramNames[] = {
+					  "guid",
+			          "f_id",
+			          "o_id_input",
+			          "o_id_operator", 
+			          "memo",
+			          "bd_pici",
+			          "start_date"
+			          };
+			
+			// 出参, 有顺序
+			String returnNames[] = {"bd_id"};
+			
+			postData.put("spName", "n_bk_qk_bd_bl_new");
+			
+			int code = baseService.doCallSp(postData, paramNames, returnNames);		
+			if (code != 0) {
+				return this.getAjaxResult(code);
+			}
+			return "{\"success\":true}";
+	    }
+		
+		/**
+		 * 获取供应商报订控制信息（开始日期、结束日期、是否允许重报）
+		 */
+		@RequestMapping(value="/getBdControlInfo", method = RequestMethod.POST)
+		@ResponseBody
+		public Object getBdControlInfo(@RequestParam Map<String, Object> postData) {
+			// 1. 定义入参和出参
+		    String[] paramNames = {"f_id", "qk_bd_regular", "start_date_init"};
+		    String[] returnNames = {"start_date", "end_date", "rebd_enabled"};
+		    
+		    // 2. 指定调用的存储过程并执行
+		    postData.put("spName", "n_bk_qk_getbd_controlinfo");
+		    int code = baseService.doCallSp(postData, paramNames, returnNames);		
+		    if (code != 0) {
+		        return this.getAjaxResult(code); 
+		    }
+		    
+		    // 3. 核心修改：针对 ObjectService 底层强转的 VARCHAR 日期格式进行解析
+		    try {
+		        // SQL Server 隐式转 VARCHAR 的默认美式格式 (04 30 2026 12:00AM)
+		        // 必须使用 Locale.US，否则在中文操作系统下无法识别 AM/PM
+		        SimpleDateFormat sourceFormat = new SimpleDateFormat("MM dd yyyy hh:mma", Locale.US);
+		        // 我们需要输出给 JSP 页面的格式
+		        SimpleDateFormat targetFormat = new SimpleDateFormat("yyyy-MM-dd");
+		        
+		        String[] dateKeys = {"start_date", "end_date"};
+		        for (String key : dateKeys) {
+		            Object dateObj = postData.get(key);
+		            if (dateObj instanceof String) {
+		                String dateStr = ((String) dateObj).trim();
+		                try {
+		                    // 尝试将 "04 30 2026 12:00AM" 解析回真正的 Date，然后再格式化输出
+		                    Date parsedDate = sourceFormat.parse(dateStr);
+		                    postData.put(key, targetFormat.format(parsedDate));
+		                } catch (Exception e) {
+		                    // 容错处理：如果恰好已经是 "2026-04-30..." 格式，直接截取前10位
+		                    if (dateStr.length() >= 10 && dateStr.contains("-")) {
+		                        postData.put(key, dateStr.substring(0, 10));
+		                    }
+		                }
+		            }
+		        }
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		    }
+		    
+		    // 4. 补充成功标识，配合前端 common.js 规范
+		    postData.put("success", true);
+		    
+		    return postData;
+		}
+}

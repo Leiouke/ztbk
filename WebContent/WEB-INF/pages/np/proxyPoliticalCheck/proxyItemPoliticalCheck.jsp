@@ -52,6 +52,7 @@
 		                        	<option></option>
 		                        	<option value="1">通过</option>
 		                        	<option value="2">不通过</option>
+		                        	<option value="3">需加工</option>
 		                        </select>
 		                	</div>
 		                	<div class="form-group  textarea-group col-xs-7">
@@ -69,6 +70,7 @@
 		                        	<option></option>
 		                        	<option value="1">通过</option>
 		                        	<option value="2">不通过</option>
+		                        	<option value="3">需加工</option>
 		                        </select>
 		                	</div>
 		                	<div class="form-group textarea-group col-xs-7">
@@ -86,6 +88,7 @@
 		                        	<option></option>
 		                        	<option value="1">通过</option>
 		                        	<option value="2">不通过</option>
+		                        	<option value="3">需加工</option>
 		                        </select>
 		                	</div>
 		                	<div class="form-group textarea-group  col-xs-7">

@@ -1,0 +1,963 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->  
+	    <jsp:include page="../../include/h_superHead.jsp"></jsp:include>
+	    <link rel="stylesheet" type="text/css" href="${context}/css/plugins/webuploader/webuploader.css">
+	    <!-- Bootstrap table -->
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-editable.css" rel="stylesheet">
+	    <link href="${context}/css/boocup_style.css" rel="stylesheet">	
+	</head>
+	<body>
+		<div class="sonpage-body">
+			<div class="col-md-12" style = "height:80%;">	        
+                <div class="tabs-container">
+                    <ul class="nav nav-tabs">
+                        <li class="active"><a data-toggle="tab" id="tab-1-title" href="#tab-1" aria-expanded="true"> 客户信息</a>
+                        </li>
+                        <li class=""><a data-toggle="tab" id="tab-2-title" href="#tab-2" aria-expanded="false">地址信息</a>
+                        </li>
+                        <li class=""><a data-toggle="tab" id="tab-3-title" href="#tab-3" aria-expanded="false">开票信息</a>
+                        </li>
+                         <li class=""><a data-toggle="tab" id="tab-4-title" href="#tab-4" aria-expanded="false">客户事件</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content" style = "height:70%;">                    
+                        <div id="tab-1" class="tab-pane active">
+                            <div class="panel-body">
+                            <form id="form_tab1" class="form-inline">
+	                            <div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label >名称*：</label>
+				                        <input type="hidden" name="c_id" readonly>  <!-- 如果没有赋值, 那么传到数据库是null 不是空字符串了 -->
+				                        <input type="text" name="c_department" >
+				                	</div>
+							        <div class="form-group small-space col-xs-4">
+				                  		<label>级别*：</label>
+				                        <select name="c_jb" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4">
+							            <label >客户类别*：</label>
+							            <select name="cc_id" class="dictionary">
+							            	<option></option>
+							           	</select>
+							       	</div>
+				                	
+<!-- 							        <div class="form-group small-space col-xs-4" > -->
+<!-- 							            <label>建档日期：</label> -->
+							            <input type="hidden" class="layer-date search-items date-type" name="c_create" id="c_create">
+<!-- 							        </div> -->
+							    </div>
+<!-- 							    <div class="row">	     -->
+<!-- 							        <div class="form-group small-space col-xs-4" > -->
+<!-- 							            <label >简称：</label> -->
+<!-- 							            <input type="text" name="c_department_simple" > -->
+<!-- 							        </div>	 -->
+<!-- 							        <div class="form-group small-space col-xs-4" > -->
+<!-- 							            <label >译名：</label> -->
+<!-- 							            <input type="text" name="c_department_Foreign" > -->
+<!-- 							        </div>  -->
+<!-- 							    </div>						     -->
+<!-- 							    <div class="row"> -->
+<!-- 							        <div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label>退货率：</label> -->
+<!-- 										<input type="text" name="c_back" > -->
+<!-- 				                	</div> -->
+<!-- 							        <div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label>退货期限：</label> -->
+<!-- 										<input type="text" name="back_limit_date" > -->
+<!-- 				                	</div>  			 -->
+<!-- 							    </div> -->
+							    <div class="row">
+							    	<div class="form-group small-space col-xs-4" >
+							            <label >销售方式：</label>
+							            <select name="cm_id" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >外商编号/证件号：</label>
+				                        <input type="text" name="c_bak2" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >TYO：</label>
+				                        <input type="text" name="c_bak3" >
+				                	</div> 
+<!-- 							        <div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >最大欠款：</label> -->
+<!-- 				                        <input type="text" name="limit_money" > -->
+<!-- 				                	</div>  -->
+<!-- 				                	<div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >结算期限：</label> -->
+<!-- 				                        <input type="text" name="limit_day" > -->
+<!-- 				                	</div>  -->
+<!-- 				                	<div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >最小折扣：</label> -->
+<!-- 				                        <input type="text" name="discountrise" > -->
+<!-- 				                	</div> 		 -->
+							    </div>
+<!-- 							    <div class="row"> -->
+<!-- 							    	<div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >户号：</label> -->
+<!-- 				                        <input type="text" name="custom_id" > -->
+<!-- 				                	</div> -->
+							    			
+<!-- 							        <div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >客户来源：</label> -->
+<!-- 				                        <select name="c_source" class="dictionary"> -->
+<!-- 							            	<option></option> -->
+<!-- 							            </select> -->
+<!-- 				                	</div>				        						       	 -->
+<!-- 							    </div> -->
+<!-- 							    <div class="row"> -->
+<!-- 				                	<div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >ORDER：</label> -->
+<!-- 				                        <input type="text" name="c_bak1" > -->
+<!-- 				                	</div>       	 -->
+<!-- 							    </div> -->
+							    <div class="row">	
+							    	<div class="form-group small-space col-xs-4">
+				                  		<label >行业分类：</label>
+				                        <select name="c_hy_id" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>   	
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >主管业务员：</label>
+							            <input type="text" name="c_charge_man_name">
+									    <div class="input-group-btn">
+				                         <button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+				                             <span class="caret"></span>
+				                         </button>
+				                         <ul class="dropdown-menu dropdown-menu-right" role="menu" style="margin-left:580px"></ul>
+				                        </div>
+				                        <input type="hidden" name="c_charge_man">
+				                	</div>
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >联系人：</label>
+				                        <input type="text" name="c_contact_man" >
+				                	</div>     	
+							    </div>
+							    <div class="row">
+							    	<div class="form-group small-space col-xs-4">
+				                  		<label >通讯地址：</label>
+				                        <input type="text" name="c_address" >
+				                	</div>
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >邮政编码：</label>
+				                        <input type="text" name="c_zip" >
+				                	</div>    
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >电话：</label>
+				                        <input type="text" name="c_tel" >
+				                	</div> 				       	
+							    </div>							    
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4">
+				                  		<label >移动电话：</label>
+				                        <input type="text" name="c_handset" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >传真：</label>
+				                        <input type="text" name="c_fax" >
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >电子邮件：</label>
+				                        <input type="text" name="c_mail" >
+				                	</div> 		
+							    </div>
+<!-- 							    <div class="row"> -->
+<!-- 							        <div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >政审等级：</label> -->
+<!-- 				                        <select name="zs_type" class="dictionary"> -->
+<!-- 							            	<option></option> -->
+<!-- 							            </select> -->
+<!-- 				                	</div>  -->
+<!-- 				                	<div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >阶段：</label> -->
+<!-- 				                        <select name="c_phase" class="dictionary"> -->
+<!-- 							            	<option></option> -->
+<!-- 							            </select> -->
+<!-- 				                	</div>  -->
+<!-- 				                	<div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >业务属性：</label> -->
+<!-- 				                        <select name="flag_move_class" class="dictionary"> -->
+<!-- 							            	<option></option> -->
+<!-- 							            </select> -->
+<!-- 				                	</div> 		 -->
+<!-- 							    </div> -->
+							    <div class="row">
+<!-- 							        <div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >货物到站：</label> -->
+<!-- 				                        <select name="c_station" class="dictionary"> -->
+<!-- 							            	<option></option> -->
+<!-- 							            </select> -->
+<!-- 				                	</div>  -->
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >发货方式：</label>
+				                        <select name="consignment_style" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4">
+							    		<label >所属客户：</label>
+							    		<input type="text" name="parent_client" >
+							    		<div class="input-group-btn">
+                                        	<button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+                                            	<span class="caret"></span>
+                                            </button>
+                                            	<ul class="dropdown-menu dropdown-menu-right" role="menu" style="margin-left:580px">
+                                            	</ul>
+                                 		</div>
+							  		</div>
+									<div class="form-group small-space col-xs-4">
+										<label >客户名称：</label>
+										<input type="text" name="parent_client_Name"  disabled>
+									</div>
+<!-- 				                	<div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >货场名称：</label> -->
+<!-- 				                        <select name="c_hc_id" class="dictionary"> -->
+<!-- 							            	<option></option> -->
+<!-- 							            </select> -->
+<!-- 				                	</div> 		 -->
+							    </div>
+<!-- 							    <div class="row"> -->
+<!-- 				                	<div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >所属户号：</label> -->
+<!-- 				                        <input type="text" name="" disabled> -->
+<!-- 				                	</div> 	 -->
+<!-- 							    </div> -->
+<!-- 							    <div class="row"> -->
+<!-- 							        <div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >账期：</label> -->
+<!-- 				                        <input type="text" name="account_limit" > -->
+<!-- 				                	</div>  -->
+<!-- 				                	<div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >是否有效*：</label> -->
+<!-- 				                        <select name="c_level" class="dictionary"> -->
+<!-- 							            	<option></option> -->
+<!-- 							            </select> -->
+<!-- 				                	</div>  -->
+<!-- 				                	<div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >信用管制：</label> -->
+<!-- 				                        <select name="clients_credit" class="dictionary"> -->
+<!-- 							            	<option></option> -->
+<!-- 							            </select> -->
+<!-- 				                	</div> 		 -->
+<!-- 							    </div> -->
+							    <div class="row">
+<!-- 							        <div class="form-group small-space col-xs-4"> -->
+<!-- 				                  		<label >折扣设置*：</label> -->
+<!-- 				                        <select name="discountmethod" class="dictionary"> -->
+<!-- 							            	<option></option> -->
+<!-- 							            </select> -->
+<!-- 				                	</div>  -->
+				                	<div class="form-group small-space col-xs-4" >
+							            <label >财务编码：</label>
+							            <input type="text" name="finance" >
+							        </div>
+				                	<div class="form-group small-space col-xs-4">
+				                  		<label >客户属性：</label>
+				                        <select name="attribute" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div> 
+				                	<div class="form-group small-space col-xs-4" >
+							         <label >订户性质：</label>
+							            <select name="c_property" class="dictionary">
+							            	<option></option>
+							            </select>
+							    	</div>
+							    </div>
+<!-- 							    <br> -->
+							    
+							    <div class="row">
+<!-- 							        <div class="form-group small-space col-xs-4" > -->
+<!-- 							            <label >证件号：</label> -->
+<!-- 							            <input type="text" name="c_certificate" > -->
+<!-- 							        </div> -->
+									<div class="form-group small-space col-xs-4" >
+							            <label >下架类型：</label>
+							            <select name="downshelf_rule_type" id = "downshelf_rule_type" class = "dictionary">
+							                <option></option>	
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >下架规则：</label>
+							            <input type="text" name="downshelf_rule_detail" id="downshelf_rule_detail">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >收货地址：</label>
+							            <input type="text" name="c_address_song" disabled>
+							        </div>
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4" >
+							            <label >收件人：</label>
+							            <input type="text" name="accept_man" disabled>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >送件线路：</label>
+							            <input type="text" name="line_id" disabled>
+							        </div>
+<!-- 							        <div class="form-group small-space col-xs-4" > -->
+<!-- 							            <label >是否本地：</label> -->
+<!-- 							            <select name="is_sh"> -->
+<!-- 							                <option></option> -->
+<!-- 							            	<option value="1">是</option> -->
+<!-- 						                	<option value="0">否</option>	 -->
+<!-- 							            </select> -->
+<!-- 							        </div> -->
+							        <div class="form-group small-space col-xs-4" >
+							            <label >国家：</label>
+							            <input type="text" name="c_country" disabled>
+							        </div>
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4" >
+							            <label >所在省：</label>
+							            <input type="text" name="a_id" disabled>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >所在市：</label>
+							            <input type="text" name="p_id" disabled>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >所在区：</label>
+							            <input type="text" name="city_id" disabled>
+							        </div>
+							    </div>
+							    <div class="row">
+							        <div class="form-group small-space col-xs-4" >
+							            <label >路名：</label>
+							            <input type="text" name="road_name" disabled>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >门牌号：</label>
+							            <input type="text" name="tablet_value" disabled>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >送件方式：</label>
+							            <input type="text" name="send_type" disabled>
+							        </div>
+							    </div>
+							    <div class="row">
+							    	<div class="form-group large-space col-xs-12" >
+							            <label >备注：</label>
+							            <textarea name="c_mem" cols="50" rows="5"></textarea>
+							        </div>
+							    </div>
+							    </form>
+						    </div><!-- panel-body1-->
+                        </div>
+                        <div id="tab-2" class="tab-pane">
+                            <div class="panel-body">
+                            <form id="form_tab2" class="form-inline">
+			   				<input type="hidden" class="c_id" name="cf_id">
+                            	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>地址类别：</label>
+				                        <select name="cf_class" class="dictionary">
+				                  			<option></option>
+				                  		</select>
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>本地客户：</label>
+							            <select name="is_sh">
+				                  			<option></option>
+				                  			<option value = "0">否</option>
+				                  			<option value = "1">是</option>
+				                  		</select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" style="display: inline-block;" >
+							            <label>起止时间：</label>
+							            <input type="text" class="layer-date search-items" name="begin_date" id="begin_date" style="width: 169px;">
+							            -
+							            <input type="text" class="layer-date search-items" name="end_date" id="end_date" style="width: 169px;">
+							        </div> 			
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>客户名称：</label>
+				                        <input type="text" name="c_department">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>国家：</label>
+							            <select name="c_country" class="dictionary" id = "c_country">
+							            	<option></option>
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>所在省：</label>
+							            <select name="p_id" class="search-items" id = "p_id">
+							            	<option></option>
+							            </select>
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>所在市：</label>
+				                        <select name="city_id" class="search-items" id = "city_id">
+							            	<option></option>
+							            </select>
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>区域：</label>
+							            <select name="a_id" class="search-items" id = "a_id">
+							            	<option></option>
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>路名：</label>
+							            <input type="text" name="road_name">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>门牌号：</label>
+				                        <input type="text" name="tablet_value">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>地址：</label>
+							            <input type="text" name="cf_address">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>邮编：</label>
+							            <input type="text" name="cf_zip">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>收件人：</label>
+				                        <input type="text" name="accept-man">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>电话：</label>
+							            <input type="text" name="cf_tel">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>E-mail：</label>
+							            <input type="text" name="cf_mail">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>送件方式：</label>
+				                        <input type="text" name="send_type">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>线路：</label>
+							            <input type="text" name="line_id">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>传真：</label>
+							            <input type="text" name="cf_fax">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>周期类型：</label>
+				                        <select name="send_type" class="dictionary">
+							            	<option></option>
+							            </select>
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>月/周：</label>
+							            <input type="text" name="where_1">
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>日/星期：</label>
+							            <input type="text" name="where_2">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>操作员：</label>
+				                  		<input type="text" name="o_id_input" disabled>
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>增量标志：</label>
+							            <select name="" class="dictionary">
+							            	<option></option>
+							            </select>
+							        </div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label>楼盘：</label>
+							            <input type="text" name="cf_address-old">
+							        </div>
+						    	</div>
+						    	<div class="row row-lg">                    
+				                    <div class="col-sm-12">
+		                                <div class="btn-group hidden-xs" id="tableTool_address" role="group">
+		                                    <button type="button" class="btn btn-outline btn-default" id="config_address">
+		                                        <i class="glyphicon glyphicon-cog" aria-hidden="true"></i>
+		                                    </button>
+		                                   <select class="form-control" >
+		                                   		<option value="all">导出全部</option>
+								                <option value="basic">导出当页</option>	
+								            </select>
+		                                </div>
+		                                <table id="table_address" data-height="250" data-mobile-responsive="true">
+		                                    
+		                                </table>
+				                    </div>
+					            </div>
+						    	</form>
+                            </div>  <!-- panel-body2 -->
+                        </div>
+                        <div id="tab-3" class="tab-pane"> 
+                            <div class="panel-body">
+                            <form id="form_tab3" class="form-inline">
+			   				<input type="hidden" class="c_id" name="f_id">
+                            	<div class="row">
+	                            	<div class="form-group middle-space col-xs-8 not-null">
+				                  		<label>公司名称：</label>
+				                        <input type="text" name="f_companyName">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >税务号：</label>
+							            <input type="text" name="f_registMark">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group middle-space col-xs-8">
+				                  		<label>公司地址：</label>
+				                        <input type="text" name="f_companyAddress">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >联系电话：</label>
+							            <input type="text" name="f_companyPhone">
+							        </div>
+							       <!--  <div class="form-group small-space col-xs-4" >
+							            <label >手机：</label>
+							            <input type="text" name="f_mobile">
+							        </div> -->
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>开户银行：</label>
+				                        <input type="text" name="f_bank">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >银行账号：</label>
+							            <input type="text" name="f_account">
+							        </div>
+							        <div class="form-group small-space col-xs-4 not-null" >
+							            <label >是否默认：</label>
+							            <select name="f_default" class="dictionary isboolean">
+							            	<option></option>
+							            </select>
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+				                  		<label>我方银行：</label>
+				                        <input type="text" name="my_bank" value="工行南京西路支行">
+				                	</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >我方银行账号：</label>
+							            <input type="text" name="my_account" value="1001207419206563490">
+							        </div>
+							        <div class="form-group small-space col-xs-4">
+									    <label >开票类型：</label>
+									    <select name="kp_type" class="dictionary" >
+									    </select>
+									</div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4 not-null">
+									    <label >发票税率：</label>
+									    <select name="tax_rate" class="dictionary" >
+									    </select>
+									</div>
+							        <div class="form-group small-space col-xs-4 not-null">
+									    <label >是否开到明细：</label>
+									    <select name="is_item" class="dictionary isboolean" >
+									    </select>
+									</div>
+							        <div class="form-group small-space col-xs-4" >
+							            <label >开票内容：</label>
+								    	<input type="text" name="kp_content">
+							        </div>
+						    	</div>
+						    	<div class="row">
+	                            	<div class="form-group small-space col-xs-4">
+									    <label >开票数量：</label>
+								    	<input type="text" name="kp_amount">
+									</div>
+							        <div class="form-group small-space col-xs-4">
+									    <label >开票单位：</label>
+								    	<input type="text" name="kp_unit">
+									</div>
+<!-- 							        <div class="form-group small-space col-xs-4" > -->
+<!-- 							            <button type="button" class="btn btn-primary btn-xs" id="save">新增保存</button> -->
+<!-- 							        </div> -->
+						    	</div>
+	                            <div class="row row-lg">                    
+					                <div class="col-sm-12">
+		                                <div class="btn-group hidden-xs" id="tableTool_bank" role="group">
+		                                    <button type="button" class="btn btn-outline btn-default" id="config_bank">
+		                                        <i class="glyphicon glyphicon-cog" aria-hidden="true"></i>
+		                                    </button>
+		                                   <select class="form-control" >
+		                                   		<option value="all">导出全部</option>
+								                <option value="basic">导出当页</option>	
+								            </select>
+		                                </div>
+		                                <table id="table_bank" data-height="250" data-mobile-responsive="true">
+		                                    
+		                                </table>
+					                </div>
+					            </div>
+					        </form>
+                            </div><!-- panel-body4 -->
+                        </div>
+            			<div id="tab-4" class="tab-pane">
+                            <div class="panel-body">
+                            <form id="form_tab4" class="form-inline">
+						    	<div class="row row-lg">                    
+				                    <div class="col-sm-12">
+		                                <div class="btn-group hidden-xs" id="tableTool_content" role="group">
+		                                	 <button type="button" class="btn btn-outline btn-default" id="addContent">
+	                            				<i class="glyphicon glyphicon-plus" aria-hidden="true"></i>
+	                        				</button>
+		                                    <button type="button" class="btn btn-outline btn-default" id="config_content">
+		                                        <i class="glyphicon glyphicon-cog" aria-hidden="true"></i>
+		                                    </button>
+		                                   <select class="form-control" >
+		                                   		<option value="all">导出全部</option>
+								                <option value="basic">导出当页</option>	
+								            </select>
+		                                </div>
+		                                <table id="table_content" data-height="250" data-mobile-responsive="true">
+		                                    
+		                                </table>
+				                    </div>
+					            </div>
+					            </form>
+                            </div>  <!-- panel-body4 -->
+                        </div>
+                    </div>                    
+                    
+                </div>
+			 </div>
+		</div>
+		<div class="sonpage-footer">
+	        <button id="save_all" class="btn btn-primary" type="button">保存客户信息</button>
+	        <button id="cancel" class="btn btn-white" type="button">取消</button>
+		</div>
+	</body>
+	<!-- Bootstrap table -->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <!-- Bootstrap table export-->
+    <script src="${context}/js/plugins/bootstrap-table/export/bootstrap-table-export.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/tableExport.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/js-xlsx/xlsx.core.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.plugin.autotable.js"></script>
+    <!-- Bootstrap table editable-->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-editable.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table-editable.js"></script>
+    
+    <script src="${context}/js/common/common.js"></script>
+	<script src="${context}/js/plugins/layer/layer.min.js"></script>
+	<script src="${context}/js/plugins/webuploader/webuploader.min.js"></script>
+	
+	<!-- plugins -->
+ 	<script src="${context}/js/plugins/suggest/bootstrap-suggest-new.min.js"></script>
+ 	<!-- layerDate plugin javascript -->
+    <script src="${context}/js/plugins/layer/laydate-new/laydate.js"></script>
+    
+	<script type="text/javascript">
+		var active=1;//区别那个窗口在活动	
+		
+		var $table_address = $('#table_address');
+		var $table_bank = $('#table_bank');	
+		var $table_content = $('#table_content');
+		
+		$(document).ready(function () {
+			$(".layer-date").each(function(){
+				inistal_one_data('#'+$(this).attr('id'));
+			});
+			//加载字典数据
+			//get_dictionary("${context}",null);
+			
+			initialize_bsSuggest_user_by_dept("${context}", "c_charge_man_name", "c_charge_man", "2000");      // 放用户信息(报刊的)
+			
+			initialize_bsSuggest_bk_client("${context}", "parent_client_Name", "parent_client");
+			
+			var to_initialize_tab2=true;
+			var to_initialize_tab3=true;
+			var to_initialize_tab4=true;
+			
+			$('#save_all').on('click',function() {
+				switch(active){
+			       case 1:{
+			    	   if(!has_null($("#form_tab1")))
+			    		   ajax_function("editClient","post",$('#form_tab1').serialize(),'修改成功');
+			    	   break;
+			       }
+			       case 2:{
+			    	   if(!has_null($("#form_tab2"))){
+			    		   ajax_function_no_close("addClientAddress","post",$('#form_tab2').serialize(),'新增成功');
+			    		   $table_address.bootstrapTable('refresh');
+			    	   }					
+			    	   break;
+			       }
+			       case 3:{
+			    	   if(!has_null($("#form_tab3"))){
+			    		   ajax_function_no_close("addClientBank","post",$('#form_tab3').serialize(),'修改成功');
+			    		   $table_bank.bootstrapTable('refresh');
+			    	   }							
+			    	   break;
+			       }
+			   }				
+			 });
+			
+			//加载字典数据
+			var c_str='${oneJson}';
+			c_str=c_str.replace(/\r\n/g,"\\r\\n");
+        	c_str=c_str.replace(/\n/g,"\\n");
+        	c_str=c_str.replace(/\s/g," ");
+			var client=JSON.parse(c_str);
+			get_dictionary("${context}",client);
+			set_one_info($("#form_tab1"),client);
+			set_one_info($("#form_tab3"),client);
+			$(".c_id").each(function(){
+				$(this).val(client["c_id"]);
+			});
+			
+			
+			//bootstrap初始化
+			function queryParams_address(param) {
+				var json_obj_address = {};
+				json_obj_address['limit'] =param.limit;
+				json_obj_address['offset'] =param.offset;
+				json_obj_address['sortName'] =this.sortName;
+				json_obj_address['sortOrder'] =this.sortOrder;
+				json_obj_address['cf_id'] =client["c_id"];
+			    return json_obj_address;
+			}
+			//bootstrap初始化
+			function queryParams_content(param) {
+				var json_obj_content = {};
+				json_obj_content['limit'] =param.limit;
+				json_obj_content['offset'] =param.offset;
+				json_obj_content['sortName'] =this.sortName;
+				json_obj_content['sortOrder'] =this.sortOrder;
+				json_obj_content['c_id'] =client["c_id"];
+			    return json_obj_content;
+			}
+			//bootstrap初始化
+			function queryParams_bank(param) {
+				var json_obj_content = {};
+				json_obj_content['limit'] =param.limit;
+				json_obj_content['offset'] =param.offset;
+				json_obj_content['sortName'] =this.sortName;
+				json_obj_content['sortOrder'] =this.sortOrder;
+				json_obj_content['f_id'] =client["c_id"];
+			    return json_obj_content;
+			}
+			
+			
+			$('#tab-1-title').on('click',function(){
+				active=1;
+				$("#tab-1").css('display','block');
+				$("#tab-2").css('display','none');
+				$("#tab-3").css('display','none');
+				$("#tab-4").css('display','none');
+				$("#save_all").text("保存客户信息");
+				$("#save_all").show();
+			});
+			$('#tab-2-title').on('click',function(){
+				active=2;
+				$("#tab-1").css('display','none');
+				$("#tab-2").css('display','block');
+				$("#tab-3").css('display','none');
+				$("#tab-4").css('display','none');
+				$('#c_country option[value="12"]').attr("selected", true);//默认是中国大陆
+				$("#save_all").text("保存地址信息");
+				$("#save_all").show();
+				load_province();//加载省份方法
+				if(to_initialize_tab2){
+					to_initialize_tab2=false;
+					initialize_table_editable($table_address,"getAddressList",${tableHeader_address},queryParams_address,"#tableTool_address",400,"editAddress");
+				}
+			});
+			$('#tab-3-title').on('click',function(){ //todo
+				active=3;
+				$("#tab-1").css('display','none');
+				$("#tab-2").css('display','none');
+				$("#tab-3").css('display','block');	 
+				$("#tab-4").css('display','none');
+				$("#save_all").text("保存开票信息");
+				$("#save_all").show();
+				if(to_initialize_tab3){
+					to_initialize_tab3=false;
+					initialize_table($table_bank,"getClientBankList",${tableHeader_bank},queryParams_bank,"#tableTool_bank",400);
+				}
+			});
+			$('#tab-4-title').on('click',function(){
+				active=4;
+				$("#tab-1").css('display','none');
+				$("#tab-2").css('display','none');
+				$("#tab-3").css('display','none');
+				$("#tab-4").css('display','block');
+				$("#save_all").hide();
+				if(to_initialize_tab4){
+					to_initialize_tab4=false;
+					initialize_table($table_content,"getContentList",${tableHeader_content},queryParams_content,"#tableTool_content",400);
+				}
+			});
+			
+			var $config_address=$("#config_address");			
+			table_column_config_layer($config_address,2,'表格属性配置','${context}/csu/columnConfig?queryId=${queryId_address}');
+			var $config_content=$("#config_content");			
+			table_column_config_layer($config_content,2,'表格属性配置','${context}/csu/columnConfig?queryId=${queryId_content}');
+			var $config_bank=$("#config_bank");			
+			table_column_config_layer($config_bank,2,'表格属性配置','${context}/csu/columnConfig?queryId=${queryId_bank}');
+			
+			$('#tableTool_address').find('select').change(function () {
+				 $('#table_address').bootstrapTable('refreshOptions',{exportDataType: $(this).val()});
+		     }); 
+			$('#tableTool_content').find('select').change(function () {
+				 $('#table_content').bootstrapTable('refreshOptions',{exportDataType: $(this).val()});
+		     }); 
+			
+			//增加条目layer
+			var $addContent=$("#addContent");
+			var c_id = client["c_id"];
+			button_click_windows_end($addContent,2,"新增事件",'clientContentAdd?c_id='+c_id,false,['750px', '450px'],end_function);
+			
+			//加载省份的方法
+			function load_province(){
+				$.ajax({
+			          type: "post",
+			          contentType: "application/json",          // 明确指定请求体格式
+			          url: "getClientprovinceList",
+			          data: JSON.stringify({limit:'200'}),
+			          dataType: 'JSON',
+			          success: function (data) {
+			        	  $.each(data.rows,function(index,dic_info){
+			        		  var item="";
+			        		  item="<option value='"+dic_info.p_id+"'>"+dic_info.p_name+"</option>"
+			        		  $('#p_id').append(item);
+			        	  });
+			          },
+			          error: function (data) {
+			          	console.log("data2="+data);
+			          }
+			      });	
+				
+			}
+			
+			//动态加载城市的方法
+			$("#p_id").on("change", function(){
+				var p_id = $("#p_id").val();
+				$('#city_id').empty();//先清空所有的option
+				$('#city_id').append("<option></option>");
+				$.ajax({
+			          type: "post",
+			          contentType: "application/json",          // 明确指定请求体格式
+			          url: "getClientCityList",
+			          data: JSON.stringify({p_id:p_id}),
+			          dataType: 'JSON',
+			          success: function (data) {
+			        	  //console.log("rows="+data.rows);
+			        	  $.each(data.rows,function(index,dic_info){
+			        		  var item="";
+			        		  item="<option value='"+dic_info.city_id+"'>"+dic_info.cityname+"</option>"
+			        		  $('#city_id').append(item);
+			        	  });
+			          },
+			          error: function (data) {
+			          	console.log("data2="+data);
+			          }
+			      });	
+			});
+			
+			//动态加载区域的方法
+			$("#city_id").on("change", function(){
+				var city_id = $("#city_id").val();
+				$('#a_id').empty();//先清空所有的option
+				$('#a_id').append("<option></option>");
+				$.ajax({
+			          type: "post",
+			          contentType: "application/json",          // 明确指定请求体格式
+			          url: "getClientArrearsList",
+			          data: JSON.stringify({city_id:city_id}),
+			          dataType: 'JSON',
+			          success: function (data) {
+			        	  $.each(data.rows,function(index,dic_info){
+			        		  var item="";
+			        		  item="<option value='"+dic_info.a_id+"'>"+dic_info.a_name+"</option>"
+			        		  $('#a_id').append(item);
+			        	  });
+			          },
+			          error: function (data) {
+			          	console.log("data2="+data);
+			          }
+			      });	
+			});
+			
+			
+			$('#downshelf_rule_type').on('change', function () {
+				
+				$('#downshelf_rule_detail').val("");
+				
+				if($('#downshelf_rule_type').val()=="0"){
+					$('#downshelf_rule_detail').attr('placeholder', '请填入累计发货的期数');
+				}else if($('#downshelf_rule_type').val()=="1"){
+					$('#downshelf_rule_detail').attr('placeholder', '请填入星期数，以1-7表示');
+				}else if($('#downshelf_rule_type').val()=="2"){
+					$('#downshelf_rule_detail').attr('placeholder', '请填入两个具体日期，两个日期间以","隔开');
+				}else if($('#downshelf_rule_type').val()=="3"){
+					$('#downshelf_rule_detail').attr('placeholder', '请填入具体日期,以1-31表示');
+				}else if($('#downshelf_rule_type').val()=="4"){
+					$('#downshelf_rule_detail').attr('placeholder', '请填入月份和日期，两个之间以","隔开，例：3,20表示3月20日');
+				}else{
+					$('#downshelf_rule_detail').attr('placeholder', '');
+				}
+			});
+			
+		});
+		
+		function toDel(id){
+			 switch(active){		  
+		       case 2:{
+		    	   ajax_function_ask_and_refresh("是否删除","deleteAddress","post",{'address_id':id},"删除成功",$('#table_address'));
+		    	   break;
+		       }
+		       case 3:{
+		    	   ajax_function_ask_and_refresh("是否删除","deleteClientBank","post",{'id':id},"删除成功",$('#table_bank'));
+		    	   break;
+		       }
+		       case 4:{
+		    	   ajax_function_ask_and_refresh("是否删除","deleteContent","post",{'content_id':id},"删除成功",$('#table_content'));
+		    	   break;
+		       }
+		   }		
+		}
+		
+		function renderOperator(value,row,index){
+			 var str = "";
+			 str += "<a onclick=\"toDel('"+row.id+"')\">删除</a>";
+			 return str;
+		}
+		
+		function end_function(index, layero){
+		    var json_data_list=formToJson($("#form_tab4"));
+		    json_data_list['queryId']='${queryId_content}';
+		    search_sum_list("${context}/csu/getTableCollectData",json_data_list,"getContentList",$table_content);
+     	}
+	</script>
+</html>

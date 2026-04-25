@@ -55,6 +55,10 @@ public class qkInvoiceController extends ZtbkServiceController {
 	private int invoiceBdSubQueryId = 10000016;	
 	private GridHeadConfig invoiceBdSubQueryHeadConfig;
 	
+	// 进货发票核销数据查询
+	private int invoiceBdSubShowQueryId = 10000057;	
+	private GridHeadConfig invoiceBdSubShowQueryHeadConfig;
+	
 	//进货发票核销刊期明细
 	private int invoiceOffsetDetailQueryId = 10000050;	
 	private GridHeadConfig invoiceOffsetDetailHeadConfig;	
@@ -68,6 +72,11 @@ public class qkInvoiceController extends ZtbkServiceController {
 	private int invoiceAgentDetailQueryId = 10000053;	
 	private GridHeadConfig invoiceAddAgentDetailHeadConfig;	
 	private GridHeadConfig invoiceEditAgentDetailHeadConfig;
+	
+	// 其他进货发票
+	private int invoiceOtherDetailQueryId = 5500003;	
+	private GridHeadConfig invoiceAddOtherDetailHeadConfig;
+	private GridHeadConfig invoiceEditOtherDetailHeadConfig;
 	
 	private InvoiceUtil invoiceutil =new InvoiceUtil();
 	
@@ -88,6 +97,7 @@ public class qkInvoiceController extends ZtbkServiceController {
 		
 		invoiceBdSubQueryHeadConfig = new GridHeadConfig(invoiceBdSubQueryId,true,false,false,false);
 		//invoiceBdSubQueryHeadConfig.setOperatorWidth(100);
+		invoiceBdSubShowQueryHeadConfig = new GridHeadConfig(invoiceBdSubShowQueryId,true,false,false,false);
 		
 		invoiceOffsetDetailHeadConfig = new GridHeadConfig(invoiceOffsetDetailQueryId,true,false,true,false);
 		
@@ -95,6 +105,9 @@ public class qkInvoiceController extends ZtbkServiceController {
 		
 		invoiceAddAgentDetailHeadConfig=new GridHeadConfig(invoiceAgentDetailQueryId,true,true,true,false);
 		invoiceEditAgentDetailHeadConfig=new GridHeadConfig(invoiceAgentDetailQueryId,true,true,true,false);
+		
+        invoiceAddOtherDetailHeadConfig=new GridHeadConfig(invoiceOtherDetailQueryId,true,false,true,false);
+		invoiceEditOtherDetailHeadConfig=new GridHeadConfig(invoiceOtherDetailQueryId,true,false,true,false);
 	}
 	/**
 	 * 进货发票 by fjs
@@ -701,7 +714,7 @@ public class qkInvoiceController extends ZtbkServiceController {
 	}
 	
 	/**
-	 * 发货核销页面
+	 * 到货核销页面
 	 * 
 	 * param postData
 	 * return
@@ -737,9 +750,46 @@ public class qkInvoiceController extends ZtbkServiceController {
 		return mv;
     }
 	
+	/**
+	 * 核销明细页面
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/invoiceSubOffsetShow",method=RequestMethod.GET)
+    public ModelAndView invoiceSubOffsetShow(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException {
+        ModelAndView mv = new ModelAndView();
+       
+        mv.setViewName("bd/invoice/invoiceSubOffsetShow");
+        
+        String tableHeader = this.getTableHeader(httpSession,invoiceBdSubShowQueryHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", invoiceBdSubShowQueryId);		
+//		mv.addObject("ItemExclusiveCode", postData.get("ItemExclusiveCode"));
+//		mv.addObject("inv_id", postData.get("inv_id"));
+		
+		Map<String, Object> oneQuery = baseService.getOneQuery(invoiceOffsetDetailQueryId, postData);
+		mv.addObject("oneJson_offset", JsonUtil.mapToString(oneQuery));
+		
+		
+		String invoice_dh_offset_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("invoice_dh_offset_guid", invoice_dh_offset_guid);
+        
+        postData.put("guid", invoice_dh_offset_guid);
+        
+		// 入参, 注意按照顺序
+		String paramNames[] = {"inv_id", "guid","ItemExclusiveCode"};
+	    
+		// 核销明细插入临时表
+		postData.put("spName", "n_np_invoice_dh_sub_temp_getdata"); 		
+		int code = baseService.doCallSp(postData, paramNames, null);
+			
+		return mv;
+    }
+	
 	
 	/**
-	 * 获得动态列表数据-发票核销到货数据明细
+	 * 获得动态列表数据-发票核销到货数据明细(到货核销页面)
 	 * 
 	 * param postData
 	 * return
@@ -750,6 +800,20 @@ public class qkInvoiceController extends ZtbkServiceController {
 		String invoice_dh_offset_guid=(String)httpSession.getAttribute("invoice_dh_offset_guid");
 		postData.put("guid", invoice_dh_offset_guid);
 		return this.getTableDataList(postData,invoiceBdSubQueryId);
+	}
+	
+	/**
+	 * 获得动态列表数据-发票核销到货数据明细(核销明细页面)
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getInvoiceOffsetItemSubShowList")
+	@ResponseBody
+	public Object getInvoiceOffsetItemSubShowList(@RequestBody Map postData,HttpSession httpSession){
+		String invoice_dh_offset_guid=(String)httpSession.getAttribute("invoice_dh_offset_guid");
+		postData.put("guid", invoice_dh_offset_guid);
+		return this.getTableDataList(postData,invoiceBdSubShowQueryId);
 	}
 	
 	/**
@@ -866,7 +930,7 @@ public class qkInvoiceController extends ZtbkServiceController {
 		postData.put("guid", invoice_dh_guid);
 		
 		// 入参, 注意按照顺序
-		String paramNames[] = {"guid","mail_code","qk_name","h_amount","jh_price","memo"};
+		String paramNames[] = {"guid","mail_code","qk_name","period_name","h_amount","jh_price","total_jh_price","memo"};
 		// 加入sp的名称
 		postData.put("spName", "n_np_invoice_dh_agent_item_temp_new");
 		
@@ -956,7 +1020,7 @@ public class qkInvoiceController extends ZtbkServiceController {
 		postData.put("guid", invoice_dh_guid);
 		
 		// 入参, 注意按照顺序
-		String paramNames[] = {"guid","item_id","mail_code","qk_name","h_amount","jh_price","memo"};
+		String paramNames[] = {"guid","item_id","mail_code","qk_name","period_name","h_amount","jh_price","total_jh_price","memo"};
 		// 加入sp的名称
 		postData.put("spName", "n_np_invoice_dh_agent_item_temp_update");
 		
@@ -1046,7 +1110,7 @@ public class qkInvoiceController extends ZtbkServiceController {
 				//if (row.getCell(3) == null) {
 					//continue;
 				//}
-				for (int i = 0; i < 5; i++) {
+				for (int i = 0; i < 7; i++) {
 					Cell cell = row.getCell(i);
 					if (cell != null){
 						switch(i){
@@ -1056,9 +1120,13 @@ public class qkInvoiceController extends ZtbkServiceController {
 							case 1:{
 								cell.setCellType(Cell.CELL_TYPE_STRING);
 								agent_invoice_itemMap.put("qk_name", cell.getStringCellValue().trim());break;}
-							case 2:{agent_invoice_itemMap.put("h_amount", cell.getNumericCellValue());break;}
-							case 3:{agent_invoice_itemMap.put("jh_price", cell.getNumericCellValue());break;}
-							case 4:{
+							case 2:{
+								cell.setCellType(Cell.CELL_TYPE_STRING);
+								agent_invoice_itemMap.put("period_name", cell.getStringCellValue().trim());break;}
+							case 3:{agent_invoice_itemMap.put("h_amount", cell.getNumericCellValue());break;}
+							case 4:{agent_invoice_itemMap.put("jh_price", cell.getNumericCellValue());break;}
+							case 5:{agent_invoice_itemMap.put("total_jh_price", cell.getNumericCellValue());break;}
+							case 6:{
 								cell.setCellType(Cell.CELL_TYPE_STRING);
 								agent_invoice_itemMap.put("memo", cell.getStringCellValue().trim());break;}
 							
@@ -1086,7 +1154,7 @@ public class qkInvoiceController extends ZtbkServiceController {
 	 */
     public int addOneAgentInvoiceItem(Map postData){
 		// 入参, 注意按照顺序
-		String paramNames[] = {"guid","mail_code","qk_name","h_amount","jh_price","memo"};
+		String paramNames[] = {"guid","mail_code","qk_name","period_name","h_amount","jh_price","total_jh_price","memo"};
 		// 加入sp的名称
 		postData.put("spName", "n_np_invoice_dh_agent_item_temp_new");
 		
@@ -1145,7 +1213,327 @@ public class qkInvoiceController extends ZtbkServiceController {
 		
         return mv;
     }
-    
+	
+	/**
+	 * 新增其他蓝票页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/otherInvoiceAdd",method=RequestMethod.GET)
+    public ModelAndView otherInvoiceAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/invoice/otherInvoiceAdd");
+        
+        String invoice_dh_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("invoice_dh_guid", invoice_dh_guid);
+        String tableHeader = this.getTableHeader(httpSession,invoiceAddOtherDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", invoiceOtherDetailQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-新增其他发票明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getOtherInvoiceAddItemList")
+	@ResponseBody
+	public Object getOtherInvoiceAddItemList(@RequestBody Map postData,HttpSession httpSession){
+		String invoice_dh_guid=(String)httpSession.getAttribute("invoice_dh_guid");
+		postData.put("guid", invoice_dh_guid);
+		return this.getTableDataList(postData,invoiceOtherDetailQueryId);
+	}	
+	
+	/**
+	 * 获得动态列表数据-编辑蓝票明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getOtherInvoiceEditItemList")
+	@ResponseBody
+	public Object getOtherInvoiceEditItemList(@RequestBody Map postData,HttpSession httpSession){
+		String invoice_dh_guid=(String)httpSession.getAttribute("invoice_dh_guid");
+		postData.put("guid", invoice_dh_guid);
+		return this.getTableDataList(postData,invoiceOtherDetailQueryId);
+	}	
+	
+	/**
+	 * 删除财务分类
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/deleteInvoiceCwItem")
+	@ResponseBody
+    public Object deleteInvoiceCwItem(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        String invoice_dh_guid = (String)httpSession.getAttribute("invoice_dh_guid");
+		postData.put("guid", invoice_dh_guid);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","cw_type"};
+		// 加入sp的名称
+		postData.put("spName", "u_business_invoice_cw_item_delete");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 新增财务分类页面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/invoiceCwItemAdd",method=RequestMethod.GET)
+    public ModelAndView invoiceCwItemAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/invoice/invoiceCwItemAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增财务分类
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/addInvoiceCwItem")
+	@ResponseBody
+    public Object addInvoiceCwItem(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        String invoice_dh_guid = (String)httpSession.getAttribute("invoice_dh_guid");
+		postData.put("guid", invoice_dh_guid);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","cw_type","item_money"};
+		// 加入sp的名称
+		postData.put("spName", "u_business_invoice_cw_item_new");
+		postData.put("cw_type", postData.get("purchase_cw_type"));
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 修改财务分类金额
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/updateInvoiceCwItem")
+	@ResponseBody
+    public Object updateInvoiceCwItem(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        String invoice_dh_guid = (String)httpSession.getAttribute("invoice_dh_guid");
+		postData.put("guid", invoice_dh_guid);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","cw_type","item_money"};
+		// 加入sp的名称
+		postData.put("spName", "u_business_invoice_cw_item_update");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 其他蓝票修改页面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/otherInvoiceEdit",method=RequestMethod.GET)
+    public ModelAndView otherInvoiceEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(invoiceOneQueryId, postData);
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("bd/invoice/otherInvoiceEdit");
+        
+        String tableHeader = this.getTableHeader(httpSession,invoiceEditOtherDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", invoiceOtherDetailQueryId);
+        
+        // 入参, 注意按照顺序
+ 		String paramNames[] = {"inv_id", "guid"};
+ 		// 加入sp的名称
+ 		postData.put("spName", "u_business_invoice_to_update");
+ 		
+ 		String invoice_dh_guid=GuidUtil.create32Guid();
+         httpSession.setAttribute("invoice_dh_guid", invoice_dh_guid);
+ 		postData.put("guid", invoice_dh_guid);
+ 		
+ 		int code = baseService.doCallSp(postData, paramNames, null);
+		
+        return mv;
+    }
+	
+	/**
+	 * 新增其他红票页面 by fjs
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/redOtherInvoiceAdd",method=RequestMethod.GET)
+    public ModelAndView redOtherInvoiceAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/invoice/redOtherInvoiceAdd");
+        
+        String invoice_dh_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("invoice_dh_guid", invoice_dh_guid);
+        
+        String tableHeader = this.getTableHeader(httpSession,invoiceAddOtherDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", invoiceOtherDetailQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 其他红票修改页面      by fjs
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/redOtherInvoiceEdit",method=RequestMethod.GET)
+    public ModelAndView redOtherInvoiceEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(invoiceOneQueryId, postData);
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("bd/invoice/redOtherInvoiceEdit");
+        
+        String tableHeader = this.getTableHeader(httpSession,invoiceEditOtherDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", invoiceOtherDetailQueryId);
+        
+        // 入参, 注意按照顺序
+ 		String paramNames[] = {"inv_id", "guid"};
+ 		// 加入sp的名称
+ 		postData.put("spName", "u_business_invoice_to_update");
+ 		
+ 		String invoice_dh_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("invoice_dh_guid", invoice_dh_guid);
+ 		postData.put("guid", invoice_dh_guid);
+ 		
+ 		int code = baseService.doCallSp(postData, paramNames, null);
+		
+        return mv;
+    }
+	
+	/**
+	 * 新增代理蓝票页面 by fjs
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/noInvoiceAdd",method=RequestMethod.GET)
+    public ModelAndView noInvoiceAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/invoice/noInvoiceAdd");
+        
+        String invoice_dh_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("invoice_dh_guid", invoice_dh_guid);
+        
+        String tableHeader = this.getTableHeader(httpSession,invoiceAddAgentDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", invoiceAgentDetailQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 新增代理红票页面 by fjs
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/redNoInvoiceAdd",method=RequestMethod.GET)
+    public ModelAndView redNoInvoiceAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("bd/invoice/redNoInvoiceAdd");
+        
+        String invoice_dh_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("invoice_dh_guid", invoice_dh_guid);
+        
+        String tableHeader = this.getTableHeader(httpSession,invoiceAddAgentDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", invoiceAgentDetailQueryId);
+        return mv;
+    }
+	
+	/**
+	 * 代理蓝票修改页面      by fjs
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/noInvoiceEdit",method=RequestMethod.GET)
+    public ModelAndView noInvoiceEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(invoiceOneQueryId, postData);
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("bd/invoice/noInvoiceEdit");
+        
+        String tableHeader = this.getTableHeader(httpSession,invoiceEditAgentDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", invoiceAgentDetailQueryId);
+        
+        // 入参, 注意按照顺序
+ 		String paramNames[] = {"inv_id", "guid"};
+ 		// 加入sp的名称
+ 		postData.put("spName", "n_np_invoice_dh_agent_item_temp_todata");
+ 		
+ 		String invoice_dh_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("invoice_dh_guid", invoice_dh_guid);
+ 		postData.put("guid", invoice_dh_guid);
+ 		
+ 		int code = baseService.doCallSp(postData, paramNames, null);
+		
+        return mv;
+    }
+	
+	/**
+	 * 代理红票修改页面      by fjs
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/redNoInvoiceEdit",method=RequestMethod.GET)
+    public ModelAndView redNoInvoiceEdit(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(invoiceOneQueryId, postData);
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("bd/invoice/redNoInvoiceEdit");
+        
+        String tableHeader = this.getTableHeader(httpSession,invoiceEditAgentDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", invoiceAgentDetailQueryId);
+        
+        // 入参, 注意按照顺序
+ 		String paramNames[] = {"inv_id", "guid"};
+ 		// 加入sp的名称
+ 		postData.put("spName", "n_np_invoice_dh_agent_item_temp_todata");
+ 		
+ 		String invoice_dh_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("invoice_dh_guid", invoice_dh_guid);
+ 		postData.put("guid", invoice_dh_guid);
+ 		
+ 		int code = baseService.doCallSp(postData, paramNames, null);
+		
+        return mv;
+    }
+	
+	
 	/**
 	 * 分发数据（关联报订表）页面
 	 * @throws JsonProcessingException 

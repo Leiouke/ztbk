@@ -1,0 +1,403 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->  
+	    <jsp:include page="../../include/h_superHead.jsp"></jsp:include>
+	    <link rel="stylesheet" type="text/css" href="${context}/css/plugins/webuploader/webuploader.css">
+	    <link href="${context}/css/boocup_style.css" rel="stylesheet">
+	    <!-- Bootstrap table -->
+	    <link href="${context}/css/plugins/bootstrap-table/bootstrap-table.min.css" rel="stylesheet">
+	</head>
+	<body>
+		<div class="sonpage-body">
+			<div class="col-md-12">
+			   <form id="form" class="form-inline">			        
+	            	<div class="row">
+	            		<div class="form-group small-space col-xs-4">
+				        	<label >刊号：</label>
+				        	<input type="text" name="mail_code" id = "mail_code" style="background-color: #C1FFC1;">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				        	<label >条码：</label>
+				        	<input type="text" name="qk_issn" id = "qk_issn" style="background-color: #C1FFC1;">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				        	<label >刊名：</label>
+				        	<input type="text" name="qk_name" id = "qk_name" style="background-color:#C1FFC1;">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				        	<input type="text" name="qk_id" id = "qk_id" style="display:none">
+				        </div>
+					</div>	
+					<div class="row">
+						<div class="form-group small-space col-xs-4">
+							<label >客户编号：</label>
+							<input type="text" name="c_id" id = "c_id"  readonly>
+							<div class="input-group-btn">
+	                        	<button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+	                           		<span class="caret"></span>
+	                            </button>
+	                             <ul class="dropdown-menu dropdown-menu-right" role="menu"></ul>
+	                         </div>
+						 </div>
+						<div class="form-group small-space col-xs-4">
+							<label >户号(_客户名称)：</label>
+							<input type="text" name="c_department" id = "c_department" disabled>
+						</div>
+						<input type="hidden" name="qk_attribute" id = "qk_attribute">
+					</div>
+					<div class="row">
+				       <div class="form-group small-space col-xs-4">
+					    <label >供应商ID：</label>
+					    <input type="text" name="f_id" id = "f_id">
+					    <div class="input-group-btn">
+	                        <button type="button" class="btn btn-white dropdown-toggle" data-toggle="dropdown">
+	                            <span class="caret"></span>
+	                        </button>
+	                        <ul class="dropdown-menu dropdown-menu-right" role="menu" style="margin-left:580px"></ul>
+	                    </div>
+					  </div>
+					  <div class="form-group small-space col-xs-4">
+					    <label >供应商名称：</label>
+					    <input type="text" name="f_department" id = "f_department"  disabled>
+					  </div>
+					</div>	
+					<div class="row">
+						<div class="form-group small-space col-xs-4">
+				            <label >订阅开始日期：</label>
+							<input name="period_start" id="period_start" type="text" class="form-control search-items layer-date" style = "width:68%;background-color: #FFE4E1;">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				            <label >订阅截止日期：</label>
+							<input name="period_end" id="period_end" type="text" class="form-control search-items layer-date" style = "width:68%;background-color: #FFE4E1;">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				        	<label >数量：</label>
+				        	<input type="text" name="h_amount" id = "h_amount" style = "background-color: #FFE4E1;">
+				        </div>
+					</div>	
+					<div class="row">
+				        <div class="form-group small-space col-xs-4">
+				        	<label >折扣：</label>
+				        	<input type="text" name="h_discount" id = "h_discount">
+				        </div>
+				        <div class="form-group small-space col-xs-4">
+				        	<label >价格：</label>
+				        	<input type="text" name="h_price" id = "h_price">
+				        </div>
+				        <div class="form-group small-space col-xs-4 not-null">
+				        	<label >销售价：</label>
+				        	<input type="text" name="real_money" id = "real_money" style = "background:#f5f5f5" readonly>
+				        </div>
+				        	<input type="hidden" name="total_money" id = "total_money">
+					</div>        
+<!-- 					<div class="row"> -->
+<!-- 				        <div class="form-group small-space col-xs-4"> -->
+<!-- 				        	<label >币制：</label> -->
+<!-- 				        	<select name="currency_id" class="dictionary" > -->
+<!-- 								<option></option> -->
+<!-- 							</select> -->
+<!-- 				        </div> -->
+<!-- 				        <div class="form-group small-space col-xs-4"> -->
+<!-- 				        	<label >汇率：</label> -->
+<!-- 				        	<input type="text" name="exchange_rate" > -->
+<!-- 				        </div> -->
+<!-- 					</div>  -->
+					<div class="row">
+				        <div class="form-group middle-space col-xs-8">
+							<label >备注：</label>
+							<input type="text" name="memo">
+						</div>
+					</div>
+		       </form>
+			 </div>
+		</div>
+		<div class="sonpage-footer">
+	        <button id="save" class="btn btn-primary" type="button">保存</button>
+	        <button id="cancel" class="btn btn-white" type="button">取消</button>
+		</div>
+	</body>
+	<!-- Bootstrap table -->
+    <script src="${context}/js/plugins/bootstrap-table/bootstrap-table.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <!-- Bootstrap table export-->
+    <script src="${context}/js/plugins/bootstrap-table/export/bootstrap-table-export.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/tableExport.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/js-xlsx/xlsx.core.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.min.js"></script>
+    <script src="${context}/js/plugins/bootstrap-table/export/jsPDF/jspdf.plugin.autotable.js"></script>
+    
+	<script src="${context}/js/common/common.js"></script>
+	<script src="${context}/js/plugins/layer/layer.min.js"></script>
+	<script src="${context}/js/plugins/webuploader/webuploader.min.js"></script>
+	<!-- layerDate plugin javascript -->
+    <!--<script src="${context}/js/plugins/layer/laydate/laydate.js"></script>-->
+    <script src="${context}/js/plugins/layer/laydate-new/laydate.js"></script>
+    <!-- plugins -->
+ 	<script src="${context}/js/plugins/suggest/bootstrap-suggest-new.min.js"></script>
+	<script type="text/javascript">
+	
+	    var $table = $('#table');
+	    function queryParams(param) {
+			var json_obj={};
+			json_obj['limit'] =param.limit;
+   	      	json_obj['offset'] =param.offset;
+   	     	json_obj['sortName'] =this.sortName;
+   	  		json_obj['sortOrder'] =this.sortOrder;
+   	  	   if($('#mail_code').val()!=null&&$('#mail_code').val()!=""){
+			   json_obj['mail_code'] =$('#mail_code').val();
+		   }
+		   if($('#qk_issn').val()!=null&&$('#qk_issn').val()!=""){
+			   json_obj['qk_issn'] =$('#qk_issn').val();
+		   }
+		   if($('#qk_name').val()!=null&&$('#qk_name').val()!=""){
+			   json_obj['qk_name'] =$('#qk_name').val();
+		   }
+   	        return json_obj;
+		}
+	    
+	    //填写月初的日期
+// 	    function getMonthStartDate() {
+// 	    	  const today = new Date();
+// 	    	  // 将日期设置为当月1号
+// 	    	  const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+	    	  
+// 	    	  // 格式化输出（可选）
+// 	    	  const year = startDate.getFullYear();
+// 	    	  const month = String(startDate.getMonth() + 1).padStart(2, '0'); // 月份补零
+// 	    	  const day = String(startDate.getDate()).padStart(2, '0'); // 日期补零
+	    	  
+// 	    	  $('#period_start').val(year+"/"+month+"/"+day);
+// 	    }
+	    
+	    
+		$(document).ready(function () {
+
+			//getMonthStartDate();
+
+			//inistal_data('#period_start','#period_end');
+			
+			
+			
+			$('#save').on('click', function () {
+				if(!has_null($('#form')))
+					ajax_function("addQkZdItem","post",$('#form').serialize(),'新增成功');		
+			 });
+
+			//加载字典数据
+			get_dictionary("${context}",null);
+			
+			//自动搜索填补
+			initialize_bsSuggest_bk_factory("${context}", "f_department", "f_id");
+			initialize_bsSuggest_bk_client("${context}", "c_department", "c_id");
+			
+			$('#c_id').val('${c_id}');
+			$('#c_department').val('${c_department}');
+			
+			
+		});
+		
+		// 绑定回车事件(自动填充供应商和商品名)
+		  $('#mail_code, #qk_issn, #qk_name').on('keydown', function(e) {
+		    if (e.which === 13) { // 13 是回车键的 keyCode
+		      e.preventDefault();
+		      getProductDetail();
+		    }
+		  });
+		    
+		   function getProductDetail(){
+			   var json_obj_data={};
+			   if($('#mail_code').val()!=null&&$('#mail_code').val()!=""){
+				   json_obj_data['mail_code'] =$('#mail_code').val();
+			   }
+			   if($('#qk_issn').val()!=null&&$('#qk_issn').val()!=""){
+				   json_obj_data['qk_issn'] =$('#qk_issn').val();
+			   }
+			   if($('#qk_name').val()!=null&&$('#qk_name').val()!=""){
+				   json_obj_data['qk_name'] =$('#qk_name').val();
+			   }
+			   $('#f_id').val("");
+         	   $('#f_department').val("");
+         	  json_obj_data['is_stop'] ="0";//默认为0
+         	   
+         	   
+			   $.ajax({
+			          type: "post",
+			          contentType: "application/json",          // 明确指定请求体格式
+			          url: "${context}/bk/basic/getProductList",
+			          data: JSON.stringify(json_obj_data),
+			          dataType: 'JSON',
+			          success: function (data) {
+			          	if(data.total==0){
+			          		alert("编号未搜索到商品，请检查编号");
+			          	}else if(data.total==1){
+			          		$('#f_id').val(data.rows[0].f_id);
+			          		$('#f_department').val(data.rows[0].f_department);
+			          		$('#mail_code').val(data.rows[0].mail_code);
+			          		$('#qk_name').val(data.rows[0].qk_name);
+			          		$('#qk_issn').val(data.rows[0].qk_issn);
+			          		$('#qk_id').val(data.rows[0].qk_id);
+			          		$('#qk_attribute').val(data.rows[0].qk_attribute);
+			          		//inistal_data('#period_start','#period_end');
+			          		initLaydate();
+			          	}else if(data.total>1){
+			          		open_layer(2,"选择明细","qkZdItemSelect",['1200px', '800px'],false);
+			          	}
+			          },
+			          error: function (data) {
+			          	console.log(data);
+			          }
+			      });	
+		    }
+		   
+		   
+		// 绑定回车事件(自动填充供应商和商品名)
+		$('#mail_code, #qk_issn, #qk_name').on('keydown', function(e) {
+			$('#period_start, #period_end, #h_amount,#h_price,#h_discount,#real_money,#total_money').val("");
+		});
+		   
+			// 绑定回车事件(自动填充商品价格)
+			  $('#period_start, #period_end, #h_amount').on('keydown', function(e) {
+			    if (e.which === 13) { // 13 是回车键的 keyCode
+			      e.preventDefault();
+			      getProductPrice();
+			    }
+			  });
+		   
+			  function getProductPrice(){
+				  var allValid = true;  //为空标识（true默认不为空）
+				  $('#period_start, #period_end, #h_amount').each(function() {  
+				    if ($(this).val() == null || $(this).val() == '') {  
+				      allValid = false;  //(有空值变为false)
+				      return false; // 跳出循环  
+				    }  
+				  });  
+				    
+				  if (allValid) {
+					  var json_obj_data={};
+					  json_obj_data['qk_id'] =$('#qk_id').val();
+					  json_obj_data['cf_id'] =$('#c_id').val();
+					  json_obj_data['start_date'] =$('#period_start').val();
+					  json_obj_data['end_date'] =$('#period_end').val();
+					  $.ajax({
+				          type: "post",
+				          contentType: "application/json",          // 明确指定请求体格式
+				          url: "getQkZdItemPrice",
+				          data: JSON.stringify(json_obj_data),
+				          dataType: 'JSON',
+				          success: function (data) {
+				        	  console.log("dataprice"+data);
+				        	  var h_amount= $('#h_amount').val();
+				        	  $('#h_price').val(data);
+				        	  $('#h_discount').val(1);
+				        	  $('#real_money').val(data*1*h_amount);
+				        	  $('#total_money').val(data*1*h_amount);
+				          },
+				          error: function (data) {
+				          	console.log(data);
+				          }
+				      });	
+				  }else{
+					  alert("有必填项为空");
+				  }
+			  }
+		   
+		   $('#h_amount, #h_discount, #h_price').on('input', function() {
+				  var amount = $('#h_amount').val();
+				  var discount = $('#h_discount').val();
+				  var price = $('#h_price').val();
+				  
+				  $('#real_money').val(discount*price*amount);
+				  $('#total_money').val(price*amount);
+           });
+			
+			function formatDate(date) {
+			    var y = date.getFullYear();
+			    var m = (date.getMonth() + 1).toString().padStart(2, '0');
+			    var d = date.getDate().toString().padStart(2, '0');
+			    return y + '-' + m + '-' + d;
+			}
+
+		function initLaydate() {
+		    laydate.render({
+		        elem: '#period_start',
+		        format: 'yyyy-MM-dd',
+		        max: '2099-06-16',
+		        btns: ['clear', 'confirm'],
+		        done: function(value, date) {
+		            // 每次选择时，动态获取当前模式
+		            var qk_attribute = $('#qk_attribute').val();
+		            
+		            if (qk_attribute == "01") {
+		                // 报纸模式：调整为周一
+		                var selectedDate = new Date(value);
+		                var weekDay = selectedDate.getDay();
+		                
+		                if (weekDay !== 1) {
+		                    var offset = weekDay === 0 ? -6 : -(weekDay - 1);
+		                    selectedDate.setDate(selectedDate.getDate() + offset);
+		                    var adjustedValue = formatDate(selectedDate);
+		                    $('#period_start').val(adjustedValue);
+		                    layer.msg('报纸开始时间为周一,已自动调整为周一：' + adjustedValue);
+		                }
+		            } else {
+		                // 普通模式：调整为当月1号
+		                var selectedDate = new Date(value);
+		                var day = selectedDate.getDate();
+		                
+		                if (day !== 1) {
+		                    selectedDate.setDate(1);
+		                    var adjustedValue = formatDate(selectedDate);
+		                    $('#period_start').val(adjustedValue);
+		                    layer.msg('已自动调整为当月1号：' + adjustedValue);
+		                }
+		            }
+		        }
+		    });
+		    
+		    laydate.render({
+		        elem: '#period_end',
+		        format: 'yyyy-MM-dd',
+		        max: '2099-06-16',
+		        btns: ['clear', 'confirm'],
+		        done: function(value, date) {
+		            var qk_attribute = $('#qk_attribute').val();
+		            
+		            if (qk_attribute == "01") {
+		                // 报纸模式：调整为周日
+		                var selectedDate = new Date(value);
+		                var weekDay = selectedDate.getDay();
+		                
+		                if (weekDay !== 0) {
+		                    selectedDate.setDate(selectedDate.getDate() - weekDay);
+		                    var adjustedValue = formatDate(selectedDate);
+		                    $('#period_end').val(adjustedValue);
+		                    layer.msg('报纸结束时间为周日,已自动调整为周日：' + adjustedValue);
+		                }
+		            } else {
+		                // 普通模式：调整为当月最后一天
+		                var selectedDate = new Date(value);
+		                var year = selectedDate.getFullYear();
+		                var month = selectedDate.getMonth();
+		                var lastDay = new Date(year, month + 1, 0).getDate();
+		                var selectedDay = selectedDate.getDate();
+		                
+		                if (selectedDay !== lastDay) {
+		                    selectedDate.setDate(lastDay);
+		                    var adjustedValue = formatDate(selectedDate);
+		                    $('#period_end').val(adjustedValue);
+		                    layer.msg('已自动调整为当月最后一天：' + adjustedValue);
+		                }
+		            }
+		        }
+		    });
+		}
+ 
+	</script>
+	
+</html>

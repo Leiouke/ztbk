@@ -1,0 +1,206 @@
+package com.cnpiecsb.fc.receivable.controller;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.cnpiecsb.common.util.GuidUtil;
+import com.cnpiecsb.common.util.JsonUtil;
+import com.cnpiecsb.csu.controller.ZtbkServiceController;
+import com.cnpiecsb.csu.entity.viewobject.GridHeadConfig;
+import com.cnpiecsb.system.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+/**
+ * 结算单直接开多张发票 控制器
+ * 
+ * @author user
+ *
+ */
+@Controller
+@RequestMapping("/fc/receivable")
+public class ReceivableStatementKpController extends ZtbkServiceController {
+	// 结算单明细临时信息查询
+	private int statementQuikKpDetailQueryId = 8100006;	
+	private GridHeadConfig statementQuikKpDetailHeadConfig;
+	
+	// 结算单单记录查询
+	private int statementOneQueryId = 8100003;
+	
+	// 客户银行信息
+	private int clientBankQueryId = 8000003;
+	private GridHeadConfig clientBankQueryHeadConfig;
+	
+	public ReceivableStatementKpController() {
+		statementQuikKpDetailHeadConfig = new GridHeadConfig(statementQuikKpDetailQueryId,true,false,true,false);
+		
+		clientBankQueryHeadConfig = new GridHeadConfig(clientBankQueryId,true,true,false,false);
+	}
+	
+	/**
+	 * 快捷开票界面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/statementQuikKp",method=RequestMethod.GET)
+    public ModelAndView statementQuikKp(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        // 单记录查询
+		Map<String, Object> oneQuery = baseService.getOneQuery(statementOneQueryId, postData);		
+		//ObjectMapper mapper = new ObjectMapper();
+		mv.addObject("oneJson", JsonUtil.mapToString(oneQuery));
+        mv.setViewName("fc/receivableStatement/statementQuikKp");
+        
+        String tableHeader = this.getTableHeader(httpSession,statementQuikKpDetailHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", statementQuikKpDetailQueryId);
+		
+		String statement_quick_kp_guid=GuidUtil.create32Guid();
+        httpSession.setAttribute("statement_quick_kp_guid", statement_quick_kp_guid);
+		
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-快捷开票明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getStatmentQuikKpItemList")
+	@ResponseBody
+	public Object getStatmentQuikKpItemList(@RequestBody Map postData,HttpSession httpSession){
+		String statement_quick_kp_guid = (String)httpSession.getAttribute("statement_quick_kp_guid");
+		postData.put("guid", statement_quick_kp_guid);
+		return this.getTableDataList(postData, statementQuikKpDetailQueryId);
+	}
+	
+	/**
+	 * 新增结算单开票明细界面
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/statementQuikKpItemAdd",method=RequestMethod.GET)
+    public ModelAndView statementQuikKpItemAdd(HttpSession httpSession)throws JsonProcessingException{
+        ModelAndView mv = new ModelAndView();
+        mv.setViewName("fc/receivableStatement/statementQuikKpItemAdd");
+        return mv;
+    }
+	
+	/**
+	 * 新增结算单开票明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/addStatementQuikKpItem")
+	@ResponseBody
+    public Object addStatementQuikKpItem(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        String statement_quick_kp_guid = (String)httpSession.getAttribute("statement_quick_kp_guid");
+		postData.put("guid", statement_quick_kp_guid);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","rs_id","kp_money","kp_content", "kp_amount", "kp_unit", "kp_memo", "fc_tax_class_code"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_statement_to_invoice_temp_new");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 删除结算单开票明细
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/deleteStatementQuikKpItem")
+	@ResponseBody
+    public Object deleteStatementQuikKpItem(@RequestParam Map postData,HttpSession httpSession)throws JsonProcessingException{
+        String statement_quick_kp_guid = (String)httpSession.getAttribute("statement_quick_kp_guid");
+		postData.put("guid", statement_quick_kp_guid);
+		
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid", "inc_no", "rs_id"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_statement_to_invoice_temp_delete");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+	
+	/**
+	 * 开票银行界面
+	 * @throws JsonProcessingException 
+	 * 
+	 * 
+	 */
+	@RequestMapping(value="/clientBankQuery",method=RequestMethod.GET)
+    public ModelAndView clientBankQuery(@RequestParam Map postData,HttpSession httpSession) throws JsonProcessingException{  // 注意这个postData里面已经包含了id的字段值
+        ModelAndView mv = new ModelAndView();        
+        mv.setViewName("fc/receivableStatement/clientBankQuery");
+        
+        String tableHeader = this.getTableHeader(httpSession,clientBankQueryHeadConfig);
+		mv.addObject("tableHeader", tableHeader);
+		mv.addObject("queryId", clientBankQueryId);
+		
+        return mv;
+    }
+	
+	/**
+	 * 获得动态列表数据-快捷开票明细
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/getClientBankQueryList")
+	@ResponseBody
+	public Object getClientBankQueryList(@RequestBody Map postData,HttpSession httpSession){
+		return this.getTableDataList(postData, clientBankQueryId);
+	}
+	
+	/**
+	 * 快捷开票完成
+	 * 
+	 * param postData
+	 * return
+	 */
+	@RequestMapping(value="/statementQuikKpComplete")
+	@ResponseBody
+    public Object statementQuikKpComplete(@RequestParam Map postData,HttpSession httpSession) {	
+		String statement_quick_kp_guid = (String)httpSession.getAttribute("statement_quick_kp_guid");
+		postData.put("guid", statement_quick_kp_guid);
+		
+		User user=(User)httpSession.getAttribute("user");
+		postData.put("o_id_input", user.getAccount());
+		// 入参, 注意按照顺序
+		String paramNames[] = {"guid","rs_id","c_id","fc_kp_form","fc_kp_family","fc_tax_rate","o_id_input","o_id_receiver","org_code", "unit_code", "bank_id","fc_kp_mail"};
+		// 加入sp的名称
+		postData.put("spName", "fc_receivable_statement_to_invoice_complete");
+		
+		int code = baseService.doCallSp(postData, paramNames, null);
+		
+		if (code != 0) {
+			return this.getAjaxResult(code);
+		}
+
+		return "{\"success\":true}";
+    }
+}
